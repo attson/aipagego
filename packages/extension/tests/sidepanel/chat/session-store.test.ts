@@ -5,6 +5,7 @@ import {
   attachTab,
   detachTab,
   ensureSession,
+  getSessionActions,
   getSessionFor,
   markAttachedUrlChanged,
   MAX_EXCHANGES,
@@ -61,6 +62,33 @@ describe("session-store per-tab", () => {
     setCurrentTab(5);
     expect(useStore.getState().currentTabId).toBe(5);
     expect(getSessionFor(5).messages).toHaveLength(1);
+  });
+
+  it("tab-bound actions keep targeting the captured tab after the current tab changes", () => {
+    ensureSession(1, "https://one.example");
+    ensureSession(2, "https://two.example");
+    setCurrentTab(1);
+    const runSession = getSessionActions(1);
+
+    setCurrentTab(2);
+    runSession.upsertCard({
+      toolUseId: "call_1",
+      name: "createPageIndex",
+      input: {},
+      inputReady: true,
+      status: "awaiting",
+    });
+    runSession.setCardStatus("call_1", { status: "ok", output: { indexId: "idx-1" } });
+    runSession.pushExecutedStep({ kind: "tool", tool: "createPageIndex", args: {} });
+
+    expect(getSessionFor(1).cards[0]).toMatchObject({
+      toolUseId: "call_1",
+      status: "ok",
+      output: { indexId: "idx-1" },
+    });
+    expect(getSessionFor(1).executedSteps).toHaveLength(1);
+    expect(getSessionFor(2).cards).toEqual([]);
+    expect(getSessionFor(2).executedSteps).toEqual([]);
   });
 
   it("setUrl updates only the target tab url", () => {
