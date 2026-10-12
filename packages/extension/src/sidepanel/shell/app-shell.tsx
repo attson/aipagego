@@ -16,6 +16,7 @@ import {
   attachTab,
   detachTab,
   ensureSession,
+  getSessionActions,
   getSessionFor,
   installBroadcastSubscriber,
   popLastAssistantTurn,
@@ -411,16 +412,18 @@ export function AppShell() {
         return;
       }
       const { tabId, url } = await currentTabInfo();
+      ensureSession(tabId, url);
       const session0 = getSessionFor(tabId);
+      const runSession = getSessionActions(tabId);
       const attachedTabs = session0.attachedTabs;
       const contextOptions = resolveContextBuildOptions(settings);
       const context = buildInitialMessagesForNextTurn(session0.messages, contextOptions);
       const getAttachedTabIds = () =>
         useStore.getState().sessionsByTab[tabId]?.attachedTabs.map((a) => a.tabId) ?? [];
-      session.setIdentity({ tabId, url, runRecordId: "" });
-      session.setError(null);
-      session.setDebugBadge(null);
-      session.setStatus("streaming");
+      runSession.setIdentity({ tabId, url, runRecordId: "" });
+      runSession.setError(null);
+      runSession.setDebugBadge(null);
+      runSession.setStatus("streaming");
       const imgsToSend = stagedImages;
       const selectorsToSend = stagedSelectors;
       const promptForLlm = buildPromptWithSelectedElements(prompt, selectorsToSend);
@@ -429,25 +432,25 @@ export function AppShell() {
         appendUserMessageWithImages(tabId, prompt, imgsToSend);
         setStagedImages([]);
       } else {
-        session.appendUserMessage(prompt);
+        runSession.appendUserMessage(prompt);
       }
       if (selectorsToSend.length > 0) setStagedSelectors([]);
       if (context.compressed) {
-        session.appendLog(
+        runSession.appendLog(
           "info",
           "[上下文] 已压缩早期对话",
           `policy=${settings.contextPolicy ?? "auto"} compressedMessages=${context.compressedMessageCount} estimatedChars=${context.estimatedChars} softCharBudget=${contextOptions.softCharBudget}`
         );
       }
-      session.appendLog(
+      runSession.appendLog(
         "info",
         "提交 prompt",
         `provider=${settings.provider} model=${settings.model} endpoint=${settings.endpoint || "(默认)"} maxRounds=${settings.maxRounds}\n---\n${promptForLlm}`
       );
-      session.setInputDraft("");
+      runSession.setInputDraft("");
       setInput("");
       const ac = new AbortController();
-      session.setAbortController(ac);
+      runSession.setAbortController(ac);
       const client = createRecordingClient(
         pickClient(settings.provider),
         (ex) => addLlmExchange(tabId, ex),
@@ -468,76 +471,75 @@ export function AppShell() {
       }
 
       const onEvent = (e: SessionEvent) => {
-        const log: typeof session.appendLog = (level, message, details) =>
-          session.appendLog(level, message, details);
+        const log = runSession.appendLog;
         switch (e.type) {
           case "round_start":
-            session.incrementRound();
-            session.beginAssistantTurn();
+            runSession.incrementRound();
+            runSession.beginAssistantTurn();
             log("info", `round ${e.round + 1} 开始`);
             break;
           case "text_delta":
-            session.appendAssistantText(e.text);
+            runSession.appendAssistantText(e.text);
             break;
           case "tool_use_start":
-            session.upsertCard({ toolUseId: e.id, name: e.name, status: "draft", inputReady: false });
+            runSession.upsertCard({ toolUseId: e.id, name: e.name, status: "draft", inputReady: false });
             log("info", `tool_use_start: ${e.name} (${e.id})`);
             break;
           case "tool_use_input_delta": {
             const cards = useStore.getState().sessionsByTab[tabId]?.cards ?? [];
             const fresh = cards.find((c) => c.toolUseId === e.id);
-            session.upsertCard({
+            runSession.upsertCard({
               toolUseId: e.id,
               partialJson: (fresh?.partialJson ?? "") + e.partial_json,
             });
             break;
           }
           case "tool_use_end":
-            session.upsertCard({ toolUseId: e.id, input: e.input, inputReady: true, status: "awaiting" });
-            session.setStatus("awaiting");
+            runSession.upsertCard({ toolUseId: e.id, input: e.input, inputReady: true, status: "awaiting" });
+            runSession.setStatus("awaiting");
             log("info", `tool_use_end: ${e.id}`, JSON.stringify(e.input, null, 2));
             break;
           case "assistant_turn_end":
-            session.finalizeAssistantTurn(e.toolUses);
+            runSession.finalizeAssistantTurn(e.toolUses);
             break;
           case "tool_running":
-            session.setCardStatus(e.id, { status: "running" });
-            session.setStatus("running");
+            runSession.setCardStatus(e.id, { status: "running" });
+            runSession.setStatus("running");
             log("info", `step running: ${e.id}`);
             break;
           case "tool_done":
-            session.setCardStatus(e.id, { status: "ok", output: e.output, ms: e.ms });
-            session.pushExecutedStep(stepFromCard(e.id));
-            session.setLastOutput(e.output);
-            session.setStatus("streaming");
+            runSession.setCardStatus(e.id, { status: "ok", output: e.output, ms: e.ms });
+            runSession.pushExecutedStep(stepFromCard(e.id));
+            runSession.setLastOutput(e.output);
+            runSession.setStatus("streaming");
             log("info", `step ok: ${e.id} (${e.ms}ms)`);
             break;
           case "tool_error":
-            session.setCardStatus(e.id, { status: "error", error: e.error, ms: e.ms });
-            session.setStatus("streaming");
+            runSession.setCardStatus(e.id, { status: "error", error: e.error, ms: e.ms });
+            runSession.setStatus("streaming");
             log("error", `step error: ${e.id}`, e.error);
             break;
           case "tool_skipped":
-            session.setCardStatus(e.id, { status: "skipped" });
+            runSession.setCardStatus(e.id, { status: "skipped" });
             log("warn", `step skipped: ${e.id}`);
             break;
           case "usage":
-            session.addUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens });
+            runSession.addUsage({ input_tokens: e.input_tokens, output_tokens: e.output_tokens });
             break;
           case "continuation_nudge":
             log(
               "warn",
               `第 ${e.round + 1} 轮未调用工具，疑似提前收尾，已追问让其确认/继续（第 ${e.attempt} 次）`
             );
-            session.setStatus("streaming");
+            runSession.setStatus("streaming");
             break;
           case "stream_error":
             log("error", "LLM stream error", e.error);
-            session.setError(e.error);
+            runSession.setError(e.error);
             break;
           case "exception":
             log("error", "exception in run-session", e.error);
-            session.setError(e.error);
+            runSession.setError(e.error);
             break;
           case "session_end":
             log(
@@ -545,15 +547,15 @@ export function AppShell() {
               `session_end: ${e.status}${e.reason ? " — " + e.reason : ""}`
             );
             if (e.status === "done") {
-              session.setStatus("done");
+              runSession.setStatus("done");
             } else if (e.status === "max_rounds") {
-              session.setStatus("error");
-              session.setError("达到最大轮数");
+              runSession.setStatus("error");
+              runSession.setError("达到最大轮数");
             } else if (e.status === "aborted") {
-              session.setStatus("aborted");
+              runSession.setStatus("aborted");
             } else {
-              session.setStatus("error");
-              if (e.reason) session.setError(e.reason);
+              runSession.setStatus("error");
+              if (e.reason) runSession.setError(e.reason);
             }
             break;
         }
@@ -583,7 +585,7 @@ export function AppShell() {
             lastUserText: prompt,
           }),
           tools: TOOL_DEFS,
-          permissionMode: session.permissionMode,
+          permissionMode: session0.permissionMode,
           askUser: async (raw) => {
             const inp = (raw as { prompt?: string; kind?: AskUserKind; options?: AskUserOption[] }) ?? {};
             const result: AskUserResult = await useIntervention.getState().ask({
@@ -639,11 +641,11 @@ export function AppShell() {
           },
         });
       } catch (e) {
-        session.setError(e instanceof Error ? e.message : String(e));
-        session.setStatus("error");
+        runSession.setError(e instanceof Error ? e.message : String(e));
+        runSession.setStatus("error");
       } finally {
         approver.resolveAllPending({ kind: "deny" });
-        session.setAbortController(null);
+        runSession.setAbortController(null);
       }
     },
     [session, settings, recommendations, approver, stagedImages, stagedSelectors]

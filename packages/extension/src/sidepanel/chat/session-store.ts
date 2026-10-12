@@ -614,7 +614,7 @@ export function getSessionFor(tabId: number): SessionData {
 
 // === legacy hook (transitional) ===
 
-type LegacySession = SessionData & {
+export type SessionActions = {
   reset: () => void;
   setStatus: (s: SessionStatus) => void;
   setError: (msg: string | null) => void;
@@ -648,15 +648,8 @@ type LegacySession = SessionData & {
   setChatMode: (m: "compact" | "full") => void;
 };
 
-export function useSession(): LegacySession {
-  const data = useStore((s) => {
-    const id = s.currentTabId;
-    return id == null ? EMPTY_SESSION : (s.sessionsByTab[id] ?? EMPTY_SESSION);
-  });
-  const tabId = useStore.getState().currentTabId ?? -1;
-
+export function getSessionActions(tabId: number): SessionActions {
   return {
-    ...data,
     reset: () => resetSession(tabId),
     setStatus: (s) => setStatus(tabId, s),
     setError: (m) => setError(tabId, m),
@@ -684,6 +677,18 @@ export function useSession(): LegacySession {
     setDebugBadge: (b) => setDebugBadge(tabId, b),
     setChatMode: (m: "compact" | "full") => setChatMode(tabId, m)
   };
+}
+
+type LegacySession = SessionData & SessionActions;
+
+export function useSession(): LegacySession {
+  const data = useStore((s) => {
+    const id = s.currentTabId;
+    return id == null ? EMPTY_SESSION : (s.sessionsByTab[id] ?? EMPTY_SESSION);
+  });
+  const tabId = useStore.getState().currentTabId ?? -1;
+
+  return { ...data, ...getSessionActions(tabId) };
 }
 
 export function useCurrentTabId(): number | null {
