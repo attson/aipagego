@@ -1,5 +1,6 @@
 import { Coordinator, type Clock, type IdGen } from "@atwebpilot/coordinator";
 import type { PairPayload } from "@atwebpilot/shared/pairing";
+import { readFile } from "node:fs/promises";
 import { LoopbackWSHub } from "./loopback-ws-hub";
 import { installWire } from "./wire";
 import {
@@ -223,6 +224,85 @@ export function createHubEnsurer(d: EnsureDeps): Deps & { bound(): boolean } {
 }
 
 type OpenCommand = { command: string; args: string[] };
+type ReadTextFile = (path: string) => Promise<string>;
+
+const DESKTOP_ENV_KEYS = [
+  "DISPLAY",
+  "WAYLAND_DISPLAY",
+  "XDG_RUNTIME_DIR",
+  "DBUS_SESSION_BUS_ADDRESS",
+  "XAUTHORITY"
+] as const;
+
+export type DesktopEnvironmentOptions = {
+  baseEnv?: NodeJS.ProcessEnv;
+  platform?: NodeJS.Platform;
+  parentPid?: number;
+  uid?: number;
+  maxDepth?: number;
+  readTextFile?: ReadTextFile;
+};
+
+function processId(field: "PPid" | "Uid", status: string): number | null {
+  const match = new RegExp(`^${field}:\\s+(\\d+)`, "m").exec(status);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isSafeInteger(value) ? value : null;
+}
+
+function copyDesktopVariables(target: NodeJS.ProcessEnv, serialized: string): void {
+  for (const entry of serialized.split("\0")) {
+    const separator = entry.indexOf("=");
+    if (separator <= 0) continue;
+    const key = entry.slice(0, separator) as (typeof DESKTOP_ENV_KEYS)[number];
+    if (!DESKTOP_ENV_KEYS.includes(key) || target[key]) continue;
+    const value = entry.slice(separator + 1);
+    if (value) target[key] = value;
+  }
+}
+
+/**
+ * Codex intentionally launches stdio MCP servers with a filtered environment.
+ * On Linux its long-lived app-server ancestor still owns the desktop session,
+ * so recover only the allowlisted GUI variables from same-uid ancestors.
+ */
+export async function resolveDesktopOpenEnvironment(
+  options: DesktopEnvironmentOptions = {}
+): Promise<NodeJS.ProcessEnv> {
+  const environment = { ...(options.baseEnv ?? process.env) };
+  if ((options.platform ?? process.platform) !== "linux") return environment;
+
+  const expectedUid = options.uid ?? process.getuid?.();
+  const readTextFile = options.readTextFile ?? ((path) => readFile(path, "utf8"));
+  const seen = new Set<number>();
+  let pid = options.parentPid ?? process.ppid;
+  const maxDepth = options.maxDepth ?? 12;
+
+  for (let depth = 0; depth < maxDepth && pid > 1 && !seen.has(pid); depth += 1) {
+    seen.add(pid);
+    let status: string;
+    try {
+      status = await readTextFile(`/proc/${pid}/status`);
+    } catch {
+      break;
+    }
+
+    const ownerUid = processId("Uid", status);
+    if (expectedUid !== undefined && ownerUid !== expectedUid) break;
+
+    try {
+      copyDesktopVariables(environment, await readTextFile(`/proc/${pid}/environ`));
+    } catch {
+      // Continue through wrapper processes whose environ is unreadable.
+    }
+
+    const parentPid = processId("PPid", status);
+    if (parentPid === null || parentPid === pid) break;
+    pid = parentPid;
+  }
+
+  return environment;
+}
 
 function openCommands(url: string): OpenCommand[] {
   if (process.platform === "darwin") return [{ command: "open", args: [url] }];
@@ -238,10 +318,17 @@ function openCommands(url: string): OpenCommand[] {
   ];
 }
 
-async function runOpenCommand({ command, args }: OpenCommand): Promise<void> {
+async function runOpenCommand(
+  { command, args }: OpenCommand,
+  environment: NodeJS.ProcessEnv
+): Promise<void> {
   const { spawn } = await import("node:child_process");
   await new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, { stdio: "ignore", detached: true });
+    const child = spawn(command, args, {
+      stdio: "ignore",
+      detached: true,
+      env: environment
+    });
     let settled = false;
     const finish = (error?: Error) => {
       if (settled) return;
@@ -266,9 +353,10 @@ async function runOpenCommand({ command, args }: OpenCommand): Promise<void> {
 /** Opens a URL in the user's default browser and reports launch failures. */
 export async function defaultOpenUrl(url: string): Promise<void> {
   const errors: string[] = [];
+  const environment = await resolveDesktopOpenEnvironment();
   for (const candidate of openCommands(url)) {
     try {
-      await runOpenCommand(candidate);
+      await runOpenCommand(candidate, environment);
       return;
     } catch (error) {
       errors.push(error instanceof Error ? error.message : String(error));
