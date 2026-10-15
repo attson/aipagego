@@ -17,11 +17,11 @@ Claude Code：
 **不需要手填端口。** 从 Plan 33 起是配对流程：
 
 1. 会话启动时**不绑任何端口** —— 不碰网页的会话零副作用。
-2. AI 第一次调 `list_tabs` / `pairing_status` 时才绑一个空闲端口，尝试用系统默认浏览器打开配对页，并立即返回 `pairing_required + pair_url`，不阻塞等待。
+2. AI 第一次调 `list_tabs` / `pairing_status` 时才绑一个空闲端口，通过 MCP URL elicitation 请宿主打开配对页，并立即返回 `pairing_required + pair_url`，不阻塞等待；不支持该能力的宿主回退到系统默认浏览器。
 3. 你在浏览器里点「允许」，扩展即接入；AI 用轻量 `pairing_status` 确认连接后再读取 tab，不重复阻塞式调用。
 4. 之后本机的会话都免确认（信任是安装级的）；端口能复用时连配对页都不会弹。
 
-若系统未弹出浏览器，可直接打开返回结果中的 `pair_url`。授权成功只以扩展实际建立连接并发送 `HELLO` 为准；打开配对页本身不代表已连接。
+若宿主和系统都未弹出浏览器，可直接打开返回结果中的 `pair_url`。授权成功只以扩展实际建立连接并发送 `HELLO` 为准；打开配对页本身不代表已连接。
 
 多个 Codex / Claude Code 会话可以同时接入同一个浏览器，各自一条连接。可在扩展设置 →
 Coordinator 查看已接入的会话、单独断开，或撤销信任。
@@ -49,7 +49,8 @@ listen 端口的能力，所以方向只能如此。这也是配对页存在的�
 ## 工具面
 
 - 控制面 5 个：`pairing_status / list_tabs / open_session / close_session / get_quota`
-- 发现 1 个：`browser_discoverTools` —— 已知工具时直接传 `enable: [...]`，已知分组时直接传 `enableGroups: ["export", ...]`；只有两者都未知时才不带参数读取目录。启用后会加入本进程的 `tools/list`（发送 `tools/list_changed`），并直接返回完整 schema。
+- 发现 1 个：`browser_discoverTools` —— 已知工具时直接传 `enable: [...]`，已知分组时直接传 `enableGroups: ["export", ...]`，也可用 `profile: "core" | "full"` 切换整套工具面；只有这些都未知时才不带参数读取目录。选中的工具会加入本进程的 `tools/list`（发送 `tools/list_changed`），并始终返回完整 schema，包括已经启用的工具。
+- 同轮执行桥 1 个：`browser_call({session_id, tool, args})` —— 某些宿主虽已刷新 `tools/list`，却不会在当前模型轮次注入新工具。AI 可在 `discoverTools` 后立刻通过该桥执行，不需要让用户回复“继续”；下一轮看到原生工具后仍优先使用原生工具。
 - 执行面在浏览器连接前不进入 `tools/list`；连接确认后加载默认 **core 31 个** `browser_*`。其余 20 个由 AI 按需 `discoverTools` 拉取，用户不用配置。
 - 不暴露 `askUser`（MCP 会话没有人在侧边栏应答）和 `attachTab` / `detachTab`（目标 tab 已由 `open_session` 绑定）。
 
@@ -65,8 +66,8 @@ hover / uploadFile / scroll / waitFor`）；`browser_storage` 也不会列出，
 
 | 值 | 效果 |
 |---|---|
-| `core`（默认） | 连接前仅控制面；连接后 31 个核心工具 + `browser_discoverTools` |
-| `full` | 连接前仍仅控制面；连接后列出全部 51 个工具 |
+| `core`（默认） | 连接前仅控制面、发现工具与同轮执行桥；连接后再列出 31 个核心工具 |
+| `full` | 连接前同上；连接后列出全部 51 个原生工具 |
 
 无法识别的值（包括已移除的 `parity`）按 `core` 处理，并往 stderr 打一条提示。
 

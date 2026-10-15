@@ -3,6 +3,7 @@ import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprot
 import type { JsonSchema } from "@atwebpilot/shared/types";
 import { CONTROL_TOOLS } from "./control-tools";
 import { DISCOVER_TOOL, handleDiscover } from "./discover-tool";
+import { BROWSER_CALL_TOOL } from "./browser-call";
 import { generateBrowserTools, readToolMode, type GeneratedTool, type ToolMode } from "./tool-gen";
 import {
   handlePairingStatus, handleListTabs, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool,
@@ -10,6 +11,7 @@ import {
 } from "./handlers";
 import { readSkillBundle, SKILL_TOOL } from "./skill-bundle";
 import { MCP_VERSION } from "./version";
+import { createPairingPresenter, type OpenUrl } from "./pairing-presenter";
 
 export type ToolListEntry = { name: string; description: string; inputSchema: JsonSchema };
 
@@ -75,6 +77,7 @@ export function buildToolList(deps?: Deps, state: ToolState = DEFAULT_STATE): To
     { name: SKILL_TOOL.name, description: SKILL_TOOL.description, inputSchema: SKILL_TOOL.inputSchema as JsonSchema },
     ...CONTROL_TOOLS.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema })),
     { name: DISCOVER_TOOL.name, description: DISCOVER_TOOL.description, inputSchema: DISCOVER_TOOL.inputSchema },
+    { name: BROWSER_CALL_TOOL.name, description: BROWSER_CALL_TOOL.description, inputSchema: BROWSER_CALL_TOOL.inputSchema },
     ...browser.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema as JsonSchema }))
   ];
 }
@@ -107,7 +110,8 @@ export async function dispatchCall(
   name: string,
   args: Record<string, unknown>,
   state: ToolState = DEFAULT_STATE,
-  onListChanged?: () => Promise<void>
+  onListChanged?: () => Promise<void>,
+  onPairingRequired?: (url: string) => void
 ): Promise<CallResult> {
   try {
     if (name === SKILL_TOOL.name) {
@@ -123,14 +127,19 @@ export async function dispatchCall(
       const { changed: _c, ...body } = r;
       return ok(body);
     }
+    if (name === BROWSER_CALL_TOOL.name) {
+      return handleBrowserCall(deps, args, state);
+    }
     if (name === "pairing_status") {
       const result = await handlePairingStatus(deps);
       if (result.status === "connected") await revealBrowserSurface(state, onListChanged);
+      else onPairingRequired?.(result.pair_url);
       return ok(result);
     }
     if (name === "list_tabs") {
       const result = await handleListTabs(deps);
       if (result.status === "connected") await revealBrowserSurface(state, onListChanged);
+      else onPairingRequired?.(result.pair_url);
       return ok(result);
     }
     if (name === "open_session") {
@@ -144,8 +153,46 @@ export async function dispatchCall(
     if (gen) return toolResult(gen, await handleBrowserTool(deps, gen, args));
     return fail(`unknown tool: ${name}`);
   } catch (e) {
-    return fail(e instanceof Error ? e.message : String(e));
+    const message = e instanceof Error ? e.message : String(e);
+    if (message.includes("PAIRING_REQUIRED")) {
+      const pairUrl = deps.pairUrl();
+      if (pairUrl) onPairingRequired?.(pairUrl);
+    }
+    return fail(message);
   }
+}
+
+async function handleBrowserCall(
+  deps: Deps,
+  args: Record<string, unknown>,
+  state: ToolState
+): Promise<CallResult> {
+  const rawName = typeof args.tool === "string" ? args.tool.trim() : "";
+  if (!rawName) return fail("InvalidArgs: browser_call requires tool");
+  const name = rawName.startsWith("browser_") ? rawName : `browser_${rawName}`;
+  const gen = BROWSER_BY_NAME.get(name);
+  if (!gen) return fail(`Unknown browser tool: ${rawName}`);
+  if (!state.advertised.has(name)) {
+    return fail(`${name} is not enabled; call browser_discoverTools first`);
+  }
+
+  const supported = workerToolSupport(deps);
+  if (supported && !gen.builtinTools.every((tool) => supported.has(tool))) {
+    return fail(`${name} is not supported by the connected browser extension`);
+  }
+
+  if (typeof args.session_id !== "string" || args.session_id.length === 0) {
+    return fail("InvalidArgs: browser_call requires session_id");
+  }
+  if (args.args === null || typeof args.args !== "object" || Array.isArray(args.args)) {
+    return fail("InvalidArgs: browser_call args must be an object");
+  }
+
+  const toolArgs = {
+    ...(args.args as Record<string, unknown>),
+    session_id: args.session_id
+  };
+  return toolResult(gen, await handleBrowserTool(deps, gen, toolArgs));
 }
 
 async function revealBrowserSurface(
@@ -157,11 +204,18 @@ async function revealBrowserSurface(
   await onListChanged?.();
 }
 
-export function createMcpServer(deps: Deps, state: ToolState = DEFAULT_STATE): Server {
+export type McpServerOptions = { fallbackOpenUrl?: OpenUrl };
+
+export function createMcpServer(
+  deps: Deps,
+  state: ToolState = DEFAULT_STATE,
+  options: McpServerOptions = {}
+): Server {
   const server = new Server(
     { name: "atwebpilot-mcp", version: MCP_VERSION },
     { capabilities: { tools: { listChanged: true }, logging: {} } }
   );
+  const presentPairing = createPairingPresenter(server, options.fallbackOpenUrl);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: buildToolList(deps, state) }));
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
@@ -172,7 +226,7 @@ export function createMcpServer(deps: Deps, state: ToolState = DEFAULT_STATE): S
         console.error("[atwebpilot-mcp] failed to send tools/list_changed:", error instanceof Error ? error.message : String(error));
       }
     };
-    return dispatchCall(deps, req.params.name, args, state, onListChanged);
+    return dispatchCall(deps, req.params.name, args, state, onListChanged, presentPairing);
   });
   return server;
 }

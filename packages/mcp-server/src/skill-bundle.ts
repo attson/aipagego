@@ -21,7 +21,7 @@ const TOPICS: Record<Exclude<SkillTopic, "full">, string> = {
 2. After approval, call pairing_status. Do not retry list_tabs while status is unchanged.
 3. Call list_tabs when connected, choose a tab, then open_session with its tab_id.
 4. For interaction use browser_getPageInfo then browser_takeSnapshot; for broad reading use browser_createPageIndex.
-5. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface.
+5. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface. Its response always includes the selected schemas. If a newly enabled native tool is not visible in the current turn, call it immediately with browser_call; do not ask the user to send "continue".
 6. Close the session when finished.
 `,
   pairing: `# AtWebPilot pairing

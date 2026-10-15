@@ -31,11 +31,12 @@ function depsWith(w?: Worker) {
   return staticDeps(coordinator, { exec: async () => ({}) } as never);
 }
 
-// browser_discoverTools is unconditional (not filtered by worker support or
-// advertised state), so it is excluded here to keep these assertions focused
-// on the worker-support-negotiated browser surface.
+// The discovery and call bridge tools are unconditional (not filtered by
+// worker support or advertised state), so exclude them from negotiated tools.
 const browserNames = (list: Array<{ name: string }>) =>
-  list.map((t) => t.name).filter((n) => n.startsWith("browser_") && n !== "browser_discoverTools");
+  list.map((t) => t.name).filter((n) =>
+    n.startsWith("browser_") && n !== "browser_discoverTools" && n !== "browser_call"
+  );
 
 describe("supported_tools negotiation", () => {
   it("keeps browser schemas out of tools/list until a worker has connected", () => {

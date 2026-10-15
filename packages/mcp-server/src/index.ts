@@ -19,11 +19,10 @@ async function main(): Promise<void> {
     clock,
     idGen,
     explicitPort,
-    token,
-    openUrl: defaultOpenUrl
+    token
   });
 
-  const server = createMcpServer(deps);
+  const server = createMcpServer(deps, undefined, { fallbackOpenUrl: defaultOpenUrl });
   await server.connect(new StdioServerTransport());
   console.error("[atwebpilot-mcp] stdio MCP connected; ws port binds on first browser use");
 

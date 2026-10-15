@@ -12,6 +12,7 @@ describe("browser_discoverTools", () => {
     const props = DISCOVER_TOOL.inputSchema.properties as Record<string, { type: string }>;
     expect(props.enable.type).toBe("array");
     expect(props.enableGroups.type).toBe("array");
+    expect(props.profile.type).toBe("string");
     expect(DISCOVER_TOOL.inputSchema.required ?? []).not.toContain("enable");
   });
 
@@ -37,11 +38,27 @@ describe("browser_discoverTools", () => {
     expect(advertised.has("browser_downloadSpreadsheet")).toBe(true);
   });
 
-  it("enabling an already advertised tool is a no-op and not a change", () => {
+  it("returns the schema for an already advertised tool without reporting a state change", () => {
     const advertised = coreNames();
     const r = handleDiscover({ all, advertised, args: { enable: ["browser_click"] } });
     expect(r.changed).toBe(false);
-    expect(r.enabled).toEqual([]);
+    expect(r.enabled!.map((t) => t.name)).toEqual(["browser_click"]);
+    expect(r.enabled![0].inputSchema).toBeTruthy();
+  });
+
+  it("profile=core returns every core schema without growing the default state", () => {
+    const advertised = coreNames();
+    const r = handleDiscover({ all, advertised, args: { profile: "core" } });
+    expect(r.changed).toBe(false);
+    expect(r.enabled!.map((t) => t.name).sort()).toEqual([...coreNames()].sort());
+  });
+
+  it("profile=full enables and returns the complete runnable surface", () => {
+    const advertised = coreNames();
+    const r = handleDiscover({ all, advertised, args: { profile: "full" } });
+    expect(r.changed).toBe(true);
+    expect(r.enabled).toHaveLength(all.length);
+    expect(advertised.size).toBe(all.length);
   });
 
   it("accepts bare builtin names as a convenience", () => {
