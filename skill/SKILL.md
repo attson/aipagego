@@ -64,16 +64,26 @@ do this, in order:
    `browser_discoverTools({ enable: ["browser_downloadSpreadsheet", ...] })`.
    If you know only the group, use
    `browser_discoverTools({ enableGroups: ["export"] })`.
+   To switch the whole process surface explicitly, use
+   `browser_discoverTools({ profile: "core" })` or `{ profile: "full" }`.
 2. Call `browser_discoverTools({})` only when neither the tool nor group is
    known. Enabled tools join `tools/list` (a `tools/list_changed` notification
-   is sent), and the response carries their full schemas for immediate use.
+   is sent), and the response carries the selected full schemas even if those
+   tools were already enabled.
+3. Prefer a newly visible native tool. If the MCP host has refreshed
+   `tools/list` but the current model turn still has the old snapshot, call the
+   selected tool immediately through
+   `browser_call({ session_id, tool: "browser_downloadSpreadsheet", args: {...} })`.
+   Do not ask the user to reply "continue" just to start another model turn.
+   Nested `args` omit `session_id`; the bridge injects the top-level value.
 
 **Do not** rebuild these capabilities with `runJS` (`fetch`, CSV blobs,
 `localStorage[...]`). It is slower, loses schema validation, and usually trips
 the dangerous-tier review that the purpose-built tool would have avoided.
 
 `ATWEBPILOT_MCP_TOOLS=full` advertises everything from the start for users who
-prefer to pay the context cost once.
+prefer to pay the context cost once. `browser_call` is a current-turn
+compatibility path; use the native tool once the host exposes it.
 
 ## Recommended flow
 
