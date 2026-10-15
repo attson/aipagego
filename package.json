@@ -1,7 +1,7 @@
 {
   "name": "atwebpilot-monorepo",
   "private": true,
-  "version": "0.0.78",
+  "version": "0.0.79",
   "description": "AtWebPilot — AI 网页助手（侧边面板）monorepo root",
   "type": "module",
   "scripts": {
