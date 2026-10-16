@@ -21,8 +21,9 @@ const TOPICS: Record<Exclude<SkillTopic, "full">, string> = {
 2. If list_tabs times out and returns pairing_required, show pair_url and wait for browser approval. Use pairing_status for a later non-blocking status check; do not ask the user to reply just to continue.
 3. Choose a returned tab, then call open_session with its tab_id.
 4. For interaction use browser_getPageInfo then browser_takeSnapshot; for broad reading use browser_createPageIndex.
-5. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface. Its response always includes the selected schemas. If a newly enabled native tool is not visible in the current turn, call it immediately with browser_call; do not ask the user to send "continue".
-6. Close the session when finished.
+5. When 2-20 safe/caution steps and their arguments are already known, use browser_runSteps to execute them in one MCP call. Keep dangerous actions and steps needing intermediate inspection as separate calls.
+6. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface. Its response always includes the selected schemas. If a newly enabled native tool is not visible in the current turn, call it immediately with browser_call; do not ask the user to send "continue".
+7. Close the session when finished.
 `,
   pairing: `# AtWebPilot pairing
 
@@ -75,10 +76,11 @@ export function readSkillBundle(rawTopic: unknown = "quickstart"): { name: strin
   }
   if (cached == null) {
     try {
-      cached = readFileSync(locateSkillFile(), "utf-8");
+      cached = `${TOPICS.quickstart}\n${readFileSync(locateSkillFile(), "utf-8")}`;
     } catch {
       cached =
-        `# ${SKILL_NAME}\n\n${SKILL_DESCRIPTION}\n\n(Skill bundle not found at build time; see https://github.com/attson/atwebpilot)\n`;
+        `${TOPICS.quickstart}\n# ${SKILL_NAME}\n\n${SKILL_DESCRIPTION}\n\n` +
+        `(Skill bundle not found at build time; see https://github.com/attson/atwebpilot)\n`;
     }
   }
   return { name: SKILL_NAME, description: SKILL_DESCRIPTION, content: cached };
