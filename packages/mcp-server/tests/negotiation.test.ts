@@ -31,11 +31,14 @@ function depsWith(w?: Worker) {
   return staticDeps(coordinator, { exec: async () => ({}) } as never);
 }
 
-// The discovery and call bridge tools are unconditional (not filtered by
-// worker support or advertised state), so exclude them from negotiated tools.
+// MCP orchestration tools are unconditional (not filtered by worker support
+// or advertised state), so exclude them from negotiated extension tools.
 const browserNames = (list: Array<{ name: string }>) =>
   list.map((t) => t.name).filter((n) =>
-    n.startsWith("browser_") && n !== "browser_discoverTools" && n !== "browser_call"
+    n.startsWith("browser_") &&
+    n !== "browser_discoverTools" &&
+    n !== "browser_call" &&
+    n !== "browser_runSteps"
   );
 
 describe("supported_tools negotiation", () => {
@@ -61,7 +64,10 @@ describe("supported_tools negotiation", () => {
       "list_tabs",
       "open_session",
       "close_session",
-      "get_quota"
+      "get_quota",
+      "browser_discoverTools",
+      "browser_call",
+      "browser_runSteps"
     ]) {
       expect(names).toContain(n);
     }

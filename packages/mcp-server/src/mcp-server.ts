@@ -4,6 +4,12 @@ import type { JsonSchema } from "@atwebpilot/shared/types";
 import { CONTROL_TOOLS } from "./control-tools";
 import { DISCOVER_TOOL, handleDiscover } from "./discover-tool";
 import { BROWSER_CALL_TOOL } from "./browser-call";
+import {
+  BROWSER_RUN_STEPS_TOOL,
+  handleBrowserRunSteps,
+  runStepsPreflightError,
+  type RunStepsResult
+} from "./browser-run-steps";
 import { generateBrowserTools, readToolMode, type GeneratedTool, type ToolMode } from "./tool-gen";
 import {
   handlePairingStatus, handleListTabs, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool,
@@ -78,6 +84,7 @@ export function buildToolList(deps?: Deps, state: ToolState = DEFAULT_STATE): To
     ...CONTROL_TOOLS.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema })),
     { name: DISCOVER_TOOL.name, description: DISCOVER_TOOL.description, inputSchema: DISCOVER_TOOL.inputSchema },
     { name: BROWSER_CALL_TOOL.name, description: BROWSER_CALL_TOOL.description, inputSchema: BROWSER_CALL_TOOL.inputSchema },
+    { name: BROWSER_RUN_STEPS_TOOL.name, description: BROWSER_RUN_STEPS_TOOL.description, inputSchema: BROWSER_RUN_STEPS_TOOL.inputSchema },
     ...browser.map((t) => ({ name: t.name, description: t.description, inputSchema: t.inputSchema as JsonSchema }))
   ];
 }
@@ -129,6 +136,24 @@ export async function dispatchCall(
     }
     if (name === BROWSER_CALL_TOOL.name) {
       return handleBrowserCall(deps, args, state);
+    }
+    if (name === BROWSER_RUN_STEPS_TOOL.name) {
+      let result: RunStepsResult;
+      try {
+        result = await handleBrowserRunSteps(deps, args, {
+          tools: BROWSER_BY_NAME,
+          advertised: state.advertised,
+          supported: workerToolSupport(deps)
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.includes("PAIRING_REQUIRED")) {
+          const pairUrl = deps.pairUrl();
+          if (pairUrl) onPairingRequired?.(pairUrl);
+        }
+        result = runStepsPreflightError(message);
+      }
+      return result.ok ? ok(result) : { ...ok(result), isError: true };
     }
     if (name === "pairing_status") {
       const result = await handlePairingStatus(deps);

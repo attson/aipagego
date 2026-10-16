@@ -27,7 +27,7 @@ function deps() {
 }
 
 describe("buildToolList", () => {
-  it("lists only skill, 5 controls, discovery and the call bridge before pairing", () => {
+  it("lists orchestration tools before pairing", () => {
     const tools = buildToolList();
     const names = tools.map((t) => t.name);
     expect(names).toContain("atwebpilot_skill_read");
@@ -35,9 +35,19 @@ describe("buildToolList", () => {
     expect(names).toContain("open_session");
     expect(names).toContain("pairing_status");
     expect(names).toContain("browser_call");
+    expect(names).toContain("browser_runSteps");
     expect(names).not.toContain("browser_click");
     expect(names).not.toContain("browser_snapshotDOM");
-    expect(tools.length).toBe(1 + 5 + 1 + 1);
+    expect(tools.length).toBe(1 + 5 + 1 + 1 + 1);
+    const runSteps = tools.find((tool) => tool.name === "browser_runSteps");
+    const runStepsSchema = runSteps?.inputSchema as {
+      properties?: Record<string, unknown>;
+    } | undefined;
+    expect(runStepsSchema?.properties?.steps).toMatchObject({
+      type: "array",
+      minItems: 1,
+      maxItems: 20
+    });
     for (const t of tools) expect(t.inputSchema).toBeTruthy();
   });
 
@@ -46,6 +56,55 @@ describe("buildToolList", () => {
     expect(listTabs?.description).toContain("pairing_required");
     expect(listTabs?.description).toContain("waits up to 45 seconds");
     expect(listTabs?.description).toContain("same call");
+  });
+});
+
+describe("browser_runSteps transport", () => {
+  it("runs a bound sequence through the MCP client", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    let call = 0;
+    const server = createMcpServer(staticDeps(coordinator, {
+      exec: async () => ({
+        ...okResult,
+        return: ++call === 1 ? "main" : { text: "done" }
+      })
+    } as any), createToolState("core"));
+    const client = new Client({ name: "run-steps-client", version: "1" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+    const tools = (await client.listTools()).tools.map((tool) => tool.name);
+    expect(tools).toContain("browser_runSteps");
+    const opened = await client.callTool({ name: "open_session", arguments: { tab_id: "42" } });
+    const sessionId = JSON.parse((opened.content as Array<{ text: string }>)[0].text).session_id;
+    const result = await client.callTool({
+      name: "browser_runSteps",
+      arguments: {
+        session_id: sessionId,
+        steps: [
+          { tool: "extractText", args: { selector: "h1" }, bind_result_to: "selector" },
+          { tool: "extractText", args: { selector: "${selector}" } }
+        ],
+        return_bindings: ["selector"]
+      }
+    });
+
+    expect(result.isError).toBeFalsy();
+    expect(JSON.parse((result.content as Array<{ text: string }>)[0].text)).toEqual({
+      ok: true,
+      completed: 2,
+      result: { text: "done" },
+      bindings: { selector: "main" }
+    });
+    await Promise.all([client.close(), server.close()]);
   });
 });
 
@@ -218,6 +277,35 @@ describe("pairing surface", () => {
     expect(presented).toEqual(["http://127.0.0.1:43443/pair"]);
   });
 
+  it("preserves automatic pairing presentation for browser_runSteps errors", async () => {
+    const d: Deps = {
+      ensure: async () => {
+        throw new Error("PAIRING_REQUIRED: browser connection is unavailable");
+      },
+      peek: () => null,
+      pairUrl: () => "http://127.0.0.1:43443/pair",
+      waitForWorker: async () => {
+        throw new Error("must not wait");
+      }
+    };
+    const presented: string[] = [];
+
+    const result = await dispatchCall(
+      d,
+      "browser_runSteps",
+      {
+        session_id: "session-1",
+        steps: [{ tool: "extractText", args: { selector: "main" } }]
+      },
+      createToolState("core"),
+      undefined,
+      (url) => { presented.push(url); }
+    );
+
+    expect(result.isError).toBe(true);
+    expect(presented).toEqual(["http://127.0.0.1:43443/pair"]);
+  });
+
   it("reveals browser tools and emits list_changed once connection is observed", async () => {
     const state = createToolState("core");
     const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock: new FakeClock(0), idGen: new FakeIdGen() });
@@ -256,8 +344,11 @@ describe("dispatchCall", () => {
     expect(textOf(quick)).toContain("same call");
     expect(textOf(quick)).toContain("do not ask the user to reply");
     expect(textOf(quick)).toContain("browser_getPageInfo");
+    expect(textOf(quick)).toContain("browser_runSteps");
+    expect(textOf(quick)).toContain("one MCP call");
     expect(textOf(quick)).not.toMatch(/\buse getPageInfo\b/);
     expect(textOf(full)).toContain("## Capabilities you have");
+    expect(textOf(full)).toContain("browser_runSteps");
     expect(textOf(quick).length).toBeLessThan(textOf(full).length / 3);
   });
 
@@ -276,6 +367,528 @@ describe("dispatchCall", () => {
     const session_id = JSON.parse(textOf(open)).session_id;
     const r = await dispatchCall(d, "browser_getPageInfo", { session_id });
     expect(r.isError).toBeFalsy();
+  });
+
+  it("runs sequential browser steps with bindings and compact output", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    const calls: Array<{ step: { args: unknown } }> = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: { step: { args: unknown } }) => {
+        calls.push(params);
+        return {
+          ...okResult,
+          return: calls.length === 1 ? "#article" : { text: "final body" }
+        };
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        {
+          tool: "browser_extractText",
+          args: { selector: "h1" },
+          bind_result_to: "articleSelector"
+        },
+        {
+          tool: "extractText",
+          args: { selector: "${articleSelector}" },
+          bind_result_to: "body"
+        }
+      ],
+      return_bindings: ["articleSelector"]
+    }, createToolState("core"));
+
+    expect(result.isError).toBeFalsy();
+    expect(JSON.parse(textOf(result))).toEqual({
+      ok: true,
+      completed: 2,
+      result: { text: "final body" },
+      bindings: { articleSelector: "#article" }
+    });
+    expect(calls.map((call) => call.step.args)).toEqual([
+      { selector: "h1" },
+      { selector: "#article" }
+    ]);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(2);
+  });
+
+  it("preserves exact binding types and stringifies embedded null bindings", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["getPageInfo", "extractPageFields", "extractText"])
+    });
+    const calls: Array<{ step: { args: unknown } }> = [];
+    const returns = [["price", "author"], null, { text: "done" }];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: { step: { args: unknown } }) => {
+        calls.push(params);
+        return { ...okResult, return: returns[calls.length - 1] };
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        { tool: "getPageInfo", args: {}, bind_result_to: "fields" },
+        {
+          tool: "extractPageFields",
+          args: { fields: "${fields}" },
+          bind_result_to: "missing"
+        },
+        { tool: "extractText", args: { selector: "value=${missing}" } }
+      ]
+    }, createToolState("core"));
+
+    expect(result.isError).toBeFalsy();
+    expect(calls.map((call) => call.step.args)).toEqual([
+      {},
+      { fields: ["price", "author"] },
+      { selector: "value=null" }
+    ]);
+  });
+
+  it("rejects a non-string bind_result_to instead of silently ignoring it", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        { tool: "extractText", args: { selector: "h1" }, bind_result_to: 123 }
+      ]
+    }, createToolState("core"));
+
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(textOf(result))).toEqual({
+      ok: false,
+      phase: "preflight",
+      completed: 0,
+      error: { message: "InvalidArgs: bind_result_to must be a binding name" },
+      bindings: {}
+    });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("stops on the first execution failure and returns structured partial progress", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        if (calls.length === 2) {
+          return {
+            ...okResult,
+            ok: false,
+            return: undefined,
+            error: { code: "PageScriptError", message: "boom", retryable: false }
+          };
+        }
+        return { ...okResult, return: "first output" };
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        { tool: "extractText", args: { selector: "h1" }, bind_result_to: "first" },
+        { tool: "extractText", args: { selector: "main" } },
+        { tool: "extractText", args: { selector: "footer" } }
+      ],
+      return_bindings: ["first"]
+    }, createToolState("core"));
+
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(textOf(result))).toEqual({
+      ok: false,
+      phase: "execution",
+      completed: 1,
+      failed_step: { index: 1, tool: "browser_extractText" },
+      error: { message: "PageScriptError: boom" },
+      bindings: { first: "first output" }
+    });
+    expect(calls).toHaveLength(2);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(2);
+  });
+
+  it("rejects a dangerous later step before any execution or quota charge", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText", "submitForm"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        { tool: "extractText", args: { selector: "h1" } },
+        { tool: "submitForm", args: { selector: "form" } }
+      ]
+    }, createToolState("full"));
+
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(textOf(result))).toEqual({
+      ok: false,
+      phase: "preflight",
+      completed: 0,
+      failed_step: { index: 1, tool: "browser_submitForm" },
+      error: { message: "Dangerous tool is not allowed in browser_runSteps" },
+      bindings: {}
+    });
+    expect(calls).toHaveLength(0);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(0);
+  });
+
+  it("rejects a batch that exceeds the session's remaining step quota", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+    for (let i = 0; i < 199; i++) coordinator.recordCall(session_id, false);
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        { tool: "extractText", args: { selector: "h1" } },
+        { tool: "extractText", args: { selector: "main" } }
+      ]
+    }, createToolState("core"));
+
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(textOf(result))).toMatchObject({
+      ok: false,
+      phase: "preflight",
+      completed: 0,
+      error: { message: "Session has only 1 steps remaining; batch requires 2" }
+    });
+    expect(calls).toHaveLength(0);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(199);
+  });
+
+  it("rejects forward binding references before executing earlier steps", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: [
+        { tool: "extractText", args: { selector: "h1" } },
+        { tool: "extractText", args: { selector: "${later}" } },
+        { tool: "extractText", args: { selector: "main" }, bind_result_to: "later" }
+      ]
+    }, createToolState("core"));
+
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(textOf(result))).toMatchObject({
+      ok: false,
+      phase: "preflight",
+      completed: 0,
+      failed_step: { index: 1, tool: "browser_extractText" },
+      error: { message: "InvalidArgs: binding later must be declared by an earlier step" }
+    });
+    expect(calls).toHaveLength(0);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(0);
+  });
+
+  it("rejects scripts, image results, downloads, and tab lifecycle tools", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set([
+        "runJS", "screenshot", "downloadImage", "downloadSpreadsheet",
+        "openTab", "closeTab", "switchToTab"
+      ])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+    const cases = [
+      { tool: "runJS", args: { source: "return document.title" } },
+      { tool: "screenshot", args: {} },
+      { tool: "downloadImage", args: { url: "https://example.org/a.png" } },
+      { tool: "downloadSpreadsheet", args: { filename: "x.xlsx", rows: [] } },
+      { tool: "openTab", args: { url: "https://example.org/next" } },
+      { tool: "closeTab", args: {} },
+      { tool: "switchToTab", args: {} }
+    ];
+
+    for (const item of cases) {
+      const result = await dispatchCall(d, "browser_runSteps", {
+        session_id,
+        steps: [item]
+      }, createToolState("full"));
+      expect(result.isError, item.tool).toBe(true);
+      expect(JSON.parse(textOf(result)), item.tool).toMatchObject({
+        ok: false,
+        phase: "preflight",
+        completed: 0,
+        error: { message: `Tool browser_${item.tool} is not allowed in browser_runSteps` }
+      });
+    }
+    expect(calls).toHaveLength(0);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(0);
+  });
+
+  it("rejects bindings in capability-sensitive fields before execution", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["getPageInfo", "httpRequest", "drop", "recorderConfig"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+    const cases = [
+      {
+        tool: "httpRequest",
+        field: "withCredentials",
+        args: { url: "https://example.org", withCredentials: "${value}" }
+      },
+      {
+        tool: "drop",
+        field: "files",
+        args: { selector: "#dropzone", files: "${value}" }
+      },
+      {
+        tool: "recorderConfig",
+        field: "bodies",
+        args: { bodies: "${value}" }
+      }
+    ];
+
+    for (const item of cases) {
+      const result = await dispatchCall(d, "browser_runSteps", {
+        session_id,
+        steps: [
+          { tool: "getPageInfo", args: {}, bind_result_to: "value" },
+          { tool: item.tool, args: item.args }
+        ]
+      }, createToolState("full"));
+      expect(result.isError, item.tool).toBe(true);
+      expect(JSON.parse(textOf(result)), item.tool).toMatchObject({
+        ok: false,
+        phase: "preflight",
+        completed: 0,
+        failed_step: { index: 1, tool: `browser_${item.tool}` },
+        error: {
+          message: `Capability-sensitive field ${item.field} cannot reference bindings in browser_runSteps`
+        }
+      });
+    }
+    expect(calls).toHaveLength(0);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(0);
+  });
+
+  it("returns a structured preflight error when the batch exceeds 20 steps", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      supported_tools: new Set(["extractText"])
+    });
+    const calls: unknown[] = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: unknown) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+    const session_id = JSON.parse(textOf(opened)).session_id;
+
+    const result = await dispatchCall(d, "browser_runSteps", {
+      session_id,
+      steps: Array.from({ length: 21 }, () => ({
+        tool: "extractText",
+        args: { selector: "main" }
+      }))
+    }, createToolState("core"));
+
+    expect(result.isError).toBe(true);
+    expect(JSON.parse(textOf(result))).toEqual({
+      ok: false,
+      phase: "preflight",
+      completed: 0,
+      error: { message: "InvalidArgs: browser_runSteps requires 1-20 steps" },
+      bindings: {}
+    });
+    expect(calls).toHaveLength(0);
+    expect(coordinator.quotaFor(session_id)?.steps_used).toBe(0);
+  });
+
+  it("preflights unknown, disabled, and unsupported tools before execution", async () => {
+    const cases = [
+      {
+        label: "unknown",
+        secondTool: "notReal",
+        supported: ["extractText"],
+        state: createToolState("full"),
+        message: "Unknown browser tool: notReal"
+      },
+      {
+        label: "disabled",
+        secondTool: "httpRequest",
+        supported: ["extractText", "httpRequest"],
+        state: createToolState("core"),
+        message: "browser_httpRequest is not enabled; call browser_discoverTools first"
+      },
+      {
+        label: "unsupported",
+        secondTool: "click",
+        supported: ["extractText"],
+        state: createToolState("core"),
+        message: "browser_click is not supported by the connected browser extension"
+      }
+    ];
+
+    for (const item of cases) {
+      const coordinator = new Coordinator({
+        hub: { send: async () => undefined } as any,
+        clock: new FakeClock(0),
+        idGen: new FakeIdGen()
+      });
+      coordinator.registerWorker({
+        ...fakeWorker(),
+        supported_tools: new Set(item.supported)
+      });
+      const calls: unknown[] = [];
+      const d = staticDeps(coordinator, {
+        exec: async (_workerId: string, params: unknown) => {
+          calls.push(params);
+          return okResult;
+        }
+      } as any);
+      const opened = await dispatchCall(d, "open_session", { tab_id: "42" });
+      const session_id = JSON.parse(textOf(opened)).session_id;
+
+      const result = await dispatchCall(d, "browser_runSteps", {
+        session_id,
+        steps: [
+          { tool: "extractText", args: { selector: "h1" } },
+          { tool: item.secondTool, args: {} }
+        ]
+      }, item.state);
+
+      expect(result.isError, item.label).toBe(true);
+      expect(JSON.parse(textOf(result)), item.label).toMatchObject({
+        ok: false,
+        phase: "preflight",
+        completed: 0,
+        failed_step: { index: 1, tool: `browser_${item.secondTool}` },
+        error: { message: item.message }
+      });
+      expect(calls, item.label).toHaveLength(0);
+      expect(coordinator.quotaFor(session_id)?.steps_used, item.label).toBe(0);
+    }
   });
 
   it("binds switchToTab and closeTab to the session tab", async () => {

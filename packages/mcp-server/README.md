@@ -51,6 +51,7 @@ listen 端口的能力，所以方向只能如此。这也是配对页存在的�
 - 控制面 5 个：`pairing_status / list_tabs / open_session / close_session / get_quota`
 - 发现 1 个：`browser_discoverTools` —— 已知工具时直接传 `enable: [...]`，已知分组时直接传 `enableGroups: ["export", ...]`，也可用 `profile: "core" | "full"` 切换整套工具面；只有这些都未知时才不带参数读取目录。选中的工具会加入本进程的 `tools/list`（发送 `tools/list_changed`），并始终返回完整 schema，包括已经启用的工具。
 - 同轮执行桥 1 个：`browser_call({session_id, tool, args})` —— 某些宿主虽已刷新 `tools/list`，却不会在当前模型轮次注入新工具。AI 可在 `discoverTools` 后立刻通过该桥执行，不需要让用户回复“继续”；下一轮看到原生工具后仍优先使用原生工具。
+- 批量编排 1 个：`browser_runSteps({session_id, steps, return_bindings?})` —— 在步骤和参数已经明确时，把 1–20 个 safe/caution 工具合并为一次 MCP 调用；`${binding}` 可引用前序结果。整批先做工具支持、权限和配额预检，dangerous、脚本、截图、下载与 tab 生命周期操作保持单步。
 - 执行面在浏览器连接前不进入 `tools/list`；连接确认后加载默认 **core 31 个** `browser_*`。其余 20 个由 AI 按需 `discoverTools` 拉取，用户不用配置。
 - 不暴露 `askUser`（MCP 会话没有人在侧边栏应答）和 `attachTab` / `detachTab`（目标 tab 已由 `open_session` 绑定）。
 
@@ -66,7 +67,7 @@ hover / uploadFile / scroll / waitFor`）；`browser_storage` 也不会列出，
 
 | 值 | 效果 |
 |---|---|
-| `core`（默认） | 连接前仅控制面、发现工具与同轮执行桥；连接后再列出 31 个核心工具 |
+| `core`（默认） | 连接前仅控制面、发现工具、同轮执行桥与批量编排；连接后再列出 31 个核心工具 |
 | `full` | 连接前同上；连接后列出全部 51 个原生工具 |
 
 无法识别的值（包括已移除的 `parity`）按 `core` 处理，并往 stderr 打一条提示。

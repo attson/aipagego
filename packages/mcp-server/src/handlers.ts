@@ -159,7 +159,22 @@ const NON_BUILTIN_CAPABILITY: Record<string, Capability> = {
   openTab: "tab:open"
 };
 
-export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Record<string, unknown>): Promise<Json> {
+export type PreparedBrowserTool = {
+  coordinator: Coordinator;
+  hub: Hub;
+  session_id: string;
+  worker_id: string;
+  tab_id: string;
+  step: Exec["step"];
+  dangerous: boolean;
+};
+
+/** Resolve and validate a browser tool call without charging quota or sending EXEC. */
+export async function prepareBrowserTool(
+  deps: Deps,
+  gen: GeneratedTool,
+  args: Record<string, unknown>
+): Promise<PreparedBrowserTool> {
   const { coordinator, hub } = await deps.ensure();
   const session_id = String(args.session_id);
   const session = coordinator.sessions.get(session_id);
@@ -178,10 +193,12 @@ export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Re
     const unsafe = highestSeverity(runStaticScan(source)) === "dangerous";
     const v = coordinator.validateCall({ session_id, kind: "runJS", unsafe });
     if (!v.ok) throw new Error(`${v.error.code}: ${v.error.message}`);
-    coordinator.recordCall(session_id, v.dangerous);
     const requestedTimeout = toolArgs.timeoutMs;
-    const jsResult = await hub.exec(session.worker_id, {
+    return {
+      coordinator,
+      hub,
       session_id,
+      worker_id: session.worker_id,
       tab_id: session.tab_id,
       step: {
         kind: "js",
@@ -189,14 +206,9 @@ export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Re
         ...(typeof requestedTimeout === "number" && Number.isInteger(requestedTimeout) && requestedTimeout > 0
           ? { timeoutMs: requestedTimeout }
           : {})
-      }
-    });
-    if (!jsResult.ok) {
-      throw new Error(
-        jsResult.error ? `${jsResult.error.code}: ${jsResult.error.message}` : "EXEC failed"
-      );
-    }
-    return (jsResult.return ?? null) as Json;
+      },
+      dangerous: v.dangerous
+    };
   }
 
   // MCP tools are session-bound, so their schema intentionally omits tabId.
@@ -211,10 +223,11 @@ export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Re
   }
 
   const override = NON_BUILTIN_CAPABILITY[tool];
+  let dangerous: boolean;
   if (override) {
     const v = coordinator.validateCall({ session_id, kind: "capability", capability: override });
     if (!v.ok) throw new Error(`${v.error.code}: ${v.error.message}`);
-    coordinator.recordCall(session_id, v.dangerous);
+    dangerous = v.dangerous;
   } else {
     const raw = toolArgs;
     const v = coordinator.validateCall({
@@ -226,10 +239,28 @@ export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Re
       recorderArmsBodies: tool === "recorderConfig" ? raw.bodies === true : undefined
     });
     if (!v.ok) throw new Error(`${v.error.code}: ${v.error.message}`);
-    coordinator.recordCall(session_id, v.dangerous);
+    dangerous = v.dangerous;
   }
 
-  const result = await hub.exec(session.worker_id, { session_id, tab_id: session.tab_id, step: { kind: "tool", tool, args: toolArgs as Json } });
+  return {
+    coordinator,
+    hub,
+    session_id,
+    worker_id: session.worker_id,
+    tab_id: session.tab_id,
+    step: { kind: "tool", tool, args: toolArgs as Json },
+    dangerous
+  };
+}
+
+export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Record<string, unknown>): Promise<Json> {
+  const prepared = await prepareBrowserTool(deps, gen, args);
+  prepared.coordinator.recordCall(prepared.session_id, prepared.dangerous);
+  const result = await prepared.hub.exec(prepared.worker_id, {
+    session_id: prepared.session_id,
+    tab_id: prepared.tab_id,
+    step: prepared.step
+  });
   if (!result.ok) throw new Error(result.error ? `${result.error.code}: ${result.error.message}` : "EXEC failed");
   return (result.return ?? null) as Json;
 }
