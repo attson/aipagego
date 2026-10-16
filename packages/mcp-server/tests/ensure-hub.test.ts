@@ -7,6 +7,7 @@ import { PROTOCOL_VERSION, type Hello } from "@atwebpilot/shared/protocol";
 import { WebSocket } from "ws";
 import { createHubEnsurer } from "../src/ensure-hub";
 import { loadLastPort, loadOrCreateIdentity, saveLastPort } from "../src/identity";
+import { PairingWaitTimeoutError } from "../src/pairing-errors";
 import pkg from "../package.json" with { type: "json" };
 
 const dirs: string[] = [];
@@ -140,6 +141,27 @@ describe("createHubEnsurer", () => {
     ws.close();
   });
 
+  it("observes HELLO completed while the pairing presenter is still pending", async () => {
+    const e = makeEnsurer({});
+    const { port } = await e.ensure();
+
+    const waiting = e.waitForWorker(1_000, async () => {
+      const ws = new WebSocket(`ws://127.0.0.1:${port}/worker`);
+      await new Promise<void>((resolve, reject) => {
+        ws.on("open", resolve);
+        ws.on("error", reject);
+      });
+      ws.send(JSON.stringify(helloMsg()));
+      await new Promise<void>((resolve, reject) => {
+        ws.once("message", () => resolve());
+        ws.once("error", reject);
+      });
+      ws.close();
+    });
+
+    await expect(waiting).resolves.toBe("w1");
+  });
+
   it("ends the pending browser call when the trusted pairing UI reports denial", async () => {
     const dir = tmp();
     const e = makeEnsurer({ dir });
@@ -185,7 +207,9 @@ describe("createHubEnsurer", () => {
     const e = makeEnsurer({});
     const { port } = await e.ensure();
 
-    await expect(e.waitForWorker(5)).rejects.toThrow(
+    const timeout = await e.waitForWorker(5).catch((error: unknown) => error);
+    expect(timeout).toBeInstanceOf(PairingWaitTimeoutError);
+    expect((timeout as Error).message).toMatch(
       new RegExp(`等待浏览器授权超时.*127\\.0\\.0\\.1:${port}/pair`)
     );
 

@@ -11,6 +11,7 @@ import {
   type ProcessInfo
 } from "./identity";
 import type { Deps, HubBundle } from "./handlers";
+import { PairingWaitTimeoutError } from "./pairing-errors";
 import { MCP_VERSION } from "./version";
 
 export type EnsureDeps = {
@@ -193,6 +194,17 @@ export function createHubEnsurer(d: EnsureDeps): Deps & { bound(): boolean } {
       );
     }
     if (pairUrlValue) await onWaiting?.(pairUrlValue);
+    // The extension can complete HELLO while an async presenter is still
+    // opening the pairing page. Re-check before installing the pending wait.
+    const connectedAfterPresentation = connectedWorkerId(coordinator);
+    if (connectedAfterPresentation) return connectedAfterPresentation;
+    if (pendingDenial) {
+      pendingDenial = false;
+      throw new Error(
+        "用户拒绝了浏览器配对授权。" +
+          (pairUrlValue ? `配对页：${pairUrlValue}` : "")
+      );
+    }
     if (workerWait) return workerWait.promise;
 
     let resolve!: (workerId: string) => void;
@@ -203,10 +215,7 @@ export function createHubEnsurer(d: EnsureDeps): Deps & { bound(): boolean } {
     });
     const timer = setTimeout(() => {
       finishWorkerWait({
-        error: new Error(
-          `等待浏览器授权超时（${Math.ceil(timeoutMs / 1000)} 秒）。` +
-            (pairUrlValue ? `请打开配对页 ${pairUrlValue} 完成授权后重试。` : "")
-        )
+        error: new PairingWaitTimeoutError(timeoutMs, pairUrlValue)
       });
     }, timeoutMs);
     timer.unref?.();

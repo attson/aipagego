@@ -10,7 +10,7 @@ export const CONTROL_TOOLS: ControlTool[] = [
   },
   {
     name: "list_tabs",
-    description: "List browser tabs. If pairing is needed, opens the pair page and immediately returns pairing_required with its URL; wait for user approval, then call pairing_status instead of retrying this tool.",
+    description: "List browser tabs. On first use, opens the pairing page and waits up to 45 seconds for authorization, normally returning connected tabs in the same call. Returns pairing_required with the URL only on timeout.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false } as JsonSchema
   },
   {

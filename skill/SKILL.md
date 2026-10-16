@@ -13,8 +13,9 @@ When this skill is loaded, you can drive any open tab through these tools
 ### Control plane
 
 - `pairing_status` — start/check pairing without waiting. When it reports
-  `pairing_required`, show `pair_url` once and wait for browser approval.
-- `list_tabs` — enumerate Chrome tabs you can operate on. Entries carry `busy`
+  `pairing_required`, show `pair_url` once; use it only as a later status check.
+- `list_tabs` — on first use, open the pairing page and wait up to 45 seconds
+  for browser authorization, normally returning tabs from the same call. Entries carry `busy`
   and `busy_label` when **another** Claude Code session is already driving that
   tab, and `mine` for tabs you hold. This is advisory — nothing blocks you — but
   contending for a tab another agent is typing into is rarely what you want.
@@ -87,7 +88,7 @@ compatibility path; use the native tool once the host exposes it.
 
 ## Recommended flow
 
-1. **先建立连接**：调一次 `list_tabs`；若返回 `pairing_required`，展示 `pair_url` 并等待用户批准。批准后只调 `pairing_status`，它报告 `connected` 后再调 `list_tabs`，不要轮询 `list_tabs`。
+1. **先建立连接**：调一次 `list_tabs`；首次配对时它会打开授权页并等待最多 45 秒，授权成功后同一次调用直接返回 tab，不要让用户回复「已连接」。只有超时才会返回 `pairing_required`；此时展示 `pair_url`，稍后用非阻塞的 `pairing_status` 检查，不要轮询 `list_tabs`。
 2. **探查先于操作**：每次进入新页面，先 `getPageInfo` 确认位置，再 `takeSnapshot`（要点击/填表）或 `createPageIndex`（要读内容/抽字段）；`snapshotDOM` / `querySelector` 属于 legacy-dom 组，只在需要分析整页结构时通过 `browser_discoverTools` 启用。
 3. **最少充分验证**：危险或不可逆操作保持单步；多个独立字段用 `fillForm`。工具已返回 `verified` 或明确后置状态时，不要再用 `runJS` 重复验证。
 4. **dangerous 工具会被人工审核**：调用前用 `extractText` 给用户看上下文，让审批更顺。
@@ -260,12 +261,13 @@ not the whole history.
 Several Claude Code sessions can be attached to the same browser at once, each
 through its own connection. Two consequences worth knowing:
 
-- **Pairing is non-blocking.** `list_tabs` lazily binds the port and opens a
-  confirmation page, then immediately returns `pairing_required` with
-  `pair_url`. Ask the user to click Allow. After they confirm, call
-  `pairing_status`; call `list_tabs` again only when it reports `connected`.
-  Never inspect the pair-page HTML or retry `list_tabs` while state is unchanged.
-  Once approved, later sessions on that machine connect silently.
+- **Pairing continues in the same call.** `list_tabs` lazily binds the port,
+  opens a confirmation page, and waits up to 45 seconds for the extension's
+  `HELLO`. Successful approval returns connected tabs directly; do not ask the
+  user to reply just to continue. On timeout it returns `pairing_required` with
+  `pair_url`; use non-blocking `pairing_status` for a later check. Never inspect
+  the pair-page HTML or poll `list_tabs`. Once approved, later sessions on that
+  machine connect silently.
 - **Pick a free tab.** `list_tabs` marks tabs held by other sessions as `busy`.
   Prefer an unowned tab, or open your own — two agents typing into one form
   produces failures that look like your own tool calls not working.

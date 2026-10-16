@@ -120,13 +120,14 @@ own permit. So:
 The port needs no negotiated convention: the page runs *on* that port, so
 `location.port` is self-evidently true.
 
-The server opens the page itself, once per process, via the platform opener
-(`open` / `xdg-open` / `start`). The triggering `list_tabs` or
-`pairing_status` call returns immediately with `pairing_required` and the URL;
-it never keeps a model tool call open while waiting for a human. The opener uses
-the *default* browser, which may not be the one holding the extension, so the
-user can paste the returned URL into the right browser. After approval the agent
-checks `pairing_status`, then reads tabs only once the status is `connected`.
+The server presents the page once per process through MCP URL elicitation, with
+the platform opener (`open` / `xdg-open` / `start`) as fallback. A triggering
+`list_tabs` call waits up to 45 seconds for the extension's `HELLO`; normal
+approval therefore returns connected tabs from that same tool call. This avoids
+requiring a second user message merely to resume the model. `pairing_status`
+remains an immediate, non-blocking check. If the bounded `list_tabs` wait expires,
+it returns `pairing_required` and the URL so the user can open it in the browser
+that holds the extension and the agent can check status later.
 
 **Restart.**
 
@@ -272,9 +273,9 @@ again.
 
 ## Error Handling
 
-- Pairing page opened but ignored: nothing blocks. The triggering call already
-  returned `pairing_required`; the agent waits for user approval and checks
-  `pairing_status` rather than retrying `list_tabs`.
+- Pairing page opened but ignored: `list_tabs` waits at most 45 seconds, then
+  returns `pairing_required`; the agent checks `pairing_status` later rather
+  than polling `list_tabs` or asking for a reply solely to continue.
 - Extension absent, or the page is a restricted URL where content scripts cannot
   run: the page reports that AtWebPilot was not detected and links to install.
 - `installId` matches but `secret` does not: treated as unknown and sent through

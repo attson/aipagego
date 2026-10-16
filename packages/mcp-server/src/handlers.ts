@@ -8,6 +8,9 @@ import type { BuiltinTool, Json } from "@atwebpilot/shared/types";
 import type { Exec, Result } from "@atwebpilot/shared/protocol";
 import { highestSeverity, runStaticScan } from "@atwebpilot/shared/static-scan";
 import type { GeneratedTool } from "./tool-gen";
+import { PairingWaitTimeoutError } from "./pairing-errors";
+
+const LIST_TABS_PAIRING_TIMEOUT_MS = 45_000;
 
 export interface Hub {
   exec(worker_id: string, params: { session_id: string; tab_id: string; step: Exec["step"] }): Promise<Result>;
@@ -79,7 +82,9 @@ export async function handlePairingStatus(deps: Deps): Promise<PairingStatus> {
 }
 
 export async function handleListTabs(
-  deps: Deps
+  deps: Deps,
+  onPairingRequired?: (pairUrl: string) => void | Promise<void>,
+  timeoutMs = LIST_TABS_PAIRING_TIMEOUT_MS
 ): Promise<
   | { status: "connected"; tabs: unknown[] }
   | { status: "pairing_required"; pair_url: string; tabs: [] }
@@ -89,11 +94,27 @@ export async function handleListTabs(
   if (workers.length > 1) {
     throw new Error("检测到多个浏览器连入；v1 仅支持单 worker，请只保留一个连接");
   }
-  const worker = workers[0];
+  let worker = workers[0];
   if (!worker) {
     const pairUrl = deps.pairUrl();
     if (!pairUrl) throw new Error("PAIRING_REQUIRED: 配对服务已启动，但配对页尚不可用");
-    return { status: "pairing_required", pair_url: pairUrl, tabs: [] };
+    try {
+      await deps.waitForWorker(timeoutMs, onPairingRequired);
+    } catch (error) {
+      if (error instanceof PairingWaitTimeoutError) {
+        return { status: "pairing_required", pair_url: pairUrl, tabs: [] };
+      }
+      throw error;
+    }
+
+    const connectedWorkers = coordinator.workers.list();
+    if (connectedWorkers.length > 1) {
+      throw new Error("检测到多个浏览器连入；v1 仅支持单 worker，请只保留一个连接");
+    }
+    worker = connectedWorkers[0];
+    if (!worker) {
+      return { status: "pairing_required", pair_url: pairUrl, tabs: [] };
+    }
   }
   return { status: "connected", tabs: worker.available_tabs };
 }
