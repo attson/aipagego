@@ -17,16 +17,16 @@ export type SkillTopic =
 const TOPICS: Record<Exclude<SkillTopic, "full">, string> = {
   quickstart: `# AtWebPilot quickstart
 
-1. Call list_tabs once. If it returns pairing_required, show pair_url and wait for the user to approve.
-2. After approval, call pairing_status. Do not retry list_tabs while status is unchanged.
-3. Call list_tabs when connected, choose a tab, then open_session with its tab_id.
+1. Call list_tabs once. On first use it opens the pairing page and waits for authorization, then normally returns connected tabs in the same call.
+2. If list_tabs times out and returns pairing_required, show pair_url and wait for browser approval. Use pairing_status for a later non-blocking status check; do not ask the user to reply just to continue.
+3. Choose a returned tab, then call open_session with its tab_id.
 4. For interaction use browser_getPageInfo then browser_takeSnapshot; for broad reading use browser_createPageIndex.
 5. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface. Its response always includes the selected schemas. If a newly enabled native tool is not visible in the current turn, call it immediately with browser_call; do not ask the user to send "continue".
 6. Close the session when finished.
 `,
   pairing: `# AtWebPilot pairing
 
-list_tabs and pairing_status never wait for browser authorization. A pairing_required result includes pair_url. Show that URL once and wait for the user to approve in the browser. Then call pairing_status; only call list_tabs after it reports connected. Never poll list_tabs or inspect the pair-page HTML.
+list_tabs opens the pairing page when needed and waits up to 45 seconds for the extension's HELLO, so successful authorization normally returns connected tabs in the same call. pairing_status remains immediate and non-blocking. A pairing_required result from list_tabs means the bounded wait expired; show pair_url once and use pairing_status for a later check. Never ask the user to reply merely to continue, poll list_tabs, or inspect the pair-page HTML.
 `,
   reading: `# AtWebPilot reading
 

@@ -4,6 +4,7 @@ import type { Result } from "@atwebpilot/shared/protocol";
 import {
   handlePairingStatus, handleListTabs, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool, type Deps, staticDeps
 } from "../src/handlers";
+import { PairingWaitTimeoutError } from "../src/pairing-errors";
 
 function fakeWorker(): Worker {
   return {
@@ -49,11 +50,64 @@ describe("control-plane handlers", () => {
       status: "pairing_required",
       pair_url: "http://127.0.0.1:8787/pair"
     });
+  });
+
+  it("list_tabs waits for pairing and returns tabs from the same call", async () => {
+    const clock = new FakeClock(0);
+    const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock, idGen: new FakeIdGen() });
+    const bundle = { coordinator, hub: {} as any, port: 8787 };
+    const announced: string[] = [];
+    const deps: Deps = {
+      ensure: async () => bundle,
+      peek: () => bundle,
+      pairUrl: () => "http://127.0.0.1:8787/pair",
+      waitForWorker: async (timeoutMs, onWaiting) => {
+        expect(timeoutMs).toBe(45_000);
+        await onWaiting?.("http://127.0.0.1:8787/pair");
+        coordinator.registerWorker(fakeWorker());
+        return "w1";
+      }
+    };
+
+    await expect(handleListTabs(deps, (url) => { announced.push(url); })).resolves.toEqual({
+      status: "connected",
+      tabs: [{ tab_id: "42", url: "https://example.org", title: "Ex" }]
+    });
+    expect(announced).toEqual(["http://127.0.0.1:8787/pair"]);
+  });
+
+  it("list_tabs returns pairing_required only after its bounded wait times out", async () => {
+    const clock = new FakeClock(0);
+    const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock, idGen: new FakeIdGen() });
+    const bundle = { coordinator, hub: {} as any, port: 8787 };
+    const deps: Deps = {
+      ensure: async () => bundle,
+      peek: () => bundle,
+      pairUrl: () => "http://127.0.0.1:8787/pair",
+      waitForWorker: async (timeoutMs = 45_000) => {
+        throw new PairingWaitTimeoutError(timeoutMs, "http://127.0.0.1:8787/pair");
+      }
+    };
+
     await expect(handleListTabs(deps)).resolves.toEqual({
       status: "pairing_required",
       pair_url: "http://127.0.0.1:8787/pair",
       tabs: []
     });
+  });
+
+  it("list_tabs preserves explicit pairing denial as an error", async () => {
+    const clock = new FakeClock(0);
+    const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock, idGen: new FakeIdGen() });
+    const bundle = { coordinator, hub: {} as any, port: 8787 };
+    const deps: Deps = {
+      ensure: async () => bundle,
+      peek: () => bundle,
+      pairUrl: () => "http://127.0.0.1:8787/pair",
+      waitForWorker: async () => { throw new Error("用户拒绝了浏览器配对授权。"); }
+    };
+
+    await expect(handleListTabs(deps)).rejects.toThrow(/拒绝/);
   });
 
   it("open_session → session_id; default scope = all capabilities", async () => {

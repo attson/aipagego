@@ -137,9 +137,8 @@ export async function dispatchCall(
       return ok(result);
     }
     if (name === "list_tabs") {
-      const result = await handleListTabs(deps);
+      const result = await handleListTabs(deps, onPairingRequired);
       if (result.status === "connected") await revealBrowserSurface(state, onListChanged);
-      else onPairingRequired?.(result.pair_url);
       return ok(result);
     }
     if (name === "open_session") {

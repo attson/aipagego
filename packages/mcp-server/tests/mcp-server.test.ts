@@ -9,6 +9,7 @@ import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@atwebpilot/coor
 import type { Result } from "@atwebpilot/shared/protocol";
 import { buildToolList, createMcpServer, createToolState, dispatchCall } from "../src/mcp-server";
 import { staticDeps, type Deps } from "../src/handlers";
+import { PairingWaitTimeoutError } from "../src/pairing-errors";
 
 function fakeWorker(): Worker {
   return {
@@ -43,40 +44,61 @@ describe("buildToolList", () => {
   it("describes the first-use pairing behavior", () => {
     const listTabs = buildToolList().find((tool) => tool.name === "list_tabs");
     expect(listTabs?.description).toContain("pairing_required");
-    expect(listTabs?.description).toContain("immediately");
+    expect(listTabs?.description).toContain("waits up to 45 seconds");
+    expect(listTabs?.description).toContain("same call");
   });
 });
 
 describe("pairing surface", () => {
-  it("returns pairing_required immediately without progress polling", async () => {
+  it("keeps list_tabs pending and returns connected tabs after pairing", async () => {
     const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock: new FakeClock(0), idGen: new FakeIdGen() });
+    let finishWait!: (workerId: string) => void;
+    const workerReady = new Promise<string>((resolve) => { finishWait = resolve; });
+    let markWaiting!: () => void;
+    const waitingStarted = new Promise<void>((resolve) => { markWaiting = resolve; });
     const d: Deps = {
       ensure: async () => ({ coordinator, hub: {} as any, port: 43443 }),
       peek: () => null,
       pairUrl: () => "http://127.0.0.1:43443/pair",
-      waitForWorker: async () => { throw new Error("must not wait"); }
+      waitForWorker: async (_timeoutMs, onWaiting) => {
+        await onWaiting?.("http://127.0.0.1:43443/pair");
+        markWaiting();
+        return workerReady;
+      }
     };
     const server = createMcpServer(d);
     const client = new Client({ name: "test-client", version: "1" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
-    const result = await client.callTool({ name: "list_tabs", arguments: {} });
+
+    let settled = false;
+    const resultPromise = client.callTool({ name: "list_tabs", arguments: {} }).finally(() => { settled = true; });
+    await waitingStarted;
+    expect(settled).toBe(false);
+
+    coordinator.registerWorker(fakeWorker());
+    finishWait("w1");
+    const result = await resultPromise;
     const body = JSON.parse((result.content as Array<{ text: string }>)[0].text);
     expect(body).toEqual({
-      status: "pairing_required",
-      pair_url: "http://127.0.0.1:43443/pair",
-      tabs: []
+      status: "connected",
+      tabs: [{ tab_id: "42", url: "https://example.org" }]
     });
     await Promise.all([client.close(), server.close()]);
   });
 
-  it("asks a capable MCP host to open the pairing URL without blocking list_tabs", async () => {
+  it("asks a capable MCP host to open the pairing URL while list_tabs waits", async () => {
     const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock: new FakeClock(0), idGen: new FakeIdGen() });
+    let finishWait!: (workerId: string) => void;
+    const workerReady = new Promise<string>((resolve) => { finishWait = resolve; });
     const d: Deps = {
       ensure: async () => ({ coordinator, hub: {} as any, port: 43443 }),
       peek: () => null,
       pairUrl: () => "http://127.0.0.1:43443/pair",
-      waitForWorker: async () => { throw new Error("must not wait"); }
+      waitForWorker: async (_timeoutMs, onWaiting) => {
+        await onWaiting?.("http://127.0.0.1:43443/pair");
+        return workerReady;
+      }
     };
     const fallbackOpenUrl = vi.fn();
     const server = createMcpServer(d, undefined, { fallbackOpenUrl });
@@ -96,8 +118,7 @@ describe("pairing surface", () => {
     });
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 
-    const result = await client.callTool({ name: "list_tabs", arguments: {} });
-    expect(JSON.parse((result.content as Array<{ text: string }>)[0].text).status).toBe("pairing_required");
+    const resultPromise = client.callTool({ name: "list_tabs", arguments: {} });
     await vi.waitFor(() => expect(requests).toHaveLength(1));
     expect(requests[0]).toMatchObject({
       mode: "url",
@@ -106,7 +127,10 @@ describe("pairing surface", () => {
     expect(requests[0].elicitationId).toMatch(/^atwebpilot-pairing-/);
     expect(fallbackOpenUrl).not.toHaveBeenCalled();
 
-    await client.callTool({ name: "list_tabs", arguments: {} });
+    coordinator.registerWorker(fakeWorker());
+    finishWait("w1");
+    const result = await resultPromise;
+    expect(JSON.parse((result.content as Array<{ text: string }>)[0].text).status).toBe("connected");
     expect(requests).toHaveLength(1);
     finishElicitation({ action: "accept" });
     await Promise.all([client.close(), server.close()]);
@@ -118,7 +142,10 @@ describe("pairing surface", () => {
       ensure: async () => ({ coordinator, hub: {} as any, port: 43443 }),
       peek: () => null,
       pairUrl: () => "http://127.0.0.1:43443/pair",
-      waitForWorker: async () => { throw new Error("must not wait"); }
+      waitForWorker: async (timeoutMs = 45_000, onWaiting) => {
+        await onWaiting?.("http://127.0.0.1:43443/pair");
+        throw new PairingWaitTimeoutError(timeoutMs, "http://127.0.0.1:43443/pair");
+      }
     };
     const fallbackOpenUrl = vi.fn();
     const server = createMcpServer(d, undefined, { fallbackOpenUrl });
@@ -140,7 +167,10 @@ describe("pairing surface", () => {
       ensure: async () => ({ coordinator, hub: {} as any, port: 43443 }),
       peek: () => null,
       pairUrl: () => "http://127.0.0.1:43443/pair",
-      waitForWorker: async () => { throw new Error("must not wait"); }
+      waitForWorker: async (timeoutMs = 45_000, onWaiting) => {
+        await onWaiting?.("http://127.0.0.1:43443/pair");
+        throw new PairingWaitTimeoutError(timeoutMs, "http://127.0.0.1:43443/pair");
+      }
     };
     const fallbackOpenUrl = vi.fn();
     const server = createMcpServer(d, undefined, { fallbackOpenUrl });
@@ -223,6 +253,8 @@ describe("dispatchCall", () => {
     const quick = await dispatchCall(deps(), "atwebpilot_skill_read", {});
     const full = await dispatchCall(deps(), "atwebpilot_skill_read", { topic: "full" });
     expect(textOf(quick)).toContain("pairing_status");
+    expect(textOf(quick)).toContain("same call");
+    expect(textOf(quick)).toContain("do not ask the user to reply");
     expect(textOf(quick)).toContain("browser_getPageInfo");
     expect(textOf(quick)).not.toMatch(/\buse getPageInfo\b/);
     expect(textOf(full)).toContain("## Capabilities you have");
