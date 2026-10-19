@@ -115,4 +115,3 @@ describe("installCodexSkill", () => {
     )).rejects.toThrow(/Unknown option.*--unknown/);
   });
 });
-

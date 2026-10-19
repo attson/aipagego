@@ -119,4 +119,3 @@ export async function runSkillInstallCommand(
   });
   return { handled: true, result };
 }
-
