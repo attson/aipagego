@@ -15,8 +15,13 @@
 Codex：
 
 ```bash
+npx -y @attson/atwebpilot-mcp --install-codex-skill
 codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
 ```
+
+第一条命令安装用户级 Codex Skill，让真实网页任务更容易主动选择 AtWebPilot；它不会修改项目的
+`AGENTS.md`。安装后新开 Codex 会话。Skill 被手工修改时安装器默认拒绝覆盖，确认替换才加
+`--force`。
 
 Claude Code：
 

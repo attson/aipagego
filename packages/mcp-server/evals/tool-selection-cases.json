@@ -1,0 +1,74 @@
+[
+  {
+    "id": "localhost-responsive-screenshot",
+    "category": "use",
+    "prompt": "Open the localhost preview, check for horizontal overflow at mobile width, and capture a screenshot.",
+    "expected": "Start with browser_start and perform the visual check in the user's existing Chrome."
+  },
+  {
+    "id": "authenticated-page-summary",
+    "category": "use",
+    "prompt": "Summarize the account dashboard that is already open and signed in in my browser.",
+    "expected": "Use browser_start so the existing authenticated browser state is preserved."
+  },
+  {
+    "id": "live-console-debugging",
+    "category": "use",
+    "prompt": "Find the console and failed network errors causing the currently open page to stay blank.",
+    "expected": "Use browser_start, then the AtWebPilot console and network inspection tools."
+  },
+  {
+    "id": "current-page-form",
+    "category": "use",
+    "prompt": "Fill the contact form on the current page, but stop before submitting it.",
+    "expected": "Use browser_start and live-page interaction tools while keeping submission explicit."
+  },
+  {
+    "id": "collect-live-reviews",
+    "category": "use",
+    "prompt": "Collect the visible product reviews from the page I have open into structured rows.",
+    "expected": "Use browser_start and page-index extraction against the open live page."
+  },
+  {
+    "id": "pure-react-refactor",
+    "category": "do_not_use",
+    "prompt": "Refactor this React component to remove duplicated state without running the application.",
+    "expected": "Edit and test the source code without starting AtWebPilot because no live page is needed."
+  },
+  {
+    "id": "static-dom-explanation",
+    "category": "do_not_use",
+    "prompt": "Explain what document.querySelector returns and provide a short TypeScript example.",
+    "expected": "Answer from code knowledge without starting a live browser session."
+  },
+  {
+    "id": "write-playwright-test",
+    "category": "do_not_use",
+    "prompt": "Write a Playwright test file for the checkout flow, but do not execute any browser.",
+    "expected": "Create the requested test source without invoking AtWebPilot or another browser."
+  },
+  {
+    "id": "unspecified-page-check",
+    "category": "clarify",
+    "prompt": "Check the page and tell me whether it looks right.",
+    "expected": "Clarify which live page and expected result when no current-page context is available."
+  },
+  {
+    "id": "ambiguous-browser-support",
+    "category": "clarify",
+    "prompt": "Can you check browser support for this feature?",
+    "expected": "Clarify whether the user wants static compatibility research or observation in a live browser."
+  },
+  {
+    "id": "pairing-denied",
+    "category": "fallback",
+    "prompt": "Inspect the current page, but the AtWebPilot pairing request is denied.",
+    "expected": "Report the concrete pairing failure and request direction before launching a different browser path."
+  },
+  {
+    "id": "multiple-matching-tabs",
+    "category": "fallback",
+    "prompt": "Inspect the dashboard while two matching dashboard tabs are open.",
+    "expected": "Use browser_start, return the tab candidates, and do not guess which tab to control."
+  }
+]

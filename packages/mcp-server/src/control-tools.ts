@@ -4,6 +4,21 @@ export type ControlTool = { name: string; description: string; inputSchema: Json
 
 export const CONTROL_TOOLS: ControlTool[] = [
   {
+    name: "browser_start",
+    description:
+      "Primary entry point for a live web page in the user's existing Chrome: localhost, screenshots/UI smoke, authenticated interaction, or console/network debugging. Pairs if needed and returns a ready session or tab candidates.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        tab_id: { type: "string", description: "Exact id from browser_start/list_tabs" },
+        url: { type: "string", description: "Exact URL of an open tab" },
+        capabilities: { type: "array", items: { type: "string" }, description: "Optional capability scope" },
+        idle_timeout_min: { type: "number", description: "Optional idle timeout in minutes" }
+      },
+      additionalProperties: false
+    } as JsonSchema
+  },
+  {
     name: "pairing_status",
     description: "Start or check browser pairing without waiting. Returns connected or pairing_required with the pair URL.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false } as JsonSchema

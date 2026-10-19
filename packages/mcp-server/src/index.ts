@@ -2,9 +2,20 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import { DefaultClock, DefaultIdGen } from "@atwebpilot/coordinator";
 import { createMcpServer } from "./mcp-server";
 import { createHubEnsurer, defaultOpenUrl } from "./ensure-hub";
+import { runSkillInstallCommand } from "./skill-installer";
 
 // ⚠ stdout 是 MCP 通道，日志一律 console.error。
 async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  const install = await runSkillInstallCommand(args);
+  if (install.handled) {
+    process.stdout.write(`Codex Skill ${install.result.status}: ${install.result.targetFile}\n`);
+    return;
+  }
+  if (args.length > 0) {
+    throw new Error(`Unknown option: ${args.join(", ")}`);
+  }
+
   const explicitPort = process.env.ATWEBPILOT_WS_PORT
     ? Number(process.env.ATWEBPILOT_WS_PORT)
     : undefined;

@@ -17,9 +17,9 @@ export type SkillTopic =
 const TOPICS: Record<Exclude<SkillTopic, "full">, string> = {
   quickstart: `# AtWebPilot quickstart
 
-1. Call list_tabs once. On first use it opens the pairing page and waits for authorization, then normally returns connected tabs in the same call.
-2. If list_tabs times out and returns pairing_required, show pair_url and wait for browser approval. Use pairing_status for a later non-blocking status check; do not ask the user to reply just to continue.
-3. Choose a returned tab, then call open_session with its tab_id.
+1. Call browser_start once. On first use it opens the pairing page and waits for authorization; when one tab is unambiguous it returns a ready session in the same call.
+2. If browser_start returns select_tab, call browser_start again with one returned tab_id. list_tabs and open_session remain lower-level compatibility tools.
+3. If browser_start times out and returns pairing_required, show pair_url and wait for browser approval. Use pairing_status for a later non-blocking status check; do not ask the user to reply just to continue.
 4. For interaction use browser_getPageInfo then browser_takeSnapshot; for broad reading use browser_createPageIndex.
 5. When 2-20 safe/caution steps and their arguments are already known, use browser_runSteps to execute them in one MCP call. Keep dangerous actions and steps needing intermediate inspection as separate calls.
 6. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface. Its response always includes the selected schemas. If a newly enabled native tool is not visible in the current turn, call it immediately with browser_call; do not ask the user to send "continue".

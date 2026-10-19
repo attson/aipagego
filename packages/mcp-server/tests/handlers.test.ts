@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@atwebpilot/coordinator";
 import type { Result } from "@atwebpilot/shared/protocol";
 import {
-  handlePairingStatus, handleListTabs, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool, type Deps, staticDeps
+  handlePairingStatus, handleListTabs, handleBrowserStart, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool, type Deps, staticDeps
 } from "../src/handlers";
 import { PairingWaitTimeoutError } from "../src/pairing-errors";
 
@@ -27,6 +27,119 @@ function makeDeps(execResult: Result): { deps: Deps; calls: any[] } {
 const okResult: Result = { type: "RESULT", nonce: "n", ts: 1, protocol_version: 1, req_id: "req_1", ok: true, return: { clicked: true } };
 
 describe("control-plane handlers", () => {
+  it("browser_start opens a session when exactly one tab is available", async () => {
+    const { deps } = makeDeps(okResult);
+
+    const result = await handleBrowserStart(deps, {});
+
+    expect(result).toMatchObject({
+      status: "ready",
+      tab: { tab_id: "42", url: "https://example.org" }
+    });
+    if (result.status !== "ready") throw new Error("expected browser_start to be ready");
+    expect(deps.peek()!.coordinator.sessions.get(result.session_id)?.tab_id).toBe("42");
+  });
+
+  it("browser_start selects an explicit tab and preserves session options", async () => {
+    const { deps } = makeDeps(okResult);
+    deps.peek()!.coordinator.workers.list()[0].available_tabs = [
+      { tab_id: "41", url: "https://one.example" },
+      { tab_id: "42", url: "https://two.example" }
+    ];
+
+    const result = await handleBrowserStart(deps, {
+      tab_id: "42",
+      capabilities: ["read:dom"],
+      idle_timeout_min: 5
+    });
+
+    expect(result).toMatchObject({ status: "ready", tab: { tab_id: "42" } });
+    if (result.status !== "ready") throw new Error("expected browser_start to be ready");
+    const session = deps.peek()!.coordinator.sessions.get(result.session_id)!;
+    expect(session.scope).toEqual(new Set(["read:dom"]));
+    expect(session.idle_timeout_ms).toBe(300_000);
+  });
+
+  it("browser_start selects the only exact URL match", async () => {
+    const { deps } = makeDeps(okResult);
+    deps.peek()!.coordinator.workers.list()[0].available_tabs = [
+      { tab_id: "41", url: "https://example.org/one" },
+      { tab_id: "42", url: "https://example.org/two" }
+    ];
+
+    const result = await handleBrowserStart(deps, { url: "https://example.org/two" });
+
+    expect(result).toMatchObject({ status: "ready", tab: { tab_id: "42" } });
+  });
+
+  it("browser_start returns candidates instead of guessing between tabs", async () => {
+    const { deps } = makeDeps(okResult);
+    deps.peek()!.coordinator.workers.list()[0].available_tabs = [
+      { tab_id: "41", url: "https://one.example" },
+      { tab_id: "42", url: "https://two.example" }
+    ];
+
+    await expect(handleBrowserStart(deps, {})).resolves.toEqual({
+      status: "select_tab",
+      tabs: [
+        { tab_id: "41", url: "https://one.example" },
+        { tab_id: "42", url: "https://two.example" }
+      ],
+      message: "Choose a tab and call browser_start again with tab_id."
+    });
+  });
+
+  it("browser_start returns all candidates when an URL has no exact match", async () => {
+    const { deps } = makeDeps(okResult);
+    deps.peek()!.coordinator.workers.list()[0].available_tabs = [
+      { tab_id: "41", url: "https://one.example" },
+      { tab_id: "42", url: "https://two.example" }
+    ];
+
+    const result = await handleBrowserStart(deps, { url: "https://missing.example" });
+
+    expect(result).toMatchObject({ status: "select_tab" });
+    if (result.status !== "select_tab") throw new Error("expected tab selection");
+    expect(result.tabs).toHaveLength(2);
+    expect(result.message).toContain("No exact URL match");
+  });
+
+  it("browser_start rejects an unavailable explicit tab instead of guessing", async () => {
+    const { deps } = makeDeps(okResult);
+
+    await expect(handleBrowserStart(deps, { tab_id: "missing" })).rejects.toThrow(
+      /InvalidArgs.*missing.*not available/
+    );
+  });
+
+  it("browser_start requires tab_id and url to identify the same tab", async () => {
+    const { deps } = makeDeps(okResult);
+
+    await expect(handleBrowserStart(deps, {
+      tab_id: "42",
+      url: "https://different.example"
+    })).rejects.toThrow(/InvalidArgs.*same tab/);
+  });
+
+  it("browser_start preserves the bounded pairing result", async () => {
+    const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock: new FakeClock(0), idGen: new FakeIdGen() });
+    const bundle = { coordinator, hub: {} as any, port: 8787 };
+    const deps: Deps = {
+      ensure: async () => bundle,
+      peek: () => bundle,
+      pairUrl: () => "http://127.0.0.1:8787/pair",
+      waitForWorker: async (timeoutMs = 45_000) => {
+        throw new PairingWaitTimeoutError(timeoutMs, "http://127.0.0.1:8787/pair");
+      }
+    };
+
+    await expect(handleBrowserStart(deps, {})).resolves.toEqual({
+      status: "pairing_required",
+      pair_url: "http://127.0.0.1:8787/pair",
+      tabs: []
+    });
+  });
+
   it("list_tabs returns the single worker's tabs", async () => {
     const { deps } = makeDeps(okResult);
     expect(await handleListTabs(deps)).toEqual({

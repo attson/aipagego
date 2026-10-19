@@ -19,9 +19,11 @@
 ```
 会话启动           → 什么都不做，不绑端口
 tools/list         → 不碰端口，只列控制面
-list_tabs          → 绑一个空闲端口 → 打开 http://127.0.0.1:<port>/pair
-                   → 立即返回 pairing_required + pair_url
-你点「允许」       → pairing_status 返回 connected → 再读取 tab
+browser_start      → 绑一个空闲端口 → 打开 http://127.0.0.1:<port>/pair
+                   → 最多等待 45 秒
+你点「允许」       → 唯一 tab：同一次调用返回 ready session
+                   → 多个 tab：返回 select_tab，带 tab_id 再调一次
+等待超时           → 返回 pairing_required + pair_url，稍后用 pairing_status 检查
 ```
 
 不碰网页的会话全程零副作用，也就不可能和别的会话撞端口。

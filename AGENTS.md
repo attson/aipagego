@@ -21,8 +21,9 @@ Three personas of work the user expects help with:
 
 - Vite 5 + `@crxjs/vite-plugin` (MV3 build), React 18, TypeScript 5 (strict)
 - Tailwind 3, zustand 4, zod 3, idb 8
-- vitest + happy-dom + fake-indexeddb (no Playwright; UI smoke is manual,
-  but coordinator-driven E2E covers the chat loop via a real `ws` server)
+- vitest + happy-dom + fake-indexeddb (no Playwright dependency; live-browser
+  UI smoke uses the AtWebPilot MCP, with manual fallback; coordinator-driven
+  E2E covers the chat loop via a real `ws` server)
 - pnpm 9 workspaces (4 packages: `shared` / `coordinator` / `extension` / `mcp-server`)
 - LLM: Anthropic Messages API + OpenAI Chat API; both stream via fetch
   directly from the side panel (no proxy, no key on disk except
@@ -397,6 +398,17 @@ so both backends share one tested implementation.
   closure-captured `tabId`. Don't rely on `currentTabId` in callbacks.
 
 ## Build / test / dev
+
+### Browser verification by coding agents
+
+- When a task requires live-page inspection, UI smoke testing, screenshots,
+  responsive-layout checks, DOM interaction, or console/network debugging,
+  use the AtWebPilot MCP first, including for localhost pages.
+- Start with `browser_start`. Do not probe for Playwright, Puppeteer, or Chrome
+  remote debugging while AtWebPilot is available.
+- Fall back only after AtWebPilot reports an actual connection or capability
+  failure, and state that failure. Pure source-code work that does not require
+  observing a live page must not start a browser.
 
 ```bash
 pnpm install
