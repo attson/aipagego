@@ -12,7 +12,7 @@ import {
 } from "./browser-run-steps";
 import { generateBrowserTools, readToolMode, type GeneratedTool, type ToolMode } from "./tool-gen";
 import {
-  handlePairingStatus, handleListTabs, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool,
+  handlePairingStatus, handleListTabs, handleBrowserStart, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool,
   type Deps
 } from "./handlers";
 import { readSkillBundle, SKILL_TOOL } from "./skill-bundle";
@@ -20,6 +20,11 @@ import { MCP_VERSION } from "./version";
 import { createPairingPresenter, type OpenUrl } from "./pairing-presenter";
 
 export type ToolListEntry = { name: string; description: string; inputSchema: JsonSchema };
+
+export const MCP_INSTRUCTIONS =
+  "Use AtWebPilot for tasks that require inspecting, testing, debugging, screenshotting, reading, or interacting with a live web page in the user's existing Chrome, including localhost and authenticated pages. " +
+  "Start with browser_start. When AtWebPilot is available, use it before probing or launching Playwright, Puppeteer, or Chrome remote debugging. " +
+  "Do not start the browser for pure code editing or static source analysis that does not require observing a live page.";
 
 export type ContentBlock =
   | { type: "text"; text: string }
@@ -166,6 +171,11 @@ export async function dispatchCall(
       if (result.status === "connected") await revealBrowserSurface(state, onListChanged);
       return ok(result);
     }
+    if (name === "browser_start") {
+      const result = await handleBrowserStart(deps, args, onPairingRequired);
+      if (result.status !== "pairing_required") await revealBrowserSurface(state, onListChanged);
+      return ok(result);
+    }
     if (name === "open_session") {
       const result = await handleOpenSession(deps, args);
       await revealBrowserSurface(state, onListChanged);
@@ -237,7 +247,10 @@ export function createMcpServer(
 ): Server {
   const server = new Server(
     { name: "atwebpilot-mcp", version: MCP_VERSION },
-    { capabilities: { tools: { listChanged: true }, logging: {} } }
+    {
+      capabilities: { tools: { listChanged: true }, logging: {} },
+      instructions: MCP_INSTRUCTIONS
+    }
   );
   const presentPairing = createPairingPresenter(server, options.fallbackOpenUrl);
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: buildToolList(deps, state) }));

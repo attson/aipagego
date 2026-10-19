@@ -26,6 +26,7 @@
 # 只用扩展:到 Releases 下载 zip,在 chrome://extensions 加载已解压的扩展。
 
 # 交给 Codex 驱动:
+npx -y @attson/atwebpilot-mcp --install-codex-skill
 codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
 
 # 或交给 Claude Code 驱动:
@@ -39,7 +40,7 @@ pnpm dev        # 扩展开发模式
 
 依赖 Node 20+ / pnpm 9。首次使用需在设置页填 LLM provider 与 API Key。
 
-MCP **不用手填端口**:AI 第一次要操作网页时会自动弹出配对页,点「允许」即接入,之后本机会话免确认。
+Codex Skill 安装到用户级 `~/.agents/skills/atwebpilot-browser/`，不会修改任何项目的 `AGENTS.md`。MCP **不用手填端口**:AI 第一次通过 `browser_start` 操作网页时会自动弹出配对页,点「允许」即接入,之后本机会话免确认。
 
 ---
 

@@ -15,8 +15,13 @@ Three ways to use it.
 Codex:
 
 ```bash
+npx -y @attson/atwebpilot-mcp --install-codex-skill
 codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
 ```
+
+The first command installs a user-level Codex Skill so live-page tasks can discover
+AtWebPilot without changing any project's `AGENTS.md`. Start a new Codex session after
+installation. The installer refuses to overwrite a modified Skill unless `--force` is explicit.
 
 Claude Code:
 

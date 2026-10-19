@@ -31,6 +31,7 @@ describe("buildToolList", () => {
     const tools = buildToolList();
     const names = tools.map((t) => t.name);
     expect(names).toContain("atwebpilot_skill_read");
+    expect(names).toContain("browser_start");
     expect(names).toContain("list_tabs");
     expect(names).toContain("open_session");
     expect(names).toContain("pairing_status");
@@ -38,7 +39,7 @@ describe("buildToolList", () => {
     expect(names).toContain("browser_runSteps");
     expect(names).not.toContain("browser_click");
     expect(names).not.toContain("browser_snapshotDOM");
-    expect(tools.length).toBe(1 + 5 + 1 + 1 + 1);
+    expect(tools.length).toBe(1 + 6 + 1 + 1 + 1);
     const runSteps = tools.find((tool) => tool.name === "browser_runSteps");
     const runStepsSchema = runSteps?.inputSchema as {
       properties?: Record<string, unknown>;
@@ -56,6 +57,41 @@ describe("buildToolList", () => {
     expect(listTabs?.description).toContain("pairing_required");
     expect(listTabs?.description).toContain("waits up to 45 seconds");
     expect(listTabs?.description).toContain("same call");
+  });
+
+  it("describes browser_start as the primary live-browser entry point", () => {
+    const start = buildToolList().find((tool) => tool.name === "browser_start");
+    expect(start?.description).toMatch(/primary entry point/i);
+    expect(start?.description).toMatch(/live web page/i);
+    expect(start?.description).toMatch(/localhost/i);
+    expect(start?.description).toMatch(/screenshots?\/UI smoke/i);
+    expect(start?.description).toMatch(/existing Chrome/i);
+    expect(start?.inputSchema).toMatchObject({
+      type: "object",
+      properties: {
+        tab_id: { type: "string" },
+        url: { type: "string" }
+      }
+    });
+  });
+});
+
+describe("MCP initialization", () => {
+  it("tells hosts when to start AtWebPilot and when not to", async () => {
+    const server = createMcpServer(deps());
+    const client = new Client({ name: "instructions-client", version: "1" });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+
+    const instructions = client.getInstructions();
+    expect(instructions).toMatch(/live web page/i);
+    expect(instructions).toMatch(/browser_start/);
+    expect(instructions).toMatch(/localhost/i);
+    expect(instructions).toMatch(/authenticated/i);
+    expect(instructions).toMatch(/pure code/i);
+    expect(instructions).toMatch(/Playwright|Puppeteer/);
+
+    await Promise.all([client.close(), server.close()]);
   });
 });
 
@@ -325,6 +361,27 @@ describe("pairing surface", () => {
     expect(changes).toHaveLength(1);
     await Promise.all([client.close(), server.close()]);
   });
+
+  it("browser_start opens a session and reveals the browser tool surface", async () => {
+    const state = createToolState("core");
+    const coordinator = new Coordinator({ hub: { send: async () => undefined } as any, clock: new FakeClock(0), idGen: new FakeIdGen() });
+    coordinator.registerWorker(fakeWorker());
+    const server = createMcpServer(staticDeps(coordinator, { exec: async () => okResult } as any), state);
+    const client = new Client({ name: "browser-start-client", version: "1" });
+    const [ct, st] = InMemoryTransport.createLinkedPair();
+    const changes: number[] = [];
+    client.setNotificationHandler(ToolListChangedNotificationSchema, async () => { changes.push(1); });
+    await Promise.all([server.connect(st), client.connect(ct)]);
+
+    const result = await client.callTool({ name: "browser_start", arguments: {} });
+    expect(JSON.parse((result.content as Array<{ text: string }>)[0].text)).toMatchObject({
+      status: "ready",
+      tab: { tab_id: "42" }
+    });
+    await vi.waitFor(() => expect(changes).toHaveLength(1));
+    expect((await client.listTools()).tools.map((tool) => tool.name)).toContain("browser_click");
+    await Promise.all([client.close(), server.close()]);
+  });
 });
 
 /** Narrows a CallResult's first block to text; image blocks have no `text`. */
@@ -340,6 +397,8 @@ describe("dispatchCall", () => {
   it("returns a concise quickstart by default and full guidance only on request", async () => {
     const quick = await dispatchCall(deps(), "atwebpilot_skill_read", {});
     const full = await dispatchCall(deps(), "atwebpilot_skill_read", { topic: "full" });
+    expect(textOf(quick)).toContain("browser_start");
+    expect(textOf(quick).indexOf("browser_start")).toBeLessThan(textOf(quick).indexOf("list_tabs"));
     expect(textOf(quick)).toContain("pairing_status");
     expect(textOf(quick)).toContain("same call");
     expect(textOf(quick)).toContain("do not ask the user to reply");
@@ -356,6 +415,14 @@ describe("dispatchCall", () => {
     const r = await dispatchCall(deps(), "list_tabs", {});
     expect(r.isError).toBeFalsy();
     expect(textOf(r)).toContain("42");
+  });
+  it("routes browser_start and returns a ready session", async () => {
+    const r = await dispatchCall(deps(), "browser_start", {});
+    expect(r.isError).toBeFalsy();
+    expect(JSON.parse(textOf(r))).toMatchObject({
+      status: "ready",
+      tab: { tab_id: "42" }
+    });
   });
   it("returns isError for unknown tool", async () => {
     const r = await dispatchCall(deps(), "no_such_tool", {});

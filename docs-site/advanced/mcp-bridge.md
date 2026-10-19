@@ -19,10 +19,12 @@ Codex 或 Claude Code 里就能调 `browser_*` 系列工具在真实网页上读
 ### Codex CLI
 
 ```bash
+npx -y @attson/atwebpilot-mcp --install-codex-skill
 codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
 ```
 
-命令会把 server 加到 Codex 的用户级 MCP 配置。新开一个 Codex 会话后，可用
+第一条命令安装用户级 Skill，第二条把 server 加到 Codex 的用户级 MCP 配置；两者都不会修改
+项目的 `AGENTS.md`。新开一个 Codex 会话后，可用
 `codex mcp get atwebpilot` 检查配置。
 
 ### Claude Code
@@ -36,8 +38,8 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 然后照常装扩展。**不用手填端口**：
 
 1. 会话启动时不绑任何端口 —— 不碰网页的会话零副作用
-2. AI 第一次调 `list_tabs` / `pairing_status` 时才绑一个空闲端口，自动打开配对页并立即返回 URL
-3. 你在浏览器里点「允许」，AI 用 `pairing_status` 确认 `connected` 后再读取 tab
+2. AI 第一次调 `browser_start` 时才绑一个空闲端口，自动打开配对页并等待最多 45 秒
+3. 你在浏览器里点「允许」后，同一次调用在 tab 唯一时直接返回 ready session；多个候选时返回 `select_tab`
 4. 之后本机的会话都免确认；端口能复用时连配对页都不会弹
 
 详见 [多会话配对](/advanced/pairing)。
@@ -49,14 +51,16 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 | `ATWEBPILOT_WS_PORT` | 固定端口。默认是自动选一个空闲端口并复用上次那个 |
 | `ATWEBPILOT_WS_TOKEN` | 要求扩展带 `bearer.<token>` 子协议 |
 | `ATWEBPILOT_MCP_TOOLS` | 连接前仅控制面；连接后为 `core`（默认 31 个）或 `full`（全部 51 个） |
+| `ATWEBPILOT_CODEX_SKILLS_DIR` | 覆盖 Skill 安装根目录；默认 `~/.agents/skills` |
 
 ## Codex / Claude Code 可用的 MCP tools
 
 | 工具 | 用途 |
 |---|---|
+| `browser_start` | 真实网页任务的首选入口：配对、无歧义选 tab、创建 session |
 | `pairing_status` | 无阻塞启动/检查浏览器配对状态 |
-| `list_tabs` | 列出扩展当前挂载的所有 tab，含 `busy` / `mine` 占用标记 |
-| `open_session` | 开启一个 session，绑定某 tab |
+| `list_tabs` | 底层兼容入口：列出所有 tab，含 `busy` / `mine` 占用标记 |
+| `open_session` | 底层兼容入口：开启一个 session，绑定某 tab |
 | `browser_*` × 51 | 扩展全部内置工具的 MCP 包装 |
 | `get_quota` | 查询当前 session 剩余次数 |
 | `close_session` | 关闭 session |

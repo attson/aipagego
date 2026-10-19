@@ -2,11 +2,14 @@
 
 让 Codex 或 Claude Code 经一个本地 ws 中继驱动 atwebpilot 浏览器扩展操作网页（读 / 写 / 采）。
 
-## 给用户：一行装
+## 给用户：安装
 
 Codex：
 
+    npx -y @attson/atwebpilot-mcp --install-codex-skill
     codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
+
+第一条命令把正式 Skill 安装到用户级 `~/.agents/skills/atwebpilot-browser/`，让 Codex 在真实网页验收、截图、调试、读取或交互任务中主动发现 AtWebPilot；它不会修改任何项目的 `AGENTS.md`。内容相同时重复执行是幂等的；若目标被手工修改会拒绝覆盖，确认替换时显式加 `--force`。安装后新开 Codex 会话。
 
 Claude Code：
 
@@ -17,8 +20,8 @@ Claude Code：
 **不需要手填端口。** 从 Plan 33 起是配对流程：
 
 1. 会话启动时**不绑任何端口** —— 不碰网页的会话零副作用。
-2. AI 第一次调 `list_tabs` 时才绑一个空闲端口，通过 MCP URL elicitation 请宿主打开配对页；不支持该能力的宿主回退到系统默认浏览器。`list_tabs` 最多等待 45 秒。
-3. 你在浏览器里点「允许」，扩展即接入；同一次 `list_tabs` 调用直接返回 tab，AI 无需让你回复「已连接」。只有等待超时才返回 `pairing_required + pair_url`；`pairing_status` 始终是立即返回的非阻塞状态检查。
+2. AI 第一次调 `browser_start` 时才绑一个空闲端口，通过 MCP URL elicitation 请宿主打开配对页；不支持该能力的宿主回退到系统默认浏览器。`browser_start` 最多等待 45 秒。
+3. 你在浏览器里点「允许」，扩展即接入；唯一 tab 可确定时同一次 `browser_start` 调用直接返回 ready session，多个候选时返回 `select_tab`，AI 带选中的 `tab_id` 再调用一次。无需让你回复「已连接」。只有等待超时才返回 `pairing_required + pair_url`；`pairing_status` 始终是立即返回的非阻塞状态检查。
 4. 之后本机的会话都免确认（信任是安装级的）；端口能复用时连配对页都不会弹。
 
 若宿主和系统都未弹出浏览器，可在超时结果中打开 `pair_url`。授权成功只以扩展实际建立连接并发送 `HELLO` 为准；打开配对页本身不代表已连接。
@@ -30,6 +33,7 @@ Coordinator 查看已接入的会话、单独断开，或撤销信任。
 
 - `ATWEBPILOT_WS_PORT`：固定端口（默认是自动选一个空闲端口并复用上次的）
 - `ATWEBPILOT_WS_TOKEN`：要求扩展带 `bearer.<token>` 子协议
+- `ATWEBPILOT_CODEX_SKILLS_DIR`：覆盖 Codex Skill 安装根目录（默认 `~/.agents/skills`）
 
 ## 给开发者：本地 monorepo
 
@@ -48,7 +52,7 @@ listen 端口的能力，所以方向只能如此。这也是配对页存在的�
 
 ## 工具面
 
-- 控制面 5 个：`pairing_status / list_tabs / open_session / close_session / get_quota`
+- 控制面 6 个：`browser_start / pairing_status / list_tabs / open_session / close_session / get_quota`。常规网页任务从 `browser_start` 开始；`list_tabs` / `open_session` 保留为底层兼容入口。
 - 发现 1 个：`browser_discoverTools` —— 已知工具时直接传 `enable: [...]`，已知分组时直接传 `enableGroups: ["export", ...]`，也可用 `profile: "core" | "full"` 切换整套工具面；只有这些都未知时才不带参数读取目录。选中的工具会加入本进程的 `tools/list`（发送 `tools/list_changed`），并始终返回完整 schema，包括已经启用的工具。
 - 同轮执行桥 1 个：`browser_call({session_id, tool, args})` —— 某些宿主虽已刷新 `tools/list`，却不会在当前模型轮次注入新工具。AI 可在 `discoverTools` 后立刻通过该桥执行，不需要让用户回复“继续”；下一轮看到原生工具后仍优先使用原生工具。
 - 批量编排 1 个：`browser_runSteps({session_id, steps, return_bindings?})` —— 在步骤和参数已经明确时，把 1–20 个 safe/caution 工具合并为一次 MCP 调用；`${binding}` 可引用前序结果。整批先做工具支持、权限和配额预检，dangerous、脚本、截图、下载与 tab 生命周期操作保持单步。

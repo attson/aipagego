@@ -36,6 +36,7 @@ function depsWith(w?: Worker) {
 const browserNames = (list: Array<{ name: string }>) =>
   list.map((t) => t.name).filter((n) =>
     n.startsWith("browser_") &&
+    n !== "browser_start" &&
     n !== "browser_discoverTools" &&
     n !== "browser_call" &&
     n !== "browser_runSteps"
@@ -60,6 +61,7 @@ describe("supported_tools negotiation", () => {
     const names = buildToolList(depsWith(worker(["click"]))).map((t) => t.name);
     for (const n of [
       "atwebpilot_skill_read",
+      "browser_start",
       "pairing_status",
       "list_tabs",
       "open_session",

@@ -1,4 +1,4 @@
-import type { Coordinator } from "@atwebpilot/coordinator";
+import type { Coordinator, TabInfo } from "@atwebpilot/coordinator";
 import {
   CAPABILITIES,
   isCapability,
@@ -86,7 +86,7 @@ export async function handleListTabs(
   onPairingRequired?: (pairUrl: string) => void | Promise<void>,
   timeoutMs = LIST_TABS_PAIRING_TIMEOUT_MS
 ): Promise<
-  | { status: "connected"; tabs: unknown[] }
+  | { status: "connected"; tabs: TabInfo[] }
   | { status: "pairing_required"; pair_url: string; tabs: [] }
 > {
   const { coordinator } = await deps.ensure();
@@ -117,6 +117,73 @@ export async function handleListTabs(
     }
   }
   return { status: "connected", tabs: worker.available_tabs };
+}
+
+export type BrowserStartResult =
+  | { status: "ready"; session_id: string; tab: TabInfo }
+  | { status: "select_tab"; tabs: TabInfo[]; message: string }
+  | { status: "pairing_required"; pair_url: string; tabs: [] };
+
+function selectionResult(tabs: TabInfo[], message: string): BrowserStartResult {
+  return { status: "select_tab", tabs, message };
+}
+
+/** Pair with the browser, select only an unambiguous tab, and open a session. */
+export async function handleBrowserStart(
+  deps: Deps,
+  args: Record<string, unknown>,
+  onPairingRequired?: (pairUrl: string) => void | Promise<void>,
+  timeoutMs = LIST_TABS_PAIRING_TIMEOUT_MS
+): Promise<BrowserStartResult> {
+  const listed = await handleListTabs(deps, onPairingRequired, timeoutMs);
+  if (listed.status === "pairing_required") return listed;
+
+  const tabId = typeof args.tab_id === "string" && args.tab_id.length > 0
+    ? args.tab_id
+    : undefined;
+  const url = typeof args.url === "string" && args.url.length > 0
+    ? args.url
+    : undefined;
+
+  let selected: TabInfo | undefined;
+  if (tabId) {
+    selected = listed.tabs.find((tab) => tab.tab_id === tabId);
+    if (!selected) {
+      throw new Error(`InvalidArgs: browser_start tab_id ${JSON.stringify(tabId)} is not available`);
+    }
+    if (url && selected.url !== url) {
+      throw new Error("InvalidArgs: browser_start tab_id and url must identify the same tab");
+    }
+  } else if (url) {
+    const matches = listed.tabs.filter((tab) => tab.url === url);
+    if (matches.length === 1) {
+      [selected] = matches;
+    } else if (matches.length > 1) {
+      return selectionResult(
+        matches,
+        "Multiple tabs have that exact URL. Choose one and call browser_start again with tab_id."
+      );
+    } else {
+      return selectionResult(
+        listed.tabs,
+        "No exact URL match. Choose a tab and call browser_start again with tab_id."
+      );
+    }
+  } else if (listed.tabs.length === 1) {
+    [selected] = listed.tabs;
+  } else {
+    return selectionResult(
+      listed.tabs,
+      "Choose a tab and call browser_start again with tab_id."
+    );
+  }
+
+  const opened = await handleOpenSession(deps, {
+    tab_id: selected.tab_id,
+    ...(Array.isArray(args.capabilities) ? { capabilities: args.capabilities } : {}),
+    ...(typeof args.idle_timeout_min === "number" ? { idle_timeout_min: args.idle_timeout_min } : {})
+  });
+  return { status: "ready", session_id: opened.session_id, tab: selected };
 }
 
 export async function handleOpenSession(
