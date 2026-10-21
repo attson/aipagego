@@ -1,6 +1,6 @@
 {
   "name": "@attson/atwebpilot-mcp",
-  "version": "0.0.82",
+  "version": "0.0.83",
   "license": "Apache-2.0",
   "description": "MCP server for the atwebpilot browser extension - let Codex or Claude Code drive your browser.",
   "homepage": "https://github.com/attson/atwebpilot#readme",
