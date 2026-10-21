@@ -7,7 +7,7 @@
 Only one Claude Code session can drive the browser at a time, and the failure
 mode is silent.
 
-`packages/mcp-server/src/index.ts:9-14` binds `ATWEBPILOT_WS_PORT ?? 8787`
+`packages/mcp-server/src/index.ts:9-14` binds `AIPAGEGO_WS_PORT ?? 8787`
 unconditionally at process start. A second session therefore dies immediately
 with an unhandled `EADDRINUSE` — `LoopbackWSHub` never attaches an `error`
 listener, so `ws` re-throws and Node exits. Claude Code reports only
@@ -88,12 +88,12 @@ learn.
 ### Session lifecycle
 
 **Start — nothing happens.** `index.ts` builds only the stdio MCP server.
-`tools/list` and `atwebpilot_skill_read` never touch a port.
+`tools/list` and `aipagego_skill_read` never touch a port.
 
 **First browser need — `ensureHub()`.** Triggered by `list_tabs`,
 `open_session`, or any `browser_*` call:
 
-1. Read `~/.atwebpilot/identity.json` (mode 0600); create
+1. Read `~/.aipagego/identity.json` (mode 0600); create
    `{ installId, secret }` if absent.
 2. Bind a port: prefer the recorded `lastPort`, fall back to an ephemeral port
    (`0`). `LoopbackWSHub.ready()` already reads the actual port back via
@@ -113,7 +113,7 @@ own permit. So:
 - The worker decides. Known `installId` with a matching `secret` connects
   straight away and the page reports "already trusted" and closes itself.
   Otherwise the worker injects a shadow-DOM overlay — reusing the machinery in
-  `content/widget/` — reading "the session in `~/code/atwebpilot2` wants to control
+  `content/widget/` — reading "the session in `~/code/aipagego2` wants to control
   your browser", with Allow and Deny. The page cannot forge that overlay's
   outcome.
 
@@ -157,7 +157,7 @@ rather than reconnecting any CLOSED socket on sight.
 
 ### Trust model
 
-One identity per installation, in `~/.atwebpilot/identity.json` (0600):
+One identity per installation, in `~/.aipagego/identity.json` (0600):
 
 ```jsonc
 { "installId": "inst_9c1e…", "secret": "…" }
@@ -177,7 +177,7 @@ reason the user can see.
 What this protects against: a local process silently taking control of the
 browser. Without the secret it must go through the overlay.
 
-What it does not protect against: anything that can read `~/.atwebpilot/`. Such a
+What it does not protect against: anything that can read `~/.aipagego/`. Such a
 process can already do considerably worse. This is a boundary, not a hole, but it
 should be stated rather than implied.
 
@@ -258,7 +258,7 @@ The Coordinator sub-page replaces its single URL field with two lists:
 
 ```
 已接入的会话
-  ~/code/atwebpilot2   pid 1234  :51234  ● connected   [断开]
+  ~/code/aipagego2   pid 1234  :51234  ● connected   [断开]
   ~/code/wanxin   pid 5678  :51299  ○ dormant     [重连]
 
 已信任
@@ -269,7 +269,7 @@ Disconnecting is an operational action and does not revoke trust — the endpoin
 will reconnect. Revoking clears the credential, after which every session asks
 again.
 
-`ATWEBPILOT_WS_PORT` remains as an override for anyone who wants a fixed port.
+`AIPAGEGO_WS_PORT` remains as an override for anyone who wants a fixed port.
 
 ## Error Handling
 
@@ -277,13 +277,13 @@ again.
   returns `pairing_required`; the agent checks `pairing_status` later rather
   than polling `list_tabs` or asking for a reply solely to continue.
 - Extension absent, or the page is a restricted URL where content scripts cannot
-  run: the page reports that AtWebPilot was not detected and links to install.
+  run: the page reports that AIPageGo was not detected and links to install.
 - `installId` matches but `secret` does not: treated as unknown and sent through
   the overlay, with a console warning — the likely cause is another process
   having taken the remembered port.
 - Repeated pairing for the same `sessionId` (a page refresh) is idempotent and
   adds no second connection.
-- `EADDRINUSE` on an explicitly configured `ATWEBPILOT_WS_PORT`: reported on
+- `EADDRINUSE` on an explicitly configured `AIPAGEGO_WS_PORT`: reported on
   stderr as an actionable message rather than an unhandled throw, naming the
   variable as the way out.
 

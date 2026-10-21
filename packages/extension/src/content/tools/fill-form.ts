@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { fillInput } from "./fill-input";
 import { fillByUid } from "./fill-by-uid";
 

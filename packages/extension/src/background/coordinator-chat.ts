@@ -3,9 +3,9 @@ import type {
   ClientToServer,
   StartChatSession,
   AbortSession
-} from "@atwebpilot/shared/protocol";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
-import type { LlmClient, LlmStreamEvent } from "@atwebpilot/shared/llm";
+} from "@aipagego/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
+import type { LlmClient, LlmStreamEvent } from "@aipagego/shared/llm";
 import type { RunSessionArgs, SessionEvent } from "@/sidepanel/chat/run-session";
 import { runChatSession as defaultRunChatSession } from "@/sidepanel/chat/run-session";
 import { MockLlmClient } from "./mock-llm-client";
@@ -15,7 +15,7 @@ import type { ToolRunner } from "@/sidepanel/chat/tool-runner";
 import { TOOL_DEFS } from "@/sidepanel/llm/tool-schema";
 import { loadAllowRemoteChat } from "./coordinator-state";
 import { createRun, appendStepLog, finalizeRun } from "./storage/runs";
-import type { Json, RunStepLogEntry } from "@atwebpilot/shared/types";
+import type { Json, RunStepLogEntry } from "@aipagego/shared/types";
 
 // Auto-approves every tool request. Used in coordinator-driven sessions
 // where the user has already opted in via the allow_remote_chat flag —

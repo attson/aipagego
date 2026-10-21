@@ -76,7 +76,7 @@ describe("evaluateAutoApproval", () => {
 });
 ```
 
-- [ ] **Step 3:** Run `pnpm -F @atwebpilot/extension test severity` → expect PASS.
+- [ ] **Step 3:** Run `pnpm -F @aipagego/extension test severity` → expect PASS.
 
 - [ ] **Step 4:** Commit:
 
@@ -120,10 +120,10 @@ export type LlmSettings = {
 
 ```ts
 import { create } from "zustand";
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { LlmSettings } from "@aipagego/shared/types";
 
-const KEY = "atwebpilot.llm";
-const MIGRATION_KEY = "atwebpilot.llm._migrated_v1";
+const KEY = "aipagego.llm";
+const MIGRATION_KEY = "aipagego.llm._migrated_v1";
 
 const DEFAULTS: LlmSettings = {
   provider: "anthropic",
@@ -223,18 +223,18 @@ describe("settings-store migration", () => {
 
   it("migrates autoApproveDangerous → trustedDangerTools on first load", async () => {
     const { local } = makeStorage();
-    local["atwebpilot.llm"] = { autoApproveDangerous: ["submitForm", "uploadFile"] };
+    local["aipagego.llm"] = { autoApproveDangerous: ["submitForm", "uploadFile"] };
     const { useSettings } = await import("../settings-store");
     await useSettings.getState().load();
     expect(useSettings.getState().trustedDangerTools).toEqual(["submitForm", "uploadFile"]);
-    expect((local["atwebpilot.llm"] as Record<string, unknown>).autoApproveDangerous).toBeUndefined();
-    expect(local["atwebpilot.llm._migrated_v1"]).toBe(true);
+    expect((local["aipagego.llm"] as Record<string, unknown>).autoApproveDangerous).toBeUndefined();
+    expect(local["aipagego.llm._migrated_v1"]).toBe(true);
   });
 
   it("does not re-migrate when migration flag set", async () => {
     const { local } = makeStorage();
-    local["atwebpilot.llm"] = { trustedDangerTools: ["submitForm"], autoApproveDangerous: ["uploadFile"] };
-    local["atwebpilot.llm._migrated_v1"] = true;
+    local["aipagego.llm"] = { trustedDangerTools: ["submitForm"], autoApproveDangerous: ["uploadFile"] };
+    local["aipagego.llm._migrated_v1"] = true;
     const { useSettings } = await import("../settings-store");
     await useSettings.getState().load();
     expect(useSettings.getState().trustedDangerTools).toEqual(["submitForm"]);
@@ -250,7 +250,7 @@ describe("settings-store migration", () => {
 });
 ```
 
-- [ ] **Step 4:** Run `pnpm -F @atwebpilot/extension test settings-store` → expect PASS. Also run `pnpm -F @atwebpilot/shared typecheck` — old `autoApproveDangerous` removal may surface broken imports in shared package. Fix none expected (autoApproveDangerous is only used in settings-store + settings-page + danger-approval-group, all in extension).
+- [ ] **Step 4:** Run `pnpm -F @aipagego/extension test settings-store` → expect PASS. Also run `pnpm -F @aipagego/shared typecheck` — old `autoApproveDangerous` removal may surface broken imports in shared package. Fix none expected (autoApproveDangerous is only used in settings-store + settings-page + danger-approval-group, all in extension).
 
 - [ ] **Step 5:** Search for stale `autoApproveDangerous` references in the extension package and stub-fix them to read from `trustedDangerTools` so typecheck stays green:
 
@@ -370,7 +370,7 @@ describe("session-store permissionMode", () => {
 });
 ```
 
-- [ ] **Step 5:** `pnpm -F @atwebpilot/extension test session-store ui-store`. Expect PASS.
+- [ ] **Step 5:** `pnpm -F @aipagego/extension test session-store ui-store`. Expect PASS.
 
 - [ ] **Step 6:** `pnpm -r typecheck` → green.
 
@@ -403,7 +403,7 @@ const auto = evaluateAutoApproval(toolName, severity, session.permissionMode, se
 
 - [ ] **Step 3:** Delete the deprecated `autoApproves` function from `severity.ts` (clean removal). Run typecheck.
 
-- [ ] **Step 4:** `pnpm -F @atwebpilot/extension test` → all tests still pass.
+- [ ] **Step 4:** `pnpm -F @aipagego/extension test` → all tests still pass.
 
 - [ ] **Step 5:** Commit:
 
@@ -636,7 +636,7 @@ describe("PermissionModePill", () => {
 });
 ```
 
-- [ ] **Step 3:** `pnpm -F @atwebpilot/extension test permission-mode-pill` → PASS.
+- [ ] **Step 3:** `pnpm -F @aipagego/extension test permission-mode-pill` → PASS.
 
 - [ ] **Step 4:** Commit:
 
@@ -755,7 +755,7 @@ These are small, mostly visual; bundle into one commit per file but light tests.
 
 - [ ] **B3f `mention-picker.tsx`:** Popover anchored above input. Accepts `{ tabs: AttachedTab[]; onPick: (tab: AttachedTab) => void; onClose: () => void }`. Renders simple list of tabs; keyboard-navigable (↑↓ + Enter). Test: arrow keys + Enter picks the right tab.
 
-After each: write component, write at least 1 test asserting key behavior, run `pnpm -F @atwebpilot/extension test <name>` (PASS), commit:
+After each: write component, write at least 1 test asserting key behavior, run `pnpm -F @aipagego/extension test <name>` (PASS), commit:
 
 ```bash
 git add packages/extension/src/sidepanel/.../<name>.tsx \
@@ -810,7 +810,7 @@ export function Header({ session, onNewChat }: Props) {
   return (
     <div className="border-b border-zinc-800 bg-zinc-900">
       <div className="flex items-center justify-between px-3 py-2">
-        <div className="font-bold text-zinc-100 text-sm tracking-tight">AtWebPilot</div>
+        <div className="font-bold text-zinc-100 text-sm tracking-tight">AIPageGo</div>
         <div className="flex gap-1">
           <IconBtn label="新会话" onClick={onNewChat}>＋</IconBtn>
           <IconBtn label="历史" onClick={() => open("history")}>⏱</IconBtn>
@@ -840,7 +840,7 @@ function IconBtn({ label, onClick, badge, children }: { label: string; onClick: 
 
 - [ ] **Step 3:** Test: renders 5 buttons; clicking each calls `open` with correct kind or `onNewChat`. Badge color test for each `debugBadge.kind`.
 
-- [ ] **Step 4:** `pnpm -F @atwebpilot/extension test header`. Commit:
+- [ ] **Step 4:** `pnpm -F @aipagego/extension test header`. Commit:
 
 ```bash
 git add packages/extension/src/sidepanel/shell/header.tsx \
@@ -975,7 +975,7 @@ git commit -m "feat(sidepanel): add SettingsDrawer with 5 sections + DevJsonModa
 
 - [ ] **Step 1:** Replace `import { App } from "./app"` with `import { AppShell } from "./shell/app-shell"`. Render `<AppShell />`.
 
-- [ ] **Step 2:** Run `pnpm -F @atwebpilot/extension build` → expect green (catches missing exports).
+- [ ] **Step 2:** Run `pnpm -F @aipagego/extension build` → expect green (catches missing exports).
 
 - [ ] **Step 3:** Commit:
 

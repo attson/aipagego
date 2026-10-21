@@ -4,7 +4,7 @@ import { _resetDBForTests } from "@/background/storage/db";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import { ensureSession, makeEmptySession, useStore } from "@/sidepanel/chat/session-store";
 import { installAutoPersist, flushAllPending, _resetAutoPersistForTests, clearPersistStateFor, setPersistIdFor, toPersistedData } from "@/sidepanel/chat/persistence/auto-persist";
-import type { LlmExchange } from "@atwebpilot/shared/types";
+import type { LlmExchange } from "@aipagego/shared/types";
 
 const URL = "https://example.com";
 

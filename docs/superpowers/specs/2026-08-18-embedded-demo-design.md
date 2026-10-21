@@ -12,7 +12,7 @@ mounting.
 
 ## Problem
 
-The docs site has no way to show what AtWebPilot does. A browser extension cannot
+The docs site has no way to show what AIPageGo does. A browser extension cannot
 be "tried online" — it has to be installed — so the homepage currently asks
 people to download a zip and configure an API key before they can form any
 impression at all.
@@ -23,7 +23,7 @@ reading a page, asking for approval, and visibly changing that page.
 
 ## Goals
 
-- Put a working AtWebPilot on the homepage that a visitor can watch drive a real
+- Put a working AIPageGo on the homepage that a visitor can watch drive a real
   DOM, with no install and no API key.
 - Run the **real** side panel UI and the **real** content tools, not a
   reimplementation — a demo that drifts from the product is worse than none.
@@ -45,7 +45,7 @@ reading a page, asking for approval, and visibly changing that page.
 
 `atstarter` mounts its real frontend directly inside VitePress —
 `import FrontendApp from '.../frontend/src/App.vue'`. That works because both
-are Vue. AtWebPilot's side panel is **React**, so a direct mount means
+are Vue. AIPageGo's side panel is **React**, so a direct mount means
 React-in-Vue interop plus both toolchains in the docs build. An iframe sidesteps
 that entirely and, for a side panel, is also the more natural frame.
 
@@ -55,7 +55,7 @@ The demo is a self-contained app that the homepage embeds:
 
 ```
 VitePress homepage
-└── <iframe src="/atwebpilot/demo/">          demo document
+└── <iframe src="/aipagego/demo/">          demo document
      ├── mock product page                    ← the DOM the tools operate on
      ├── <iframe> side panel                  ← the real React app
      └── harness                              ← stands in for the service worker

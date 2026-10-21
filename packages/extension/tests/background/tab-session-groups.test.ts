@@ -65,7 +65,7 @@ describe("TabSessionGroupManager", () => {
     expect(h.tabs.get(1)?.groupId).toBe(h.tabs.get(2)?.groupId);
     expect(h.groups.size).toBe(1);
     expect([...h.groups.values()][0]).toMatchObject({
-      title: "AtWebPilot · MCP · abcdef",
+      title: "AIPageGo · MCP · abcdef",
       color: "green"
     });
   });
@@ -135,7 +135,7 @@ describe("TabSessionGroupManager", () => {
     h.groups.set(55, {
       id: 55,
       windowId: 7,
-      title: "AtWebPilot · MCP · stale1",
+      title: "AIPageGo · MCP · stale1",
       color: "green"
     });
 

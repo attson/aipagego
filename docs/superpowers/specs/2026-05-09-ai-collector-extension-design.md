@@ -272,7 +272,7 @@ MV3 content script 默认在 **isolated world**：能访问页面 DOM，但拿�
 浏览器本地（单设备、单浏览器、单 profile）
 │
 ├── IndexedDB (extension origin) — 主数据
-│   └── atwebpilot.db
+│   └── aipagego.db
 │        ├── tools     (key: id)            ← 工具主表
 │        ├── versions  (index: toolId)      ← 历史版本
 │        └── runs      (index: toolId)      ← 运行记录
@@ -311,7 +311,7 @@ API Key 单独放 `chrome.storage.local`：
 
 ```json
 {
-  "schema": "atwebpilot.tools/v1",
+  "schema": "aipagego.tools/v1",
   "exportedAt": 1715212800000,
   "tools": [ /* Tool[] without runs */ ]
 }
@@ -320,7 +320,7 @@ API Key 单独放 `chrome.storage.local`：
 ## 8. 模块边界与文件结构
 
 ```
-atwebpilot2/
+aipagego2/
 ├─ manifest.json
 ├─ package.json
 ├─ tsconfig.json

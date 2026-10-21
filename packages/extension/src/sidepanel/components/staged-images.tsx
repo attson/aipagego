@@ -1,4 +1,4 @@
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 
 type Props = {
   images: ImagePart[];

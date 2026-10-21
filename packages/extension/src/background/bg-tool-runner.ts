@@ -1,4 +1,4 @@
-import type { Json, Step } from "@atwebpilot/shared/types";
+import type { Json, Step } from "@aipagego/shared/types";
 import type { ToolRunner } from "@/sidepanel/chat/tool-runner";
 import { runOneStep } from "./rpc-handlers";
 

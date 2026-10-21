@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 export async function injectMain(source: string, args: Json): Promise<Json> {
   const res = (await chrome.runtime.sendMessage({

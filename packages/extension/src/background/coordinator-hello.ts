@@ -1,8 +1,8 @@
 import {
   PROTOCOL_VERSION,
   type Hello
-} from "@atwebpilot/shared/protocol";
-import { CAPABILITIES } from "@atwebpilot/shared/capability";
+} from "@aipagego/shared/protocol";
+import { CAPABILITIES } from "@aipagego/shared/capability";
 import { TOOLS } from "@/content/tools";
 import { META_TOOL_NAMES } from "./meta-tool-router";
 

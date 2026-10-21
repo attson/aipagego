@@ -1,4 +1,4 @@
-import type { ScanFinding } from "@atwebpilot/shared/types";
+import type { ScanFinding } from "@aipagego/shared/types";
 
 export function StaticScanBadge(props: { findings: ScanFinding[] }) {
   if (props.findings.length === 0) return null;

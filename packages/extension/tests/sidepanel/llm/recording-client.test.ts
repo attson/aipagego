@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createRecordingClient } from "@/sidepanel/llm/recording-client";
 import type { LlmClient, LlmStreamEvent } from "@/sidepanel/llm/types";
-import type { LlmExchange } from "@atwebpilot/shared/types";
+import type { LlmExchange } from "@aipagego/shared/types";
 
 function fakeClient(events: LlmStreamEvent[]): LlmClient {
   return {

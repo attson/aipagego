@@ -1,17 +1,17 @@
 /**
- * Right-click → "AtWebPilot" entries. Writes the chosen prompt to
- * chrome.storage.local under `atwebpilot.pending_prompt` (5s TTL) and opens
+ * Right-click → "AIPageGo" entries. Writes the chosen prompt to
+ * chrome.storage.local under `aipagego.pending_prompt` (5s TTL) and opens
  * the side panel for the active tab. The sidepanel's `usePendingPrompt`
  * hook consumes and clears the value on next mount.
  */
 
-export const PENDING_PROMPT_KEY = "atwebpilot.pending_prompt";
+export const PENDING_PROMPT_KEY = "aipagego.pending_prompt";
 export const PENDING_TTL_MS = 5_000;
 
 const MENU_IDS = {
-  summarize: "atwebpilot.summarize",
-  extract: "atwebpilot.extract",
-  custom: "atwebpilot.custom",
+  summarize: "aipagego.summarize",
+  extract: "aipagego.extract",
+  custom: "aipagego.custom",
 } as const;
 
 export type PendingPrompt = {
@@ -26,17 +26,17 @@ export function registerContextMenus(): void {
     chrome.contextMenus.removeAll(() => {
       chrome.contextMenus.create({
         id: MENU_IDS.summarize,
-        title: "AtWebPilot：总结此页",
+        title: "AIPageGo：总结此页",
         contexts: ["page"],
       });
       chrome.contextMenus.create({
         id: MENU_IDS.extract,
-        title: "AtWebPilot：处理此选区",
+        title: "AIPageGo：处理此选区",
         contexts: ["selection"],
       });
       chrome.contextMenus.create({
         id: MENU_IDS.custom,
-        title: "AtWebPilot：让 AI 处理…",
+        title: "AIPageGo：让 AI 处理…",
         contexts: ["page", "selection"],
       });
     });

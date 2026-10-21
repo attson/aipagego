@@ -1,4 +1,4 @@
-import type { ChatMessage, ImagePart, Json, TextPart, ToolResultPart } from "@atwebpilot/shared/types";
+import type { ChatMessage, ImagePart, Json, TextPart, ToolResultPart } from "@aipagego/shared/types";
 
 /**
  * Anthropic accepts `image` content blocks natively. We also need to

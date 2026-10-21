@@ -1,4 +1,4 @@
-import type { Json, JsonSchema } from "@atwebpilot/shared/types";
+import type { Json, JsonSchema } from "@aipagego/shared/types";
 import { handleBrowserTool, prepareBrowserTool, type Deps } from "./handlers";
 import type { GeneratedTool } from "./tool-gen";
 

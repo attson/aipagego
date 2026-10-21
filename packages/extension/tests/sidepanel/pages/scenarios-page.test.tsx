@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { ScenariosPage } from "@/sidepanel/pages/scenarios-page";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { PRESETS } from "@aipagego/shared/presets";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

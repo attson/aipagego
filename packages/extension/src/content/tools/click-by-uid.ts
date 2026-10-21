@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { lookupUid } from "./uid-cache";
 
 export async function clickByUid(args: Json): Promise<Json> {

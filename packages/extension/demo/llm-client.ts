@@ -1,4 +1,4 @@
-import type { LlmClient, LlmProvider, LlmStreamEvent } from "@atwebpilot/shared/llm";
+import type { LlmClient, LlmProvider, LlmStreamEvent } from "@aipagego/shared/llm";
 import { DEMO_ROUNDS, ROUND_DELAY_MS } from "./scenario";
 
 /**

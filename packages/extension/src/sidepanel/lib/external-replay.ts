@@ -1,6 +1,6 @@
-import type { Step } from "@atwebpilot/shared/types";
+import type { Step } from "@aipagego/shared/types";
 
-export const PENDING_REPLAY_KEY = "atwebpilot.pending_replay";
+export const PENDING_REPLAY_KEY = "aipagego.pending_replay";
 export const PENDING_REPLAY_TTL_MS = 30_000;
 
 export type ReplayPayload = {

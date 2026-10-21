@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CoordinatorChatHost } from "@/background/coordinator-chat";
 import * as state from "@/background/coordinator-state";
-import type { ServerToClient, ClientToServer } from "@atwebpilot/shared/protocol";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import type { ServerToClient, ClientToServer } from "@aipagego/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 import type { Approver } from "@/sidepanel/chat/approval";
 
 function makeEnv() {

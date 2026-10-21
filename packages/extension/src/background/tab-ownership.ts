@@ -1,4 +1,4 @@
-import type { TabOwner } from "@atwebpilot/shared/pairing";
+import type { TabOwner } from "@aipagego/shared/pairing";
 
 /**
  * Which session is driving which tab.

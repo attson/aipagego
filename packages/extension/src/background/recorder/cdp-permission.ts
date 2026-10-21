@@ -4,7 +4,7 @@
  * install time even if they never turn the CDP backend on.
  */
 
-const SETTING_KEY = "atwebpilot.recorder.cdpEnabled";
+const SETTING_KEY = "aipagego.recorder.cdpEnabled";
 
 export async function hasDebuggerPermission(): Promise<boolean> {
   if (!chrome.permissions?.contains) return false;

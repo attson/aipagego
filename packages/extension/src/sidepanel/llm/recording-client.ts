@@ -1,4 +1,4 @@
-import type { Json, LlmExchange, LlmExchangeResponse, LlmProvider } from "@atwebpilot/shared/types";
+import type { Json, LlmExchange, LlmExchangeResponse, LlmProvider } from "@aipagego/shared/types";
 import type { LlmClient } from "./types";
 import { truncateMessages } from "./truncate";
 

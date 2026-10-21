@@ -34,7 +34,7 @@ type Deps = {
   save(state: PersistedState): Promise<void>;
 };
 
-const STORAGE_KEY = "atwebpilot.tabSessionGroups";
+const STORAGE_KEY = "aipagego.tabSessionGroups";
 const NO_GROUP = -1;
 
 export class TabSessionGroupManager {
@@ -155,7 +155,7 @@ export class TabSessionGroupManager {
       for (const sessionId of sessionIds) await this.releaseSessionNow(sessionId);
 
       const cleaned = new Set(trackedTabIds);
-      const prefix = `AtWebPilot · ${sourceLabel(source)} ·`;
+      const prefix = `AIPageGo · ${sourceLabel(source)} ·`;
       const groups = await this.deps.queryGroups({});
       for (const group of groups) {
         if (!group.title?.startsWith(prefix)) continue;
@@ -247,7 +247,7 @@ export class TabSessionGroupManager {
   private async decorate(group: GroupRecord): Promise<void> {
     const status = group.status === "awaiting" ? " · 等待确认" : "";
     await this.deps.updateGroup(group.groupId, {
-      title: `AtWebPilot · ${sourceLabel(group.source)} · ${shortId(group.sessionId)}${status}`,
+      title: `AIPageGo · ${sourceLabel(group.source)} · ${shortId(group.sessionId)}${status}`,
       color: sourceColor(group.source),
       collapsed: false
     });

@@ -6,10 +6,10 @@
  */
 
 const STORAGE_KEYS = {
-  worker_id: "atwebpilot.coordinator.worker_id",
-  token: "atwebpilot.coordinator.token",
-  config: "atwebpilot.coordinator.config",
-  connection_status: "atwebpilot.coordinator.connection_status"
+  worker_id: "aipagego.coordinator.worker_id",
+  token: "aipagego.coordinator.token",
+  config: "aipagego.coordinator.config",
+  connection_status: "aipagego.coordinator.connection_status"
 } as const;
 
 export const COORDINATOR_CONNECTION_STATUS_KEY = STORAGE_KEYS.connection_status;
@@ -78,7 +78,7 @@ export async function clearToken(): Promise<void> {
   await chrome.storage.local.remove(STORAGE_KEYS.token);
 }
 
-const ALLOW_REMOTE_CHAT_KEY = "atwebpilot.coordinator.allow_remote_chat";
+const ALLOW_REMOTE_CHAT_KEY = "aipagego.coordinator.allow_remote_chat";
 
 export async function loadAllowRemoteChat(): Promise<boolean> {
   const got = await chrome.storage.local.get([ALLOW_REMOTE_CHAT_KEY]);

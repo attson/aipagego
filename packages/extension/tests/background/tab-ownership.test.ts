@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { TabOwnership } from "@/background/tab-ownership";
-import { deriveTabView } from "@atwebpilot/shared/pairing";
+import { deriveTabView } from "@aipagego/shared/pairing";
 
-const a = { connectionId: "conn-a", sessionId: "sess-a", label: "~/code/atwebpilot2" };
+const a = { connectionId: "conn-a", sessionId: "sess-a", label: "~/code/aipagego" };
 const b = { connectionId: "conn-b", sessionId: "sess-b", label: "~/code/wanxin" };
 
 describe("TabOwnership", () => {
   it("records who claimed a tab", () => {
     const o = new TabOwnership();
     o.claim("42", a);
-    expect(o.owners()).toEqual({ "42": { connectionId: "conn-a", label: "~/code/atwebpilot2" } });
+    expect(o.owners()).toEqual({ "42": { connectionId: "conn-a", label: "~/code/aipagego" } });
   });
 
   it("releasing by session clears only that session's tabs", () => {
@@ -77,7 +77,7 @@ describe("TabOwnership", () => {
     expect(deriveTabView(tabs, o.owners(), "conn-b")[0]).toMatchObject({
       mine: false,
       busy: true,
-      busy_label: "~/code/atwebpilot2"
+      busy_label: "~/code/aipagego"
     });
   });
 });

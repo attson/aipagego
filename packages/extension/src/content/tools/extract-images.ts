@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 type Args = { root?: string; includeBg?: boolean };
 type ImageRef = { url: string; via: "src" | "data-src" | "data-original" | "srcset" | "bg" };

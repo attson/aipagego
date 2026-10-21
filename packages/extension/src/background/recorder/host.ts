@@ -1,5 +1,5 @@
-import type { Json } from "@atwebpilot/shared/types";
-import type { PageRecorder } from "@atwebpilot/shared/recorder";
+import type { Json } from "@aipagego/shared/types";
+import type { PageRecorder } from "@aipagego/shared/recorder";
 import { DRAIN_SOURCE } from "@/content/recorder/drain";
 import { MainWorldRecorder } from "./main-world-host";
 

@@ -2,12 +2,12 @@
 
 - 日期：2026-05-14
 - 状态：草案，待评审
-- 范围：让一次 AtWebPilot 会话可以读写多个浏览器 tab 的数据；保留现有 per-tab 会话隔离作为默认，跨 tab 是显式扩展
+- 范围：让一次 AIPageGo 会话可以读写多个浏览器 tab 的数据；保留现有 per-tab 会话隔离作为默认，跨 tab 是显式扩展
 - 前置：Plan 4（Per-Tab 会话）已落地
 
 ## 1. 背景与目标
 
-当前 AtWebPilot 一个会话只能操作绑定的那个 tab（`sessionsByTab` + `currentTabId`，见 `2026-05-10-plan4-per-tab-sessions-design.md`）。但用户在做对比、汇总、跨页核对一类的分析时，常常需要把多个已打开 tab 的数据放到同一段对话里判断。例如：
+当前 AIPageGo 一个会话只能操作绑定的那个 tab（`sessionsByTab` + `currentTabId`，见 `2026-05-10-plan4-per-tab-sessions-design.md`）。但用户在做对比、汇总、跨页核对一类的分析时，常常需要把多个已打开 tab 的数据放到同一段对话里判断。例如：
 
 - 同款商品在多个电商平台的价格、规格、评价横向对比
 - 同一篇报告分散在三个内部页面里，让 AI 汇总成一篇

@@ -1,10 +1,10 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import type {
   ConsoleLevel,
   DialogPolicy,
   NetworkPart,
   RecorderConfigPatch
-} from "@atwebpilot/shared/recorder";
+} from "@aipagego/shared/recorder";
 import { getRecorder } from "../recorder/host";
 
 /**

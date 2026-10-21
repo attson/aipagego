@@ -21,7 +21,7 @@ Claude Code ──stdio/MCP──► MCP server ──verbs──► Coordinator
 - **本地单人交互**：单 worker、stdio 启动、无需真正的多租户认证（token 仅本地比对）。不做多 worker 选择、跨机、打包发布。
 - **自动生成工具面**：复用扩展现成的 `TOOL_DEFS`（19 个内置工具的完整 JSON Schema），启动时为每个生成一个带真 schema 的 MCP 工具，Claude **零猜测、零漂移**。
 - **复用 Coordinator 门面**：走现有 `session / quota / policy / catalog` 状态机，兑现 `coordinator.ts` 注释里「MCP server (Phase 3) 复用门面」的原始设计，并为未来远程多租户铺路。
-- **拓扑方案 A**：新建 `packages/mcp-server` 独占重运行时依赖；`@atwebpilot/coordinator` 保持纯逻辑零运行时依赖。
+- **拓扑方案 A**：新建 `packages/mcp-server` 独占重运行时依赖；`@aipagego/coordinator` 保持纯逻辑零运行时依赖。
 
 ### 非目标（YAGNI）
 
@@ -35,7 +35,7 @@ Claude Code ──stdio/MCP──► MCP server ──verbs──► Coordinator
 
 ```
 packages/mcp-server/                 ← 新包
-  package.json        deps: @atwebpilot/coordinator, @atwebpilot/shared,
+  package.json        deps: @aipagego/coordinator, @aipagego/shared,
                             ws, @modelcontextprotocol/sdk, zod
   src/
     index.ts          bin 入口：读 env（PORT / TOKEN）→ 装配并启动
@@ -60,7 +60,7 @@ packages/mcp-server/                 ← 新包
                                                            浏览器扩展 (worker)──► 网页
 ```
 
-- `@atwebpilot/coordinator` **不改**，保持零运行时依赖。
+- `@aipagego/coordinator` **不改**，保持零运行时依赖。
 - 新包独占 `ws` 与 `@modelcontextprotocol/sdk`。
 
 ## 3. 组件职责
@@ -74,7 +74,7 @@ packages/mcp-server/                 ← 新包
 
 ### ② `tool-gen.ts`
 
-遍历 `TOOL_DEFS`（**从 `packages/extension/src/sidepanel/llm/tool-schema.ts` 上提到 `@atwebpilot/shared`**，扩展与 MCP server 共用一份源头），每条生成一个 MCP 工具：
+遍历 `TOOL_DEFS`（**从 `packages/extension/src/sidepanel/llm/tool-schema.ts` 上提到 `@aipagego/shared`**，扩展与 MCP server 共用一份源头），每条生成一个 MCP 工具：
 
 - 名字 `browser_<toolName>`（如 `browser_click`）。
 - input schema = 该工具的 `input_schema`，**移除内部 `tabId` 字段**（target tab 由 session 决定），**注入 `session_id`（required）**。
@@ -156,14 +156,14 @@ Claude ──browser_click{session_id,selector}──► mcp-server
 - **单元 `tool-gen`**：喂 `TOOL_DEFS`，断言生成的 MCP 工具名 / schema（去掉 `tabId`、注入 `session_id`、`required` 正确）。
 - **`LoopbackWSHub` 端到端**：起真 ws server，假 worker socket 连入发 `HELLO` → 断言收 `WELCOME`；`hub.exec` 发 `EXEC`、假 worker 回 `RESULT` → 断言 promise resolve；另测超时 reject、掉线 reject 两条路径。
 - **桥接集成**：真门面 + `FakeClock`/`FakeIdGen`，跑 `open_session → browser_click → close_session` 全链路，断言 `validateCall` 被调、配额自增、`RESULT` 透传。
-- **协议复用**：EXEC/RESULT 仍走 `@atwebpilot/shared` zod 校验；参照现有 `coordinator-e2e.test.ts`。
+- **协议复用**：EXEC/RESULT 仍走 `@aipagego/shared` zod 校验；参照现有 `coordinator-e2e.test.ts`。
 
 ## 8. 影响面 / 改动清单
 
 - **新增** `packages/mcp-server/`（4 个 src 文件 + package.json + tests）。
-- **改动** `@atwebpilot/shared`：上提 `TOOL_DEFS`（及其 `LlmTool` 类型依赖）到 `shared/mcp-tools/`（或 `shared/builtin-tools/`），导出供两端复用。
+- **改动** `@aipagego/shared`：上提 `TOOL_DEFS`（及其 `LlmTool` 类型依赖）到 `shared/mcp-tools/`（或 `shared/builtin-tools/`），导出供两端复用。
 - **改动** `packages/extension`：`tool-schema.ts` 改为 re-export shared 的 `TOOL_DEFS`（保持扩展侧零行为变化）。
-- **不改** `@atwebpilot/coordinator`（仅被复用）。
+- **不改** `@aipagego/coordinator`（仅被复用）。
 - 根 `package.json` workspace / `pnpm-workspace.yaml` 纳入新包；`pnpm -r typecheck/test/build` 覆盖。
 
 ## 9. 手动验收

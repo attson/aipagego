@@ -1,13 +1,13 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { lookupUid } from "./uid-cache";
 
-const ELEMENT_CLASS = "atwebpilot-highlight-el";
-const TEXT_CLASS = "atwebpilot-highlight-text";
+const ELEMENT_CLASS = "aipagego-highlight-el";
+const TEXT_CLASS = "aipagego-highlight-text";
 
 function ensureStyles(): void {
-  if (document.getElementById("atwebpilot-highlight-style")) return;
+  if (document.getElementById("aipagego-highlight-style")) return;
   const s = document.createElement("style");
-  s.id = "atwebpilot-highlight-style";
+  s.id = "aipagego-highlight-style";
   s.textContent = `
     .${ELEMENT_CLASS} {
       outline: 2px dashed #ef4444 !important;

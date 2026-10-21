@@ -2,13 +2,13 @@
 
 **状态**：草稿 · 2026-07-06 · 作者：assistant + attson
 
-给 AtWebPilot 项目做一个 GitHub Pages 展示站：既是给普通用户的产品落地页（是什么、能干啥、怎么装），也是给开发者的文档站（工具参考、Coordinator、MCP Bridge）。中英双语，中文为主。
+给 AIPageGo 项目做一个 GitHub Pages 展示站：既是给普通用户的产品落地页（是什么、能干啥、怎么装），也是给开发者的文档站（工具参考、Coordinator、MCP Bridge）。中英双语，中文为主。
 
 ## 1 · 背景
 
 现状：项目介绍只有 `README.md`（12 KB 长中文），其他文档散落在 `docs/superpowers/{specs,plans}/`（30+ 份内部设计文档，非用户友好）。想装 / 用 / 集成的人只能读 README；国际访客只能读中文。
 
-要做的：一个可以 `https://attson.github.io/atwebpilot/` 直达的**双入口**站点：
+要做的：一个可以 `https://attson.github.io/aipagego/` 直达的**双入口**站点：
 - 用户从首页 hero 进 → 3 分钟看懂"是什么、装到哪、发第一条 prompt"
 - 开发者从顶部 nav 进 `/tools` → 20 个内置工具的 args schema + 例子；进 `/advanced` → Coordinator / MCP Bridge 集成细节
 
@@ -54,7 +54,7 @@
 ```
 ┌────────────────────────────────────────────────────┐
 │                                                    │
-│                   AtWebPilot                       │
+│                   AIPageGo                       │
 │                                                    │
 │           AI 网页助手 · 在当前 tab 上读写采          │
 │                                                    │
@@ -95,7 +95,7 @@
 ### 3.2 顶部 nav
 
 ```
-[AtWebPilot logo]  首页  快速上手 ▾  工具 ▾  高阶 ▾            [ 中/EN toggle ]  [ GitHub icon ]
+[AIPageGo logo]  首页  快速上手 ▾  工具 ▾  高阶 ▾            [ 中/EN toggle ]  [ GitHub icon ]
 ```
 
 ## 4 · 技术栈与目录
@@ -152,9 +152,9 @@ docs-site/
 
 ### 5.1 站点根路径
 
-GitHub Pages 部署地址：`https://attson.github.io/atwebpilot/`
+GitHub Pages 部署地址：`https://attson.github.io/aipagego/`
 
-VitePress `config.ts` 里 `base: '/atwebpilot/'`，所有内链自动加前缀。
+VitePress `config.ts` 里 `base: '/aipagego/'`，所有内链自动加前缀。
 
 ### 5.2 i18n 策略
 
@@ -176,7 +176,7 @@ MVP 阶段 EN 只翻译 5 页；未翻译的 EN 页面显示一个约定占位�
 
 ### 5.3 Base URL / dev vs prod
 
-- dev：`pnpm dev` 起本地 `http://localhost:5173/atwebpilot/`
+- dev：`pnpm dev` 起本地 `http://localhost:5173/aipagego/`
 - CI build：`pnpm build` 产出到 `docs-site/.vitepress/dist/`
 
 ## 6 · 工具参考自动生成
@@ -222,7 +222,7 @@ MVP 阶段 EN 只翻译 5 页；未翻译的 EN 页面显示一个约定占位�
 
 ### 6.1 CI 里的 gen sanity
 
-`scripts/check-tools-gen.mjs`：跑 gen → diff 提交状态；如果生成结果与仓库里的不一致，CI 失败并提示"跑 pnpm --filter atwebpilot-docs gen 后再提交"。
+`scripts/check-tools-gen.mjs`：跑 gen → diff 提交状态；如果生成结果与仓库里的不一致，CI 失败并提示"跑 pnpm --filter aipagego-docs gen 后再提交"。
 
 ## 7 · 部署 workflow
 
@@ -237,9 +237,9 @@ MVP 阶段 EN 只翻译 5 页；未翻译的 EN 页面显示一个约定占位�
   1. checkout
   2. setup Node 20 + enable pnpm 8
   3. `cd docs-site && pnpm install --frozen-lockfile`
-  4. `pnpm --filter atwebpilot-docs gen`（从 TOOL_DEFS 重生）
-  5. `pnpm --filter atwebpilot-docs check-gen`（sanity；如果本地忘了跑 gen，CI 失败）—— 或者跳过 check 直接用刚生成的（简单）
-  6. `pnpm --filter atwebpilot-docs build`
+  4. `pnpm --filter aipagego-docs gen`（从 TOOL_DEFS 重生）
+  5. `pnpm --filter aipagego-docs check-gen`（sanity；如果本地忘了跑 gen，CI 失败）—— 或者跳过 check 直接用刚生成的（简单）
+  6. `pnpm --filter aipagego-docs build`
   7. `actions/upload-pages-artifact@v3`  path: `docs-site/.vitepress/dist`
   8. `actions/deploy-pages@v4`
 
@@ -275,17 +275,17 @@ frontmatter 用 VitePress `layout: home`：
 ---
 layout: home
 hero:
-  name: AtWebPilot
+  name: AIPageGo
   text: AI 网页助手
   tagline: 在当前 tab 上读、写、采
   image: /mockups/sidepanel-hero.svg
   actions:
     - theme: brand
       text: 下载最新版本
-      link: https://github.com/attson/atwebpilot/releases/latest
+      link: https://github.com/attson/aipagego/releases/latest
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/attson/atwebpilot
+      link: https://github.com/attson/aipagego
 features:
   - title: 读
     details: 总结、翻译、抽重点、回答本页问题
@@ -303,7 +303,7 @@ frontmatter 下方再补充 markdown：三行示例 prompt + Coordinator/MCP 一
 ### /guide/install
 
 - chrome://extensions 加载 dist 三步走
-- npm 装 MCP：`claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp`
+- npm 装 MCP：`claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp`
 - Coordinator 可选：连 ws://127.0.0.1:8787/worker
 
 ### /guide/config
@@ -345,7 +345,7 @@ frontmatter 下方再补充 markdown：三行示例 prompt + Coordinator/MCP 一
 
 - Claude Code 侧配置
 - 可用 MCP tools 列表（`list_tabs`, `open_session`, `browser_*` × 19, `get_quota`, `close_session`）
-- `pnpm -F @atwebpilot/mcp-server start`
+- `pnpm -F @aipagego/mcp-server start`
 
 ## 10 · 数据流
 
@@ -358,23 +358,23 @@ GitHub Actions workflow deploy-docs.yml
     ↓
 checkout + install
     ↓
-pnpm --filter atwebpilot-docs gen  ← 从 TOOL_DEFS 生成 tools/*.md
+pnpm --filter aipagego-docs gen  ← 从 TOOL_DEFS 生成 tools/*.md
     ↓
-pnpm --filter atwebpilot-docs build ← VitePress 打包
+pnpm --filter aipagego-docs build ← VitePress 打包
     ↓
 upload-pages-artifact
     ↓
 deploy-pages
     ↓
-https://attson.github.io/atwebpilot/ 更新
+https://attson.github.io/aipagego/ 更新
 ```
 
 ## 11 · 测试
 
 站点无单元测试（VitePress 是静态生成 + 手工内容）。CI 层面靠 build 成功验证：
 
-- `pnpm --filter atwebpilot-docs gen` 不报错
-- `pnpm --filter atwebpilot-docs build` 不报错（内链坏了 VitePress 会 warn / error）
+- `pnpm --filter aipagego-docs gen` 不报错
+- `pnpm --filter aipagego-docs build` 不报错（内链坏了 VitePress 会 warn / error）
 - 本地手工 QA（`pnpm dev`）：
   - [ ] 首页三条 CTA 都能点
   - [ ] Nav 中/EN toggle 切换后 URL 前缀正确

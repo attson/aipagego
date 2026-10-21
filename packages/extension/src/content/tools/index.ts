@@ -1,4 +1,4 @@
-import type { BuiltinTool, Json } from "@atwebpilot/shared/types";
+import type { BuiltinTool, Json } from "@aipagego/shared/types";
 import { click } from "./click";
 import { clickByUid } from "./click-by-uid";
 import { extractFormState } from "./extract-form-state";

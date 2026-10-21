@@ -40,7 +40,7 @@ Defaults:
 
 Optional `--claude-dir` and `--codex-dir` overrides support fixtures and custom
 installations. `--latest-session` keeps only the most recent session containing
-an AtWebPilot call. `--format json` returns the same aggregated report as
+an AIPageGo call. `--format json` returns the same aggregated report as
 structured JSON. The CLI exits successfully when a client directory is missing
 and reports that client as unavailable.
 
@@ -72,7 +72,7 @@ counts, affected session counts and estimated avoidable model rounds.
 - Direct calls: `response_item.payload.type == "function_call"` or
   `custom_tool_call`, joined to their corresponding output by `call_id`.
 - Nested calls made through the Codex `exec` orchestrator are identified only
-  when its source contains an actual `tools.mcp__atwebpilot__...(` invocation.
+  when its source contains an actual `tools.mcp__aipagego__...(` invocation.
   They are marked `confidence: "derived"`; argument values remain unavailable.
 - A yielded exec cell is joined to subsequent `wait` calls until terminal
   completion. Result bytes, boolean error/pairing signals and duration are
@@ -80,8 +80,8 @@ counts, affected session counts and estimated avoidable model rounds.
 - Adjacent `token_count.last_token_usage` records are attributed to the active
   call chain, splitting total input into cached and uncached input.
 
-Both adapters normalize `mcp__atwebpilot__browser_screenshot` to
-`browser_screenshot`. Calls unrelated to AtWebPilot are ignored.
+Both adapters normalize `mcp__aipagego__browser_screenshot` to
+`browser_screenshot`. Calls unrelated to AIPageGo are ignored.
 
 ## Rules
 
@@ -100,7 +100,7 @@ The first rule set detects:
 - `pairing_retry_without_state_change`: `list_tabs` repeated while pairing was
   still required.
 
-Sequence rules inspect only AtWebPilot calls within the same local session and
+Sequence rules inspect only AIPageGo calls within the same local session and
 a small call window. They are heuristics, so the report labels them as
 opportunities rather than guaranteed waste.
 

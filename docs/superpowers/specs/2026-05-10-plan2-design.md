@@ -383,7 +383,7 @@ export function highestSeverity(findings: ScanFinding[]): Severity;
 
 ```
 ┌──────────────────────────────────────────┐
-│ ⚙ atwebpilot2 — 对话采集                       │
+│ ⚙ aipagego2 — 对话采集                       │
 ├──────────────────────────────────────────┤
 │ [Banner: ▶ 此页面可用 2 个工具 ...]        │ ← 仅当 URL 命中
 ├──────────────────────────────────────────┤
@@ -574,7 +574,7 @@ LLM 真接入仍 mock 为主，e2e 留 README 手测脚本（不进 CI）。
 ## 14. 文件结构（增量）
 
 ```
-atwebpilot2/
+aipagego2/
 ├─ src/
 │  ├─ shared/
 │  │  ├─ static-scan.ts                  # NEW

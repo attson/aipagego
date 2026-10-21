@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { captureVisualEvidence } from "@/sidepanel/llm/visual-evidence";
-import type { Json, Step } from "@atwebpilot/shared/types";
+import type { Json, Step } from "@aipagego/shared/types";
 
 describe("captureVisualEvidence", () => {
   it("resolves page-index block target, prepares the element, and captures the viewport", async () => {

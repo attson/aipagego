@@ -21,7 +21,7 @@ type IdentityFile = Identity & { lastPort?: number };
 const FILE = "identity.json";
 
 export function defaultIdentityDir(): string {
-  return join(homedir(), ".atwebpilot");
+  return join(homedir(), ".aipagego");
 }
 
 function read(dir: string): IdentityFile | null {
@@ -42,20 +42,26 @@ function write(dir: string, data: IdentityFile): void {
   writeFileSync(join(dir, FILE), `${JSON.stringify(data, null, 2)}\n`, { mode: 0o600 });
 }
 
-export function loadOrCreateIdentity(dir: string = defaultIdentityDir()): Identity {
-  const existing = read(dir);
+function resolveIdentityFile(dir: string | undefined): { dir: string; existing: IdentityFile | null } {
+  const targetDir = dir ?? defaultIdentityDir();
+  return { dir: targetDir, existing: read(targetDir) };
+}
+
+export function loadOrCreateIdentity(dir?: string): Identity {
+  const resolved = resolveIdentityFile(dir);
+  const existing = resolved.existing;
   if (existing) return { installId: existing.installId, secret: existing.secret };
 
   const created: IdentityFile = {
     installId: `inst_${randomUUID().replace(/-/g, "").slice(0, 16)}`,
     secret: randomBytes(24).toString("base64url")
   };
-  write(dir, created);
+  write(resolved.dir, created);
   return { installId: created.installId, secret: created.secret };
 }
 
-export function loadLastPort(dir: string = defaultIdentityDir()): number | undefined {
-  const existing = read(dir);
+export function loadLastPort(dir?: string): number | undefined {
+  const existing = resolveIdentityFile(dir).existing;
   return typeof existing?.lastPort === "number" ? existing.lastPort : undefined;
 }
 
@@ -64,10 +70,10 @@ export function loadLastPort(dir: string = defaultIdentityDir()): number | undef
  * restart; the identity is what makes doing so safe, by rejecting whatever
  * else may have taken the port in the meantime.
  */
-export function saveLastPort(port: number, dir: string = defaultIdentityDir()): void {
-  const existing = read(dir);
-  const base: IdentityFile = existing ?? { ...loadOrCreateIdentity(dir) };
-  write(dir, { ...base, lastPort: port });
+export function saveLastPort(port: number, dir?: string): void {
+  const resolved = resolveIdentityFile(dir);
+  const base: IdentityFile = resolved.existing ?? { ...loadOrCreateIdentity(resolved.dir) };
+  write(resolved.dir, { ...base, lastPort: port });
 }
 
 export type ProcessInfo = { sessionId: string; label: string; pid: number };

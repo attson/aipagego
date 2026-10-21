@@ -1,5 +1,5 @@
-import { matchPresetsByUrl } from "@atwebpilot/shared/match-presets";
-import type { PromptPreset } from "@atwebpilot/shared/preset";
+import { matchPresetsByUrl } from "@aipagego/shared/match-presets";
+import type { PromptPreset } from "@aipagego/shared/preset";
 
 type Action = { id: string; label: string; prompt: string };
 

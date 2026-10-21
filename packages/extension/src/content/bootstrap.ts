@@ -49,7 +49,7 @@ async function reconcile(): Promise<void> {
   }
 
   void chrome.runtime.sendMessage({
-    type: "atwebpilot.recorderPolicy",
+    type: "aipagego.recorderPolicy",
     enabled: activation.recorder
   }).catch(() => undefined);
 }

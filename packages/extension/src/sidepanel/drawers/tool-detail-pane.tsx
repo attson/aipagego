@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { RunRecord, Tool } from "@atwebpilot/shared/types";
+import type { RunRecord, Tool } from "@aipagego/shared/types";
 import { ResultView } from "@/sidepanel/components/result-view";
 import { StepList } from "@/sidepanel/components/step-list";
 import { currentTabId, rpc } from "@/sidepanel/rpc";

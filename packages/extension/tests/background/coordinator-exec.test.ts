@@ -1,7 +1,7 @@
 import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
 import { handleExec } from "../../src/background/coordinator-exec";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
-import type { Exec } from "@atwebpilot/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
+import type { Exec } from "@aipagego/shared/protocol";
 
 vi.mock("../../src/background/rpc-handlers", () => ({
   runOneStep: vi.fn()

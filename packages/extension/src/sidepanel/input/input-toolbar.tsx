@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Paperclip, Crosshair } from "lucide-react";
-import type { AttachedTab, ImagePart } from "@atwebpilot/shared/types";
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { AttachedTab, ImagePart } from "@aipagego/shared/types";
+import type { LlmSettings } from "@aipagego/shared/types";
 import type { PermissionMode } from "../chat/severity";
 import { optimizePrompt } from "@/sidepanel/lib/optimize-prompt";
 import { StagedImages } from "../components/staged-images";

@@ -1,4 +1,4 @@
-import { deriveTabView, type TabBase } from "@atwebpilot/shared/pairing";
+import { deriveTabView, type TabBase } from "@aipagego/shared/pairing";
 import type { CoordinatorPool } from "./coordinator-pool";
 import type { TabOwnership } from "./tab-ownership";
 

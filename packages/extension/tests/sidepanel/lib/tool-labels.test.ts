@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 import { labelFor, TOOL_LABELS } from "@/sidepanel/lib/tool-labels";
 
 describe("labelFor", () => {

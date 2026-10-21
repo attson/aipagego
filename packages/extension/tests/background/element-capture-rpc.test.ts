@@ -58,7 +58,7 @@ describe("elementCapture.start RPC", () => {
     });
     expect(chrome.tabs.sendMessage).toHaveBeenCalledTimes(2);
     expect(chrome.tabs.sendMessage).toHaveBeenLastCalledWith(42, {
-      type: "atwebpilot.startCapture"
+      type: "aipagego.startCapture"
     });
   });
 });

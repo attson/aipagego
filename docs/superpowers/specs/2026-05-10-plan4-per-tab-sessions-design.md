@@ -7,7 +7,7 @@
 
 ## 1. 目标与定位
 
-AtWebPilot 的会话目前是 sidepanel 全局单例：用户切到另一个浏览器 tab 后再发指令，AI 看到的还是上一个 tab 的对话历史与 url 上下文，导致结果错乱。本 plan 把会话与 tab 绑定，让助手"挂在 tab 上"——每个 tab 独立的对话历史、独立的 step 卡、独立的 token 计数、独立的输入框草稿。
+AIPageGo 的会话目前是 sidepanel 全局单例：用户切到另一个浏览器 tab 后再发指令，AI 看到的还是上一个 tab 的对话历史与 url 上下文，导致结果错乱。本 plan 把会话与 tab 绑定，让助手"挂在 tab 上"——每个 tab 独立的对话历史、独立的 step 卡、独立的 token 计数、独立的输入框草稿。
 
 非目标：
 - 持久化（关浏览器后恢复）
@@ -507,7 +507,7 @@ tests/sidepanel/chat/
 8. 全量回归（149 tests + 手测三个场景）
 
 **不影响**：
-- IDB DB_NAME（仍 `atwebpilot`）
+- IDB DB_NAME（仍 `aipagego`）
 - run-session.ts 公共接口
 - LLM 适配 / 工具集 / system prompt
 - 设置页 / 工具库 / 工具详情页

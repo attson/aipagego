@@ -31,4 +31,4 @@
 3. Push the release branch, open and merge a pull request, tag the merge as
    `v0.0.72`, and push the tag.
 4. Verify the GitHub Release workflow and npm publish workflow complete, the
-   release asset exists, and npm reports `@attson/atwebpilot-mcp@0.0.72`.
+   release asset exists, and npm reports `@attson/aipagego-mcp@0.0.72`.

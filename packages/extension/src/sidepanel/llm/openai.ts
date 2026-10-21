@@ -1,4 +1,4 @@
-import type { ChatMessage, Json, ToolUsePart } from "@atwebpilot/shared/types";
+import type { ChatMessage, Json, ToolUsePart } from "@aipagego/shared/types";
 import { formatLlmHttpError } from "./http-error";
 import type { LlmClient, LlmStreamEvent } from "./types";
 

@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useSession, type StepCardState } from "../chat/session-store";
 import { useSettings } from "../chat/settings-store";
 import { MessageBubble } from "./message-bubble";
-import type { ChatMessage, TextPart, ToolUsePart } from "@atwebpilot/shared/types";
+import type { ChatMessage, TextPart, ToolUsePart } from "@aipagego/shared/types";
 import { classifyTool, evaluateAutoApproval } from "../chat/severity";
 import { AssistantBubble } from "./assistant-bubble";
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Loader2, TestTube } from "lucide-react";
-import type { LlmProvider } from "@atwebpilot/shared/types";
+import type { LlmProvider } from "@aipagego/shared/types";
 import { ANTHROPIC_MODELS, OPENAI_MODELS, useSettings } from "@/sidepanel/chat/settings-store";
 import { pickClient } from "@/sidepanel/llm/client";
 

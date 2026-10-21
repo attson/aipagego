@@ -10,8 +10,8 @@ afterEach(() => {
 describe("chrome shim", () => {
   it("starts the panel already configured", async () => {
     installChromeShim();
-    const got = await chrome.storage.local.get("atwebpilot.settings");
-    expect((got["atwebpilot.settings"] as { model: string }).model).toBe("demo-model");
+    const got = await chrome.storage.local.get("aipagego.settings");
+    expect((got["aipagego.settings"] as { model: string }).model).toBe("demo-model");
   });
 
   it("round-trips storage and notifies listeners", async () => {

@@ -149,7 +149,7 @@ Expected: 全绿。（`defaultChatMode` 是可选字段，不影响任何现有 
 - [ ] **Step 5: 全套测试确认无回归**
 
 ```bash
-pnpm --filter @atwebpilot/extension test 2>&1 | tail -10
+pnpm --filter @aipagego/extension test 2>&1 | tail -10
 ```
 
 Expected: 全绿（无既存 SectionAppearance 测试；本 task 也不引入）。
@@ -176,7 +176,7 @@ EOF
 - Create: `packages/extension/tests/sidepanel/lib/tool-labels.test.ts`
 
 **Interfaces:**
-- Consumes: `TOOL_DEFS` from `@atwebpilot/shared/llm`（sanity 测用）
+- Consumes: `TOOL_DEFS` from `@aipagego/shared/llm`（sanity 测用）
 - Produces:
   - `TOOL_LABELS: Record<string, string>` — 常量表
   - `labelFor(toolName: string): string | null` — 有别名返回中文；没有返回 null
@@ -189,7 +189,7 @@ Create `packages/extension/tests/sidepanel/lib/tool-labels.test.ts`：
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 import { labelFor, TOOL_LABELS } from "@/sidepanel/lib/tool-labels";
 
 describe("labelFor", () => {
@@ -225,7 +225,7 @@ describe("TOOL_LABELS", () => {
 - [ ] **Step 2: 跑测试确认失败**
 
 ```bash
-pnpm --filter @atwebpilot/extension test tool-labels.test.ts 2>&1 | tail -15
+pnpm --filter @aipagego/extension test tool-labels.test.ts 2>&1 | tail -15
 ```
 
 Expected: 4 tests failed with "Cannot find module '@/sidepanel/lib/tool-labels'".
@@ -305,7 +305,7 @@ export function labelFor(toolName: string): string | null {
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-pnpm --filter @atwebpilot/extension test tool-labels.test.ts 2>&1 | tail -15
+pnpm --filter @aipagego/extension test tool-labels.test.ts 2>&1 | tail -15
 ```
 
 Expected: 4 tests passed。
@@ -313,7 +313,7 @@ Expected: 4 tests passed。
 - [ ] **Step 5: 全套 typecheck + test**
 
 ```bash
-pnpm typecheck 2>&1 | tail -5 && pnpm --filter @atwebpilot/extension test 2>&1 | tail -5
+pnpm typecheck 2>&1 | tail -5 && pnpm --filter @aipagego/extension test 2>&1 | tail -5
 ```
 
 Expected: 全绿。
@@ -450,7 +450,7 @@ describe("StepRow", () => {
 - [ ] **Step 2: 跑测试确认失败**
 
 ```bash
-pnpm --filter @atwebpilot/extension test step-row.test.tsx 2>&1 | tail -15
+pnpm --filter @aipagego/extension test step-row.test.tsx 2>&1 | tail -15
 ```
 
 Expected: 5 tests failed with "Cannot find module '@/sidepanel/components/step-row'"。
@@ -509,7 +509,7 @@ export function StepRow({ card, onExpand }: Props) {
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-pnpm --filter @atwebpilot/extension test step-row.test.tsx 2>&1 | tail -15
+pnpm --filter @aipagego/extension test step-row.test.tsx 2>&1 | tail -15
 ```
 
 Expected: 5 tests passed。
@@ -692,7 +692,7 @@ Expected: 全绿。
 - [ ] **Step 5: 全套 test（无 Header/AppShell/session-store 单测；仅确保 Task 1-3 没被回归）**
 
 ```bash
-pnpm --filter @atwebpilot/extension test 2>&1 | tail -10
+pnpm --filter @aipagego/extension test 2>&1 | tail -10
 ```
 
 Expected: 全绿。
@@ -733,7 +733,7 @@ Modify `packages/extension/src/sidepanel/components/assistant-bubble.tsx`。**�
 
 ```tsx
 import { useState } from "react";
-import type { ToolUsePart } from "@atwebpilot/shared/types";
+import type { ToolUsePart } from "@aipagego/shared/types";
 import { useSession, type StepCardState } from "../chat/session-store";
 import { StepCard } from "./step-card";
 import { StepRow } from "./step-row";
@@ -936,7 +936,7 @@ Expected: 全绿。
 - [ ] **Step 3: 全套 test（AssistantBubble 无既有单测；仅确保 Task 1-3 的 tool-labels / step-row 无回归 + 主套 487 tests 仍绿）**
 
 ```bash
-pnpm --filter @atwebpilot/extension test 2>&1 | tail -10
+pnpm --filter @aipagego/extension test 2>&1 | tail -10
 ```
 
 Expected: 全绿；`tool-labels.test.ts` (4) + `step-row.test.tsx` (5) 皆 pass。

@@ -11,7 +11,7 @@ import {
 
 const dirs: string[] = [];
 const tmp = () => {
-  const d = mkdtempSync(join(tmpdir(), "atwebpilot-id-"));
+  const d = mkdtempSync(join(tmpdir(), "aipagego-id-"));
   dirs.push(d);
   return d;
 };
@@ -81,8 +81,8 @@ describe("lastPort", () => {
 
 describe("processInfo", () => {
   it("collapses the home prefix in the label", () => {
-    const info = processInfo(join(homedir(), "code", "atwebpilot2"));
-    expect(info.label).toBe("~/code/atwebpilot2");
+    const info = processInfo(join(homedir(), "code", "aipagego"));
+    expect(info.label).toBe("~/code/aipagego");
   });
 
   it("leaves a path outside home alone", () => {

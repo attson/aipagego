@@ -8,7 +8,7 @@ import { WorkerRegistry } from "./worker-registry";
 import type { Clock, IdGen } from "./clock";
 import type { WSHub } from "./ws-hub";
 import type { Session, Worker, Quota } from "./types";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 export interface CoordinatorDeps {
   hub: WSHub;

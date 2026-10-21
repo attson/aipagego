@@ -1,11 +1,11 @@
-# Agent Guide — AtWebPilot
+# Agent Guide — AIPageGo
 
 This file orients AI agents (Claude Code / Codex / Cursor) working in this
 repo. Read it before making non-trivial changes.
 
 ## What this is
 
-AtWebPilot is a Chromium MV3 side-panel extension that lets a user converse
+AIPageGo is a Chromium MV3 side-panel extension that lets a user converse
 with an LLM and have it read / write / collect on the currently-open web
 page. Successful conversations can be **固化 (solidified)** into reusable
 URL-pattern-matched tools that replay the same step sequence on similar
@@ -22,7 +22,7 @@ Three personas of work the user expects help with:
 - Vite 5 + `@crxjs/vite-plugin` (MV3 build), React 18, TypeScript 5 (strict)
 - Tailwind 3, zustand 4, zod 3, idb 8
 - vitest + happy-dom + fake-indexeddb (no Playwright dependency; live-browser
-  UI smoke uses the AtWebPilot MCP, with manual fallback; coordinator-driven
+  UI smoke uses the AIPageGo MCP, with manual fallback; coordinator-driven
   E2E covers the chat loop via a real `ws` server)
 - pnpm 9 workspaces (4 packages: `shared` / `coordinator` / `extension` / `mcp-server`)
 - LLM: Anthropic Messages API + OpenAI Chat API; both stream via fetch
@@ -35,7 +35,7 @@ Three personas of work the user expects help with:
 ## Repo layout
 
 ```
-atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 起）
+aipagego/                                # pnpm workspaces monorepo（Phase 0 起）
 ├─ packages/
 │  ├─ shared/                         纯函数 + 类型 + zod wire schemas（无 chrome / 无 DOM 依赖）
 │  │  └─ src/
@@ -52,7 +52,7 @@ atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 �
 │  ├─ coordinator/                    参考 WS 服务器（worker registry / session manager / dispatcher / catalog / clock）
 │  │  └─ src/                         （仅供测试与本地 smoke；生产部署不在这里）
 │  ├─ mcp-server/                     stdio MCP server + LoopbackWSHub（Plan 13；Claude 经 coordinator 驱动浏览器）
-│  └─ extension/                      AtWebPilot 浏览器扩展（46 LLM tools + sidepanel + in-page widget + LLM agent loop + WS worker）
+│  └─ extension/                      AIPageGo 浏览器扩展（46 LLM tools + sidepanel + in-page widget + LLM agent loop + WS worker）
 │     ├─ src/
 │     │  ├─ manifest.ts               MV3 manifest (defineManifest)
 │     │  ├─ background/               Service worker
@@ -71,7 +71,7 @@ atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 �
 │     │  │  ├─ bg-tool-runner.ts      ToolRunner 接口的 background 实现（直接调 runOneStep）
 │     │  │  ├─ self-heal.ts           Plan 27：`attemptHeal(ctx, deps)` 纯函数 + DI；zod parse patched Step[] + static-scan gate（严格拒 dangerous）
 │     │  │  ├─ self-heal-bridge.ts    Plan 27：BG → sidepanel 借 LLM 的 chrome.runtime.sendMessage 包装（30s timeout → `no_sidepanel`）
-│     │  │  └─ storage/{db,tools,runs,export-import,sessions}.ts   IndexedDB (DB_NAME = "atwebpilot" — do NOT rename)；`runs` 表 record 有 `source: "user" | "coordinator"` 与可选 `healed?: {fromVersion,toVersion,fixedStepIndex}`；`tools` 表带可选 `origin?: {kind:"preset", presetId, presetVersion}`；`materializePreset(id)` 幂等复制 preset 到 IDB；`exportTools()` 跳过未修改的 preset 副本；`importTools()` 剥掉未知 preset origin
+│     │  │  └─ storage/{db,tools,runs,export-import,sessions}.ts   IndexedDB (DB_NAME = "aipagego" — do NOT rename)；`runs` 表 record 有 `source: "user" | "coordinator"` 与可选 `healed?: {fromVersion,toVersion,fixedStepIndex}`；`tools` 表带可选 `origin?: {kind:"preset", presetId, presetVersion}`；`materializePreset(id)` 幂等复制 preset 到 IDB；`exportTools()` 跳过未修改的 preset 副本；`importTools()` 剥掉未知 preset origin
 │     │  ├─ content/                  Content script (isolated world)
 │     │  │  ├─ index.ts               chrome.runtime.onMessage → callTool / injectMain
 │     │  │  ├─ element-capture.ts     页面元素圈选：hover 高亮 + click 产 selector，供 sidepanel/widget 作为附件式引用
@@ -98,13 +98,13 @@ atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 �
 │     │     │  ├─ ui-store.ts         drawer 栈（DrawerKind 含 tools/settings/scenarios/logs 等）
 │     │     │  └─ settings-store.ts   LlmSettings (provider/model/apiKey/endpoint/maxRounds/maxTokens/trustedDangerTools/maxContinuationNudges/defaultChatMode/defaultPermissionMode/theme/**selfHealEnabled/maxSelfHealOutputTokens**)
 │     │     ├─ llm/
-│     │     │  ├─ types.ts            re-export from @atwebpilot/shared/llm（兼容存量 import）
+│     │     │  ├─ types.ts            re-export from @aipagego/shared/llm（兼容存量 import）
 │     │     │  ├─ anthropic.ts / openai.ts    SSE parsers（surface stop_reason on message_end）
 │     │     │  ├─ recording-client.ts Plan 11：包 LlmClient 捕获 request/response 到 llmExchanges（apiKey 屏蔽）
 │     │     │  ├─ http-error.ts       HTTP 错误规范化（含 retry-after 解析）
 │     │     │  ├─ truncate.ts         exchange log payload 截断
 │     │     │  ├─ client.ts           pickClient(provider)
-│     │     │  ├─ tool-schema.ts      re-export TOOL_DEFS；46 个 LLM tools 从 @atwebpilot/shared/llm 来
+│     │     │  ├─ tool-schema.ts      re-export TOOL_DEFS；46 个 LLM tools 从 @aipagego/shared/llm 来
 │     │     │  ├─ system-prompt.ts    buildSystemPrompt({url,title,savedTools,attachedTabs})；含 tier 选择提示
 │     │     │  ├─ summary-step.ts     One-shot 非流式生成 "summary runJS step"（Plan 5）
 │     │     │  ├─ self-heal-prompt.ts Plan 27：`buildSelfHealMessages(ctx, maxOutputTokens)` — 允许 step 白名单 + DOM 截断 + 已成功产物摘要
@@ -141,8 +141,8 @@ atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 �
 | `pnpm build` | 产 `packages/extension/dist/` |
 | `pnpm typecheck` | shared + extension 串跑 tsc --noEmit |
 | `pnpm test` | shared + extension 串跑 vitest |
-| `pnpm --filter @atwebpilot/shared test` | 只跑 shared 包测试 |
-| `pnpm --filter @atwebpilot/extension test:watch` | 扩展测试 watch 模式 |
+| `pnpm --filter @aipagego/shared test` | 只跑 shared 包测试 |
+| `pnpm --filter @aipagego/extension test:watch` | 扩展测试 watch 模式 |
 
 ## Workflow conventions
 
@@ -163,9 +163,8 @@ Skip this only for: bug fixes, typo / doc edits, the user explicitly asks
 
 ## Hard rules
 
-- **IDB DB name is `atwebpilot`** in `packages/extension/src/background/storage/db.ts`. Do not rename
-  it (would orphan every existing user's saved tools). Internal name and
-  product name (AtWebPilot) are intentionally decoupled.
+- **IDB DB name is `aipagego`** in `packages/extension/src/background/storage/db.ts`. Do not rename
+  it again (that would orphan saved tools created after the AIPageGo rename).
 - **No new dependencies without asking.** Existing stack covers everything
   we've needed; new deps cost build size and review burden.
 - **API key never goes to IDB or to any export bundle.** It lives in
@@ -211,10 +210,10 @@ Skip this only for: bug fixes, typo / doc edits, the user explicitly asks
   for legacy. Don't make it optional in the type. Coordinator-driven
   sessions set `source: "coordinator"`; user sessions get `"user"` (or
   backfilled to `"user"` if a pre-v0.0.16 record is read back).
-- **`LlmStreamEvent` / `LlmClient` live in `@atwebpilot/shared/llm`**
+- **`LlmStreamEvent` / `LlmClient` live in `@aipagego/shared/llm`**
   (Plan 12). Extension still has a re-export shim at
   `sidepanel/llm/types.ts` for back-compat — keep it; new code should
-  import from `@atwebpilot/shared/llm` directly.
+  import from `@aipagego/shared/llm` directly.
 - **BG never holds the API key.** Self-heal (Plan 27) needs an LLM but
   runs BG-side; the bridge in `background/self-heal-bridge.ts` posts the
   `HealContext` to sidepanel via `chrome.runtime.sendMessage`, and
@@ -403,10 +402,10 @@ so both backends share one tested implementation.
 
 - When a task requires live-page inspection, UI smoke testing, screenshots,
   responsive-layout checks, DOM interaction, or console/network debugging,
-  use the AtWebPilot MCP first, including for localhost pages.
+  use the AIPageGo MCP first, including for localhost pages.
 - Start with `browser_start`. Do not probe for Playwright, Puppeteer, or Chrome
-  remote debugging while AtWebPilot is available.
-- Fall back only after AtWebPilot reports an actual connection or capability
+  remote debugging while AIPageGo is available.
+- Fall back only after AIPageGo reports an actual connection or capability
   failure, and state that failure. Pure source-code work that does not require
   observing a live page must not start a browser.
 
@@ -450,7 +449,7 @@ node docs/superpowers/scripts/mini-coordinator.mjs   # 起一个最小 WS server
 Read `docs/superpowers/specs/README.md` for the full spec index (Plan 1-30). At a glance:
 
 **Foundations (Plans 1-11)**
-- **Plan 1-3** — Executable skeleton, streaming Anthropic+OpenAI, 18 initial tools, per-tool dangerous allowlist, `AtWebPilot` rebrand
+- **Plan 1-3** — Executable skeleton, streaming Anthropic+OpenAI, 18 initial tools, per-tool dangerous allowlist, `AIPageGo` rebrand
 - **Plan 4** — Per-tab sessions; closed-tab sessions initially 5-min in-memory (later replaced by Plan 8)
 - **Plan 5-6** — AI-generated summary step; two tool-save flavors (`prompt` vs `steps`); AI-generated tool draft from conversation
 - **Plan 7** — Multi-tab context: `@`-mention, `openTab`, `attachTab`, optional `tabId` on all tools
@@ -462,7 +461,7 @@ Read `docs/superpowers/specs/README.md` for the full spec index (Plan 1-30). At 
 **Extension surface expansion (Plans 12-15)**
 - **Plan 12** — Remote-testable chat session (v0.0.16): `START_CHAT_SESSION`/`CHAT_EVENT`/`SIDEPANEL_STATE_REPLY`; `CoordinatorChatHost` runs `runChatSession` BG-side; `allow_remote_chat` opt-in; `RunRecord.source` tag
 - **Plan 13** — MCP Bridge: `packages/mcp-server` = stdio MCP server + `LoopbackWSHub`; auto-generates 19 `browser_*` tools + 4 control tools from `TOOL_DEFS`
-- **Plan 14-15** — Rename to atwebpilot; publish `@attson/atwebpilot-mcp` on npm on `v*` tag (v0.0.19)
+- **Plan 14-15** — Adopt the former product brand; publish its MCP package on npm on `v*` tag (v0.0.19)
 
 **UX overhauls (Plans 16-25)**
 - **Plan 16** — AIPex UI refactor: `app-shell.tsx` replaces `app.tsx`; drawer stack; compact chat by default
@@ -477,7 +476,7 @@ Read `docs/superpowers/specs/README.md` for the full spec index (Plan 1-30). At 
 **Docs + Product (Plans 26-27)**
 - **Plan 26** — GitHub Pages VitePress site (`docs-site/`) — zh-CN primary + EN overview; auto-gen tool reference
 - **Plan 27** (v0.0.45) — **Scenario Presets + Self-Heal**:
-  - 12 built-in presets under `@atwebpilot/shared/presets` (7 content prompt-form + 5 ecommerce tool-form)
+  - 12 built-in presets under `@aipagego/shared/presets` (7 content prompt-form + 5 ecommerce tool-form)
   - Three exposure paths: tab-watcher banner + quick-actions URL override + Scenarios drawer
   - `Tool.origin` (optional preset origin) + `RunRecord.healed` (optional heal metadata)
   - `background/self-heal.ts` pure DI module + `sidepanel/self-heal-host.ts` LLM borrower + `background/self-heal-bridge.ts` BG↔sidepanel bridge
@@ -504,8 +503,8 @@ Read `docs/superpowers/specs/README.md` for the full spec index (Plan 1-30). At 
 - Adding business logic to a component (move to `chat/` or shared/`)
 - Treating `runJS` errors as `output: null` (BG now wraps + re-throws —
   don't undo)
-- Renaming `atwebpilot` → `atwebpilot` anywhere user data lives (IDB / import
-  alias `@/`)
+- Renaming persistent `aipagego` identifiers without an explicit migration
+  (IDB, storage keys, export schema, or runtime wire messages)
 - Touching `.idea/` or other IDE configs in commits
 - Hard-coding `chrome.*` access in `runChatSession` or anything below
   it — go through DI (the `tabsRpc` / `runner` / `client` / `approver`

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { DEMO_PROMPT, DEMO_ROUNDS, DEMO_TOOL_NAMES } from "../../demo/scenario";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 
 describe("demo scenario", () => {
   it("names only tools that exist", () => {

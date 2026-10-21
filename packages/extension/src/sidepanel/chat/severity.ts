@@ -1,5 +1,5 @@
-import { highestSeverity, runStaticScan } from "@atwebpilot/shared/static-scan";
-import type { Json } from "@atwebpilot/shared/types";
+import { highestSeverity, runStaticScan } from "@aipagego/shared/static-scan";
+import type { Json } from "@aipagego/shared/types";
 
 export type ToolSeverity = "safe" | "caution" | "dangerous";
 

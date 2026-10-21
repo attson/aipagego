@@ -26,20 +26,20 @@ export type ShimOptions = {
 type Listener = (changes: Record<string, unknown>, area: string) => void;
 
 export const DEMO_TAB_ID = 1;
-export const DEMO_URL = "https://demo.atwebpilot.local/product/ergo-chair-pro";
+export const DEMO_URL = "https://demo.aipagego.local/product/ergo-chair-pro";
 export const DEMO_TITLE = "人体工学办公椅 Pro";
 
 /** Settings that make the panel behave as if it were already configured. */
 export function demoSeed(): Record<string, unknown> {
   return {
-    "atwebpilot.settings": {
+    "aipagego.settings": {
       provider: "anthropic",
       model: "demo-model",
       maxTokens: 4096,
       maxRounds: 20,
       permissionMode: "default"
     },
-    "atwebpilot.demo": true
+    "aipagego.demo": true
   };
 }
 
@@ -96,7 +96,7 @@ export function installChromeShim(opts: ShimOptions = {}): void {
 
   const shim = {
     runtime: {
-      id: "atwebpilot-demo",
+      id: "aipagego-demo",
       getManifest: () => ({ version: "demo" }),
       getURL: (p: string) => p,
       sendMessage: (req: unknown) => handleRpc(req),

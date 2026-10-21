@@ -1,4 +1,4 @@
-import type { Step, Tool, Json } from "@atwebpilot/shared/types";
+import type { Step, Tool, Json } from "@aipagego/shared/types";
 import { classifyTool } from "@/sidepanel/chat/severity";
 
 export type HealContext = {

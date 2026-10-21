@@ -265,7 +265,7 @@ The new outer `<div>` carries the `m-auto max-w-[280px]` that previously lived o
 
 - [ ] **Step 5: Repo typecheck + extension tests**
 
-Run from `/Users/attson/code/atwebpilot2`:
+Run from `/Users/attson/code/aipagego2`:
 
 ```bash
 pnpm -r typecheck && cd packages/extension && pnpm test
@@ -300,7 +300,7 @@ git commit -m "feat(sidepanel): wire QuickActions above EmptySuggestions in empt
 
 - [ ] **Step 1: Full repo typecheck**
 
-Run from `/Users/attson/code/atwebpilot2`: `pnpm -r typecheck`
+Run from `/Users/attson/code/aipagego2`: `pnpm -r typecheck`
 
 Expected: 4 packages PASS (shared, extension, coordinator, mcp-server).
 
@@ -312,7 +312,7 @@ Expected: all suites pass (existing + 4 new QuickActions tests). Confirm test co
 
 - [ ] **Step 3: Production build**
 
-Run from `/Users/attson/code/atwebpilot2`: `pnpm build`
+Run from `/Users/attson/code/aipagego2`: `pnpm build`
 
 Expected: PASS. `packages/extension/dist/` regenerates without warnings.
 

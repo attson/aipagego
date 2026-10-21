@@ -1,7 +1,7 @@
 import { matchingTools } from "./storage/tools";
-import { matchPresetsByUrl } from "@atwebpilot/shared/match-presets";
-import type { Preset } from "@atwebpilot/shared/preset";
-import type { Tool } from "@atwebpilot/shared/types";
+import { matchPresetsByUrl } from "@aipagego/shared/match-presets";
+import type { Preset } from "@aipagego/shared/preset";
+import type { Tool } from "@aipagego/shared/types";
 
 export async function refreshRecommendations(tabId: number, url: string): Promise<void> {
   const tools = await matchingTools(url);

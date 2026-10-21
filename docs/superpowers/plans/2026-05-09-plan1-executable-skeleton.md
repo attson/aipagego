@@ -13,7 +13,7 @@
 ## 文件结构（本计划范围）
 
 ```
-atwebpilot2/
+aipagego2/
 ├─ package.json
 ├─ pnpm-lock.yaml
 ├─ tsconfig.json
@@ -105,7 +105,7 @@ atwebpilot2/
 
 ```json
 {
-  "name": "atwebpilot2",
+  "name": "aipagego2",
   "private": true,
   "version": "0.0.1",
   "type": "module",
@@ -218,10 +218,10 @@ import pkg from "../package.json" with { type: "json" };
 
 export default defineManifest({
   manifest_version: 3,
-  name: "atwebpilot2 — AI 网页采集器",
+  name: "aipagego2 — AI 网页采集器",
   description: "对话式 AI 采集 + 工具固化复用",
   version: pkg.version,
-  action: { default_title: "atwebpilot2" },
+  action: { default_title: "aipagego2" },
   side_panel: { default_path: "src/sidepanel/index.html" },
   background: { service_worker: "src/background/index.ts", type: "module" },
   permissions: ["sidePanel", "storage", "scripting", "activeTab", "tabs"],
@@ -317,7 +317,7 @@ git commit -m "chore: configure vite, crx plugin, and tailwind"
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>atwebpilot2</title>
+    <title>aipagego2</title>
   </head>
   <body class="bg-zinc-950 text-zinc-100 font-sans">
     <div id="root"></div>
@@ -358,7 +358,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
 export function App() {
   return (
     <div className="p-4 text-sm">
-      <h1 className="text-base font-semibold">atwebpilot2</h1>
+      <h1 className="text-base font-semibold">aipagego2</h1>
       <p className="mt-2 text-zinc-400">扩展骨架已加载。</p>
     </div>
   );
@@ -369,7 +369,7 @@ export function App() {
 
 ```ts
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("[atwebpilot2] service worker installed");
+  console.info("[aipagego2] service worker installed");
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -379,13 +379,13 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((e) => console.error("[atwebpilot2] sidePanel setPanelBehavior", e));
+  .catch((e) => console.error("[aipagego2] sidePanel setPanelBehavior", e));
 ```
 
 - [ ] **Step 6: 创建 `src/content/index.ts`**
 
 ```ts
-console.info("[atwebpilot2] content script loaded on", location.href);
+console.info("[aipagego2] content script loaded on", location.href);
 ```
 
 - [ ] **Step 7: 创建 `tests/setup.ts`**
@@ -486,7 +486,7 @@ export type RunRecord = {
 };
 
 export type ExportBundle = {
-  schema: "atwebpilot.tools/v1";
+  schema: "aipagego.tools/v1";
   exportedAt: number;
   tools: Tool[];
 };
@@ -721,7 +721,7 @@ git commit -m "feat(shared): add zod RPC schemas for sidepanel <-> bg <-> conten
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
 import type { RunRecord, Tool } from "@/shared/types";
 
-export interface atwebpilotDB extends DBSchema {
+export interface aipagegoDB extends DBSchema {
   tools: {
     key: string;
     value: Tool;
@@ -734,14 +734,14 @@ export interface atwebpilotDB extends DBSchema {
   };
 }
 
-const DB_NAME = "atwebpilot";
+const DB_NAME = "aipagego";
 const DB_VERSION = 1;
 
-let dbPromise: Promise<IDBPDatabase<atwebpilotDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<aipagegoDB>> | null = null;
 
-export function getDB(): Promise<IDBPDatabase<atwebpilotDB>> {
+export function getDB(): Promise<IDBPDatabase<aipagegoDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<atwebpilotDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<aipagegoDB>(DB_NAME, DB_VERSION, {
       upgrade(db) {
         const tools = db.createObjectStore("tools", { keyPath: "id" });
         tools.createIndex("byUpdatedAt", "updatedAt");
@@ -1173,7 +1173,7 @@ describe("export-import", () => {
       outputSchema: {}
     });
     const bundle = await exportAll();
-    expect(bundle.schema).toBe("atwebpilot.tools/v1");
+    expect(bundle.schema).toBe("aipagego.tools/v1");
     expect(bundle.tools).toHaveLength(1);
     expect(bundle.tools[0].id).toBe(t.id);
   });
@@ -1187,7 +1187,7 @@ describe("export-import", () => {
       outputSchema: {}
     });
     const bundle = {
-      schema: "atwebpilot.tools/v1" as const,
+      schema: "aipagego.tools/v1" as const,
       exportedAt: Date.now(),
       tools: [{ ...t, name: "A-modified" }]
     };
@@ -1207,7 +1207,7 @@ describe("export-import", () => {
       outputSchema: {}
     });
     const bundle = {
-      schema: "atwebpilot.tools/v1" as const,
+      schema: "aipagego.tools/v1" as const,
       exportedAt: Date.now(),
       tools: [{ ...t, name: "A-modified" }]
     };
@@ -1226,7 +1226,7 @@ describe("export-import", () => {
       outputSchema: {}
     });
     const bundle = {
-      schema: "atwebpilot.tools/v1" as const,
+      schema: "aipagego.tools/v1" as const,
       exportedAt: Date.now(),
       tools: [{ ...t, name: "A-modified" }]
     };
@@ -1260,7 +1260,7 @@ import { getDB } from "./db";
 export async function exportAll(): Promise<ExportBundle> {
   const db = await getDB();
   const tools = await db.getAll("tools");
-  return { schema: "atwebpilot.tools/v1", exportedAt: Date.now(), tools };
+  return { schema: "aipagego.tools/v1", exportedAt: Date.now(), tools };
 }
 
 export type ConflictPolicy = "skip" | "overwrite" | "copy";
@@ -1274,7 +1274,7 @@ export async function importBundle(
   raw: ExportBundle,
   opts: { onConflict: ConflictPolicy }
 ): Promise<ImportResult> {
-  if (!raw || raw.schema !== "atwebpilot.tools/v1" || !Array.isArray(raw.tools)) {
+  if (!raw || raw.schema !== "aipagego.tools/v1" || !Array.isArray(raw.tools)) {
     throw new Error("invalid bundle: schema mismatch");
   }
   const db = await getDB();
@@ -2850,7 +2850,7 @@ import type { Json } from "@/shared/types";
 import { injectMain } from "./inject-main";
 import { callTool } from "./tools";
 
-console.info("[atwebpilot2] content script loaded on", location.href);
+console.info("[aipagego2] content script loaded on", location.href);
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   const parsed = ContentRequest.safeParse(msg);
@@ -3088,7 +3088,7 @@ import { RpcRequest as RpcRequestSchema } from "@/shared/messages";
 import { handleRpc } from "./rpc-handlers";
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("[atwebpilot2] service worker installed");
+  console.info("[aipagego2] service worker installed");
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -3098,7 +3098,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((e) => console.error("[atwebpilot2] sidePanel setPanelBehavior", e));
+  .catch((e) => console.error("[aipagego2] sidePanel setPanelBehavior", e));
 
 // 处理来自 sidepanel 与 content 的所有 RPC 请求。
 // content 发来的请求 sender.tab 非空（content 调 httpRequestBridge / injectMain
@@ -3334,7 +3334,7 @@ export function ResultView(props: { run: RunRecord }) {
       </details>
 
       <button
-        onClick={() => downloadJson(run.output, `atwebpilot-output-${run.id.slice(0, 8)}.json`)}
+        onClick={() => downloadJson(run.output, `aipagego-output-${run.id.slice(0, 8)}.json`)}
         className="self-start px-3 py-1 bg-emerald-700 rounded"
       >
         导出 output JSON
@@ -3671,7 +3671,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `atwebpilot-tools-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `aipagego-tools-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       setMsg(`导出 ${bundle.tools.length} 个工具`);
@@ -3750,7 +3750,7 @@ git commit -m "feat(sidepanel): tools list + tool detail + settings (export/impo
 - [ ] **Step 1: 写入文件**
 
 ```markdown
-# atwebpilot2 — AI 网页采集器（Plan 1：可执行骨架）
+# aipagego2 — AI 网页采集器（Plan 1：可执行骨架）
 
 ## 开发与装载
 

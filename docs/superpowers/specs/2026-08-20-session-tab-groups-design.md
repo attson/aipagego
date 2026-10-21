@@ -3,7 +3,7 @@
 ## Goal
 
 Make AI-controlled tabs visibly attributable to the logical session driving
-them without injecting any indicator into the page. AtWebPilot groups tabs by
+them without injecting any indicator into the page. AIPageGo groups tabs by
 session through Chromium's native tab-group UI.
 
 ## Identity
@@ -17,9 +17,9 @@ session through Chromium's native tab-group UI.
 
 Group titles are readable and include only a short id:
 
-- `AtWebPilot · 侧栏 · a3f91c`
-- `AtWebPilot · MCP · a3f91c`
-- `AtWebPilot · 远程 · a3f91c`
+- `AIPageGo · 侧栏 · a3f91c`
+- `AIPageGo · MCP · a3f91c`
+- `AIPageGo · 远程 · a3f91c`
 - waiting sessions append `· 等待确认`.
 
 Colors identify source: local blue, MCP green, remote purple. Group status is
@@ -43,11 +43,11 @@ records for closed tabs or missing groups.
 
 ## User Control
 
-If the user manually moves a tab out of its expected AtWebPilot group, the
+If the user manually moves a tab out of its expected AIPageGo group, the
 manager relinquishes that tab and does not pull it back or restore it later.
-Tabs manually added to an AtWebPilot group are not claimed automatically.
+Tabs manually added to an AIPageGo group are not claimed automatically.
 
-The group remains expanded. AtWebPilot never collapses a group containing the
+The group remains expanded. AIPageGo never collapses a group containing the
 active tab.
 
 ## Permissions And Privacy

@@ -117,19 +117,19 @@ export * from "./types";
 
 - [ ] **Step 3: Verify the shared package builds**
 
-Run: `pnpm --filter @atwebpilot/shared typecheck`
+Run: `pnpm --filter @aipagego/shared typecheck`
 Expected: PASS
 
 - [ ] **Step 4: Replace extension's `llm/types.ts` with re-exports for backward compat**
 
 ```ts
 // packages/extension/src/sidepanel/llm/types.ts
-export type { LlmTool, LlmStreamEvent, LlmClient } from "@atwebpilot/shared/llm";
+export type { LlmTool, LlmStreamEvent, LlmClient } from "@aipagego/shared/llm";
 ```
 
 - [ ] **Step 5: Confirm extension typecheck still passes**
 
-Run: `pnpm --filter @atwebpilot/extension typecheck`
+Run: `pnpm --filter @aipagego/extension typecheck`
 Expected: PASS — every existing import of `@/sidepanel/llm/types` resolves transparently via the re-export.
 
 - [ ] **Step 6: Run the full test suite**
@@ -178,7 +178,7 @@ it("createRun preserves source when given", async () => {
 
 - [ ] **Step 2: Run test to verify it fails**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run runs.test`
+Run: `pnpm --filter @aipagego/extension test -- --run runs.test`
 Expected: FAIL on `source` property — undefined / missing.
 
 - [ ] **Step 3: Extend the type in shared**
@@ -232,7 +232,7 @@ export async function createRun(input: {
 Add `RunSource` to the imports at the top of the file:
 
 ```ts
-import type { Json, RunRecord, RunSource, RunStepLogEntry, RunStatus } from "@atwebpilot/shared/types";
+import type { Json, RunRecord, RunSource, RunStepLogEntry, RunStatus } from "@aipagego/shared/types";
 ```
 
 - [ ] **Step 5: Backfill read path so old records without `source` parse as "user"**
@@ -262,7 +262,7 @@ export async function listRuns(filter?: { toolId?: string }): Promise<RunRecord[
 
 - [ ] **Step 6: Run the test**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run runs.test`
+Run: `pnpm --filter @aipagego/extension test -- --run runs.test`
 Expected: PASS for the two new cases plus existing cases.
 
 - [ ] **Step 7: Full typecheck + tests**
@@ -343,7 +343,7 @@ describe("ChatSessionEventSchema", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/shared test -- --run chat-event`
+Run: `pnpm --filter @aipagego/shared test -- --run chat-event`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement the schemas**
@@ -403,7 +403,7 @@ export type ChatSessionEvent = z.infer<typeof ChatSessionEventSchema>;
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/shared test -- --run chat-event`
+Run: `pnpm --filter @aipagego/shared test -- --run chat-event`
 Expected: PASS — every variant round-trips.
 
 - [ ] **Step 5: Commit**
@@ -541,7 +541,7 @@ describe("union extension", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/shared test -- --run wire-extensions`
+Run: `pnpm --filter @aipagego/shared test -- --run wire-extensions`
 Expected: FAIL — schemas not exported.
 
 - [ ] **Step 3: Implement in `messages.ts`**
@@ -677,10 +677,10 @@ export * from "./chat-event";
 
 - [ ] **Step 5: Run tests, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/shared test -- --run wire-extensions`
+Run: `pnpm --filter @aipagego/shared test -- --run wire-extensions`
 Expected: PASS.
 
-Also: `pnpm --filter @atwebpilot/shared test` to ensure existing message tests still pass.
+Also: `pnpm --filter @aipagego/shared test` to ensure existing message tests still pass.
 
 - [ ] **Step 6: Commit**
 
@@ -732,7 +732,7 @@ describe("allow_remote_chat", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-state`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-state`
 Expected: FAIL — `loadAllowRemoteChat` not exported.
 
 - [ ] **Step 3: Implement the accessors**
@@ -740,7 +740,7 @@ Expected: FAIL — `loadAllowRemoteChat` not exported.
 Append to `packages/extension/src/background/coordinator-state.ts`:
 
 ```ts
-const ALLOW_REMOTE_CHAT_KEY = "atwebpilot.coordinator.allow_remote_chat";
+const ALLOW_REMOTE_CHAT_KEY = "aipagego.coordinator.allow_remote_chat";
 
 export async function loadAllowRemoteChat(): Promise<boolean> {
   const got = await chrome.storage.local.get([ALLOW_REMOTE_CHAT_KEY]);
@@ -754,7 +754,7 @@ export async function saveAllowRemoteChat(value: boolean): Promise<void> {
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-state`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-state`
 Expected: PASS for the three new cases.
 
 - [ ] **Step 5: Commit**
@@ -785,7 +785,7 @@ later in the coordinator settings page."
 // packages/extension/tests/background/mock-llm-client.test.ts
 import { describe, it, expect } from "vitest";
 import { MockLlmClient } from "@/background/mock-llm-client";
-import type { LlmStreamEvent } from "@atwebpilot/shared/llm";
+import type { LlmStreamEvent } from "@aipagego/shared/llm";
 
 async function collect(it: AsyncIterable<LlmStreamEvent>): Promise<LlmStreamEvent[]> {
   const out: LlmStreamEvent[] = [];
@@ -833,14 +833,14 @@ describe("MockLlmClient", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run mock-llm-client`
+Run: `pnpm --filter @aipagego/extension test -- --run mock-llm-client`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement**
 
 ```ts
 // packages/extension/src/background/mock-llm-client.ts
-import type { LlmClient, LlmStreamEvent } from "@atwebpilot/shared/llm";
+import type { LlmClient, LlmStreamEvent } from "@aipagego/shared/llm";
 
 /**
  * Deterministic LLM client driven by a pre-scripted list of rounds.
@@ -864,7 +864,7 @@ export class MockLlmClient implements LlmClient {
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run mock-llm-client`
+Run: `pnpm --filter @aipagego/extension test -- --run mock-llm-client`
 Expected: PASS.
 
 - [ ] **Step 5: Commit**
@@ -920,14 +920,14 @@ describe("BackgroundToolRunner", () => {
 
 - [ ] **Step 3: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run bg-tool-runner`
+Run: `pnpm --filter @aipagego/extension test -- --run bg-tool-runner`
 Expected: FAIL — module not found.
 
 - [ ] **Step 4: Implement**
 
 ```ts
 // packages/extension/src/background/bg-tool-runner.ts
-import type { Json, Step } from "@atwebpilot/shared/types";
+import type { Json, Step } from "@aipagego/shared/types";
 import type { ToolRunner } from "@/sidepanel/chat/tool-runner";
 import { runOneStep } from "./rpc-handlers";
 
@@ -950,7 +950,7 @@ export class BackgroundToolRunner implements ToolRunner {
 
 - [ ] **Step 5: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run bg-tool-runner`
+Run: `pnpm --filter @aipagego/extension test -- --run bg-tool-runner`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
@@ -984,8 +984,8 @@ service worker."
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CoordinatorChatHost } from "@/background/coordinator-chat";
 import * as state from "@/background/coordinator-state";
-import type { ServerToClient, ClientToServer } from "@atwebpilot/shared/protocol";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import type { ServerToClient, ClientToServer } from "@aipagego/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 function makeEnv() {
   return { nonce: "n", ts: 0, protocol_version: PROTOCOL_VERSION };
@@ -1084,7 +1084,7 @@ describe("CoordinatorChatHost.handle", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-chat-host`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-chat-host`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement**
@@ -1096,9 +1096,9 @@ import type {
   ClientToServer,
   StartChatSession,
   AbortSession
-} from "@atwebpilot/shared/protocol";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
-import type { LlmClient, LlmStreamEvent } from "@atwebpilot/shared/llm";
+} from "@aipagego/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
+import type { LlmClient, LlmStreamEvent } from "@aipagego/shared/llm";
 import type { RunSessionArgs, SessionEvent } from "@/sidepanel/chat/run-session";
 import { runChatSession as defaultRunChatSession } from "@/sidepanel/chat/run-session";
 import { MockLlmClient } from "./mock-llm-client";
@@ -1108,7 +1108,7 @@ import type { ToolRunner } from "@/sidepanel/chat/tool-runner";
 import { TOOL_DEFS } from "@/sidepanel/llm/tool-schema";
 import { loadAllowRemoteChat } from "./coordinator-state";
 import { createRun, appendStepLog, finalizeRun } from "./storage/runs";
-import type { Json, RunStepLogEntry } from "@atwebpilot/shared/types";
+import type { Json, RunStepLogEntry } from "@aipagego/shared/types";
 
 type RunChatSessionFn = (args: RunSessionArgs) => Promise<unknown>;
 
@@ -1289,7 +1289,7 @@ function makeBgRpc() {
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-chat-host`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-chat-host`
 Expected: PASS for all five cases.
 
 - [ ] **Step 5: Commit**
@@ -1321,7 +1321,7 @@ with source=\"coordinator\". Forwards every SessionEvent as CHAT_EVENT."
 // packages/extension/tests/background/coordinator-state-bridge.test.ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CoordinatorStateBridge } from "@/background/coordinator-state-bridge";
-import type { ServerToClient, ClientToServer } from "@atwebpilot/shared/protocol";
+import type { ServerToClient, ClientToServer } from "@aipagego/shared/protocol";
 
 function makeEnv() { return { nonce: "n", ts: 0, protocol_version: 1 }; }
 
@@ -1412,15 +1412,15 @@ describe("CoordinatorStateBridge", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-state-bridge`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-state-bridge`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement**
 
 ```ts
 // packages/extension/src/background/coordinator-state-bridge.ts
-import type { ServerToClient, ClientToServer, ReadSidepanelState } from "@atwebpilot/shared/protocol";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import type { ServerToClient, ClientToServer, ReadSidepanelState } from "@aipagego/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 interface SnapshotPayload {
   status: string;
@@ -1508,7 +1508,7 @@ export class CoordinatorStateBridge {
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-state-bridge`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-state-bridge`
 Expected: PASS for all three cases.
 
 - [ ] **Step 5: Commit**
@@ -1595,7 +1595,7 @@ describe("handleSidepanelStatePing", () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-state-bridge.test`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-state-bridge.test`
 (matches both bridge tests; sidepanel one will fail)
 Expected: sidepanel test FAILs — module not found.
 
@@ -1682,7 +1682,7 @@ export function mountSidepanelStateBridge(): () => void {
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run sidepanel/coordinator-state-bridge`
+Run: `pnpm --filter @aipagego/extension test -- --run sidepanel/coordinator-state-bridge`
 Expected: PASS.
 
 - [ ] **Step 5: Mount in sidepanel app**
@@ -1699,7 +1699,7 @@ useEffect(() => mountSidepanelStateBridge(), []);
 
 - [ ] **Step 6: Run all sidepanel tests**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run sidepanel`
+Run: `pnpm --filter @aipagego/extension test -- --run sidepanel`
 Expected: PASS (no existing test should be broken; `app.tsx` change is a mount call inside `useEffect`).
 
 - [ ] **Step 7: Commit**
@@ -1744,7 +1744,7 @@ it("toggles allow_remote_chat in storage when the checkbox flips", async () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-settings-page`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-settings-page`
 Expected: FAIL — no checkbox with that label.
 
 - [ ] **Step 3: Add the checkbox to the page**
@@ -1785,7 +1785,7 @@ Markup placed near the other settings controls:
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-settings-page`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-settings-page`
 Expected: PASS for the new case + existing cases unaffected.
 
 - [ ] **Step 5: Commit**
@@ -1869,7 +1869,7 @@ it("routes READ_SIDEPANEL_STATE to onReadState handler", async () => {
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-client.test`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-client.test`
 Expected: FAIL — `onChat` / `onReadState` not in options type, or messages not routed.
 
 - [ ] **Step 3: Extend the options interface + add the switch branches**
@@ -1882,7 +1882,7 @@ import type {
   AbortSession,
   ReadSidepanelState,
   ClientToServer
-} from "@atwebpilot/shared/protocol";
+} from "@aipagego/shared/protocol";
 
 export interface CoordinatorClientOptions {
   // existing fields...
@@ -1917,7 +1917,7 @@ case "READ_SIDEPANEL_STATE":
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-client.test`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-client.test`
 Expected: PASS for the three new cases.
 
 - [ ] **Step 5: Commit**
@@ -1953,7 +1953,7 @@ export async function startCoordinatorClient(): Promise<void> {
   if (!config?.enabled || !config.ws_url) return;
   const token = await loadToken();
   if (!token) {
-    console.warn("[atwebpilot] coordinator enabled but no token saved");
+    console.warn("[aipagego] coordinator enabled but no token saved");
     return;
   }
   const worker_id = await getOrCreateWorkerId();
@@ -1985,12 +1985,12 @@ import { CoordinatorStateBridge } from "./coordinator-state-bridge";
 
 - [ ] **Step 2: Verify typecheck**
 
-Run: `pnpm --filter @atwebpilot/extension typecheck`
+Run: `pnpm --filter @aipagego/extension typecheck`
 Expected: PASS.
 
 - [ ] **Step 3: Verify all tests still green**
 
-Run: `pnpm --filter @atwebpilot/extension test`
+Run: `pnpm --filter @aipagego/extension test`
 Expected: full suite PASS.
 
 - [ ] **Step 4: Commit**
@@ -2021,7 +2021,7 @@ Append to the existing `describe("coordinator-client end-to-end with ws server",
 it("START_CHAT_SESSION → continuation guard nudges exactly once", async () => {
   // Pre-arm the allow flag in the fake chrome.storage.local
   const fakeStorage = new Map<string, unknown>();
-  fakeStorage.set("atwebpilot.coordinator.allow_remote_chat", true);
+  fakeStorage.set("aipagego.coordinator.allow_remote_chat", true);
   vi.stubGlobal("chrome", {
     ...((globalThis as { chrome?: unknown }).chrome as object),
     storage: {
@@ -2128,7 +2128,7 @@ Note: the test inlines a fake `chrome.storage.local` because the file's existing
 
 - [ ] **Step 2: Run, expect FAIL initially (the assertions pin behavior; the test may also fail on harness setup the first run)**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-e2e`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-e2e`
 Expected: FAIL because either (a) the host wiring isn't yet right or (b) the schema for CHAT_EVENT enforces a structure that needs the env fields populated by host. If (b), make sure `coordinator-chat.ts` populates `nonce`/`ts`/`protocol_version` (it already does in Task 8).
 
 - [ ] **Step 3: Make the test pass**
@@ -2137,7 +2137,7 @@ Fix any harness / wiring bugs revealed by the test. The implementation pieces ar
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-e2e`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-e2e`
 Expected: PASS for the new case + existing E2E test still green.
 
 - [ ] **Step 5: Commit**
@@ -2279,7 +2279,7 @@ it("READ_SIDEPANEL_STATE returns found:false when no sidepanel listens", async (
 
 - [ ] **Step 2: Run, expect FAIL**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-e2e`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-e2e`
 Expected: at least one of the new cases fails if any wire path is broken.
 
 - [ ] **Step 3: Fix any wiring issues revealed**
@@ -2288,7 +2288,7 @@ If `WELCOME` mismatch logs and disconnects (line 106-112 of coordinator-client.t
 
 - [ ] **Step 4: Run, expect PASS**
 
-Run: `pnpm --filter @atwebpilot/extension test -- --run coordinator-e2e`
+Run: `pnpm --filter @aipagego/extension test -- --run coordinator-e2e`
 Expected: all E2E cases PASS.
 
 - [ ] **Step 5: Commit**
@@ -2423,7 +2423,7 @@ Expected: clean. Test count: 315 + ~20 new = ~335.
 - [ ] **Step 2: Run the dev build to confirm the extension still bundles**
 
 ```bash
-pnpm --filter @atwebpilot/extension build
+pnpm --filter @aipagego/extension build
 ```
 
 Expected: PASS, `packages/extension/dist/` populated.
@@ -2459,7 +2459,7 @@ After completing the plan, verify:
    - Release: Task 17 ✓
 
 2. **Type consistency**
-   - `LlmStreamEvent` referenced consistently from `@atwebpilot/shared/llm` ✓
+   - `LlmStreamEvent` referenced consistently from `@aipagego/shared/llm` ✓
    - `ChatSessionEvent` only used in shared/protocol; runtime uses `SessionEvent` ✓
    - `RunSource` type alias added in shared/types and used in storage/runs ✓
    - `CoordinatorChatHostOptions` shape consistent between Task 8 and Tasks 14/15 (`pickActiveTab` / `urlFor` / `loadSystemPrompt`) ✓

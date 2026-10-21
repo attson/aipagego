@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const KEY = "atwebpilot.llm";
-const MIGRATION_KEY = "atwebpilot.llm._migrated_v1";
+const KEY = "aipagego.llm";
+const MIGRATION_KEY = "aipagego.llm._migrated_v1";
 
 function makeStorage() {
   const local: Record<string, unknown> = {};

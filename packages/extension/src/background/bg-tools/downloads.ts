@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { XLSX_MIME, buildXlsxBytes, type SpreadsheetInput } from "@/sidepanel/lib/xlsx";
 
 function asObj(raw: Json): Record<string, unknown> {

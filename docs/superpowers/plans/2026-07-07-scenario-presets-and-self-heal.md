@@ -2,15 +2,15 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让 AtWebPilot 内置一批"打开这个网站就能用"的 Preset(prompt + tool 两种形态),并给 tool 重放路径加运行时自愈,失败一步自动重生成补丁继续跑。
+**Goal:** 让 AIPageGo 内置一批"打开这个网站就能用"的 Preset(prompt + tool 两种形态),并给 tool 重放路径加运行时自愈,失败一步自动重生成补丁继续跑。
 
-**Architecture:** 三层:①`@atwebpilot/shared/presets/*` 静态 registry(zod-validated + URL 匹配纯函数);②扩展侧曝光(tab-watcher 合并 + quick-actions URL 条件覆盖 + 新 `scenarios-page`);③BG `runTool` 里 catch 失败 → 走 `self-heal.ts`(BG 通过 RPC 借 sidepanel 的 LLM 一次性调用 → zod parse → static-scan 过滤 dangerous → 替换后续 steps + appendVersion v(N+1))。
+**Architecture:** 三层:①`@aipagego/shared/presets/*` 静态 registry(zod-validated + URL 匹配纯函数);②扩展侧曝光(tab-watcher 合并 + quick-actions URL 条件覆盖 + 新 `scenarios-page`);③BG `runTool` 里 catch 失败 → 走 `self-heal.ts`(BG 通过 RPC 借 sidepanel 的 LLM 一次性调用 → zod parse → static-scan 过滤 dangerous → 替换后续 steps + appendVersion v(N+1))。
 
 **Tech Stack:** TypeScript 5(strict)、React 18、zustand 4、zod 3、idb 8、vitest + happy-dom + fake-indexeddb;新增 0 依赖。
 
 ## Global Constraints
 
-- **IDB DB name = `atwebpilot`**(不可改;老用户 tool 全靠这个名字)
+- **IDB DB name = `aipagego`**(不可改;老用户 tool 全靠这个名字)
 - **No new dependencies**(AGENTS.md hard rule)
 - **API key 只在 sidepanel**(chrome.storage.local/session);BG 侧一律不持 key
 - **Coordinator EXEC 路径首版不自愈**(`allowHeal: false` 显式传)
@@ -123,7 +123,7 @@ describe("PresetSchema", () => {
 - [ ] **Step 2: Run test to verify it fails**
 
 ```bash
-pnpm --filter @atwebpilot/shared test preset.test
+pnpm --filter @aipagego/shared test preset.test
 ```
 Expected: fail with `Cannot find module '../src/preset'`
 
@@ -174,7 +174,7 @@ export type Preset       = z.infer<typeof PresetSchema>;
 - [ ] **Step 4: Run test to verify it passes**
 
 ```bash
-pnpm --filter @atwebpilot/shared test preset.test
+pnpm --filter @aipagego/shared test preset.test
 ```
 Expected: all 4 tests pass
 
@@ -257,7 +257,7 @@ describe("PRESETS registry", () => {
 - [ ] **Step 3: Run tests to verify they fail**
 
 ```bash
-pnpm --filter @atwebpilot/shared test match-presets preset-registry
+pnpm --filter @aipagego/shared test match-presets preset-registry
 ```
 Expected: fails with module not found
 
@@ -293,7 +293,7 @@ export const PRESETS: readonly Preset[] = Object.freeze([]);
 - [ ] **Step 6: Run tests to verify they pass**
 
 ```bash
-pnpm --filter @atwebpilot/shared test match-presets preset-registry
+pnpm --filter @aipagego/shared test match-presets preset-registry
 ```
 Expected: pass (registry is empty but valid)
 
@@ -514,7 +514,7 @@ export const PRESETS: readonly Preset[] = Object.freeze([
 - [ ] **Step 9: Run registry test**
 
 ```bash
-pnpm --filter @atwebpilot/shared test preset-registry
+pnpm --filter @aipagego/shared test preset-registry
 ```
 Expected: 2 tests pass (7 valid entries, unique ids)
 
@@ -676,7 +676,7 @@ export const PRESETS: readonly Preset[] = Object.freeze([
 - [ ] **Step 6: Run all shared tests**
 
 ```bash
-pnpm --filter @atwebpilot/shared test
+pnpm --filter @aipagego/shared test
 ```
 Expected: all pass (registry has 11 entries, all valid, unique ids)
 
@@ -738,7 +738,7 @@ describe("Tool.origin optional", () => {
 - [ ] **Step 3: Run test to verify it fails**
 
 ```bash
-pnpm --filter @atwebpilot/shared test tool-origin
+pnpm --filter @aipagego/shared test tool-origin
 ```
 Expected: 2nd test fails ("Unrecognized key: origin" if strict) or 2nd passes but Tool type has no field — either way stays red.
 
@@ -805,7 +805,7 @@ If `RunRecord` is only a TS type (no zod), skip the zod change and only extend t
 - [ ] **Step 6: Run test to verify it passes**
 
 ```bash
-pnpm --filter @atwebpilot/shared test tool-origin
+pnpm --filter @aipagego/shared test tool-origin
 ```
 Expected: both pass
 
@@ -967,7 +967,7 @@ describe("self_heal_* SessionEvents", () => {
 - [ ] **Step 5: Run tests to verify pass**
 
 ```bash
-pnpm --filter @atwebpilot/shared test chat-event
+pnpm --filter @aipagego/shared test chat-event
 pnpm -r typecheck
 ```
 Expected: all pass
@@ -1006,7 +1006,7 @@ git commit -m "feat: 3 个 self-heal SessionEvent 变体 + 协议镜像"
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { materializePreset, listTools } from "@/background/storage/tools";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { PRESETS } from "@aipagego/shared/presets";
 
 describe("materializePreset", () => {
   beforeEach(async () => {
@@ -1050,7 +1050,7 @@ describe("materializePreset", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test materialize-preset
+pnpm --filter @aipagego/extension test materialize-preset
 ```
 Expected: fail with `materializePreset is not exported`
 
@@ -1059,9 +1059,9 @@ Expected: fail with `materializePreset is not exported`
 Add at the bottom of `packages/extension/src/background/storage/tools.ts`:
 
 ```ts
-import { PRESETS } from "@atwebpilot/shared/presets";
-import type { Preset } from "@atwebpilot/shared/preset";
-import type { Tool, ToolOrigin } from "@atwebpilot/shared/types";
+import { PRESETS } from "@aipagego/shared/presets";
+import type { Preset } from "@aipagego/shared/preset";
+import type { Tool, ToolOrigin } from "@aipagego/shared/types";
 
 /**
  * Copy a tool-form Preset into IDB. If a user tool already exists for the
@@ -1135,7 +1135,7 @@ export async function materializePreset(presetId: string): Promise<Tool> {
 - [ ] **Step 4: Verify storage test passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test materialize-preset
+pnpm --filter @aipagego/extension test materialize-preset
 ```
 Expected: all 4 pass
 
@@ -1154,7 +1154,7 @@ In `packages/extension/src/background/rpc-handlers.ts`, `dispatch` function swit
 
 ```ts
     case "presets.list": {
-      const { PRESETS } = await import("@atwebpilot/shared/presets");
+      const { PRESETS } = await import("@aipagego/shared/presets");
       return PRESETS as unknown as Json;
     }
     case "presets.materialize": {
@@ -1173,7 +1173,7 @@ In `packages/extension/src/sidepanel/rpc.ts` `export const rpc = { ... }`, add:
     call<Tool>({ type: "presets.materialize", presetId }),
 ```
 
-Import `Preset` from `@atwebpilot/shared/preset` at the top if needed.
+Import `Preset` from `@aipagego/shared/preset` at the top if needed.
 
 - [ ] **Step 8: Typecheck + full test**
 
@@ -1213,7 +1213,7 @@ git commit -m "feat: materializePreset 存储辅助 + presets.list/materialize R
 // packages/extension/tests/background/tab-watcher-presets.test.ts
 import "fake-indexeddb/auto";
 import { describe, expect, it, vi } from "vitest";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { PRESETS } from "@aipagego/shared/presets";
 
 // Minimal chrome mock
 (globalThis as any).chrome = {
@@ -1257,7 +1257,7 @@ describe("refreshRecommendations includes matching presets", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test tab-watcher-presets
+pnpm --filter @aipagego/extension test tab-watcher-presets
 ```
 Expected: fail — `msg.presets is undefined`
 
@@ -1267,9 +1267,9 @@ Rewrite `refreshRecommendations` in `packages/extension/src/background/tab-watch
 
 ```ts
 import { matchingTools } from "./storage/tools";
-import { matchPresetsByUrl } from "@atwebpilot/shared/match-presets";
-import type { Preset } from "@atwebpilot/shared/preset";
-import type { Tool } from "@atwebpilot/shared/types";
+import { matchPresetsByUrl } from "@aipagego/shared/match-presets";
+import type { Preset } from "@aipagego/shared/preset";
+import type { Tool } from "@aipagego/shared/types";
 
 export async function refreshRecommendations(tabId: number, url: string): Promise<void> {
   const tools = await matchingTools(url);
@@ -1310,7 +1310,7 @@ export async function refreshRecommendations(tabId: number, url: string): Promis
 - [ ] **Step 4: Verify test passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test tab-watcher-presets
+pnpm --filter @aipagego/extension test tab-watcher-presets
 ```
 Expected: pass
 
@@ -1394,8 +1394,8 @@ describe("QuickActions URL-conditional prompt preset", () => {
 
 ```tsx
 // packages/extension/src/sidepanel/chat/quick-actions.tsx
-import { matchPresetsByUrl } from "@atwebpilot/shared/match-presets";
-import type { PromptPreset } from "@atwebpilot/shared/preset";
+import { matchPresetsByUrl } from "@aipagego/shared/match-presets";
+import type { PromptPreset } from "@aipagego/shared/preset";
 
 type Action = { id: string; label: string; prompt: string };
 
@@ -1458,7 +1458,7 @@ Add `currentUrl` prop where `<QuickActions .../>` is rendered — grep result wi
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test quick-actions
+pnpm --filter @aipagego/extension test quick-actions
 pnpm -r typecheck
 ```
 Expected: pass
@@ -1493,7 +1493,7 @@ git commit -m "feat(chat): quick-actions 优先展示 URL 命中的 prompt prese
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ScenariosPage } from "@/sidepanel/pages/scenarios-page";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { PRESETS } from "@aipagego/shared/presets";
 
 vi.mock("@/sidepanel/rpc", () => ({
   rpc: {
@@ -1526,8 +1526,8 @@ describe("ScenariosPage", () => {
 ```tsx
 // packages/extension/src/sidepanel/pages/scenarios-page.tsx
 import { useEffect, useState } from "react";
-import type { Preset } from "@atwebpilot/shared/preset";
-import type { Tool } from "@atwebpilot/shared/types";
+import type { Preset } from "@aipagego/shared/preset";
+import type { Tool } from "@aipagego/shared/types";
 import { rpc, currentTabInfo } from "@/sidepanel/rpc";
 
 const CAT_LABEL: Record<string, string> = {
@@ -1686,7 +1686,7 @@ And in the top nav tab list, add:
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test scenarios-page
+pnpm --filter @aipagego/extension test scenarios-page
 pnpm -r typecheck
 ```
 Expected: pass
@@ -1721,7 +1721,7 @@ git commit -m "feat(sidepanel): 场景库页 #/scenarios — 搜索/分类/一�
 // packages/extension/tests/background/self-heal.test.ts
 import { describe, expect, it, vi } from "vitest";
 import { attemptHeal } from "@/background/self-heal";
-import type { Step } from "@atwebpilot/shared/types";
+import type { Step } from "@aipagego/shared/types";
 
 const baseCtx = {
   tool: {
@@ -1801,7 +1801,7 @@ describe("attemptHeal", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test self-heal
+pnpm --filter @aipagego/extension test self-heal
 ```
 Expected: fail with `Cannot find module '@/background/self-heal'`
 
@@ -1809,7 +1809,7 @@ Expected: fail with `Cannot find module '@/background/self-heal'`
 
 ```ts
 // packages/extension/src/background/self-heal.ts
-import type { Step, Tool, Json } from "@atwebpilot/shared/types";
+import type { Step, Tool, Json } from "@aipagego/shared/types";
 import { classifyTool } from "@/sidepanel/chat/severity";
 
 export type HealContext = {
@@ -1887,7 +1887,7 @@ export async function attemptHeal(
 - [ ] **Step 4: Run test to verify pass**
 
 ```bash
-pnpm --filter @atwebpilot/extension test self-heal
+pnpm --filter @aipagego/extension test self-heal
 ```
 Expected: 5 tests pass
 
@@ -2188,7 +2188,7 @@ describe("runTool self-heal integration", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test bg-tool-runner-heal
+pnpm --filter @aipagego/extension test bg-tool-runner-heal
 ```
 Expected: fail — no v2, no `runRecord.healed`
 
@@ -2342,7 +2342,7 @@ async function readLlmSettings(): Promise<{
   maxSelfHealOutputTokens: number;
   apiKey: string;
 }> {
-  const KEY = "atwebpilot.llm";
+  const KEY = "aipagego.llm";
   const raw = (await chrome.storage.local.get([KEY]))[KEY] ?? {};
   const session = (await chrome.storage.session.get([KEY]))[KEY] ?? {};
   const apiKey = raw.apiKey || session.apiKey || "";
@@ -2371,7 +2371,7 @@ Add imports at top:
 
 ```ts
 import { z } from "zod";
-import { StepSchema } from "@atwebpilot/shared/messages";
+import { StepSchema } from "@aipagego/shared/messages";
 import { attemptHeal } from "./self-heal";
 import { requestSidepanelLlm } from "./self-heal-bridge";
 import { classifyTool } from "@/sidepanel/chat/severity";
@@ -2394,7 +2394,7 @@ export async function setRunHealed(
 - [ ] **Step 5: Verify test passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test bg-tool-runner-heal
+pnpm --filter @aipagego/extension test bg-tool-runner-heal
 ```
 Expected: pass
 
@@ -2571,7 +2571,7 @@ git checkout feat/scenario-presets-and-self-heal
 git push -u origin feat/scenario-presets-and-self-heal
 gh pr create --title "feat: 场景 Preset 库 + Tool 运行时自愈" --body "$(cat <<'EOF'
 ## Summary
-- 引入 `@atwebpilot/shared/presets` 静态 registry — 11 个内置 preset(7 内容站 prompt-form + 4 电商 tool-form)
+- 引入 `@aipagego/shared/presets` 静态 registry — 11 个内置 preset(7 内容站 prompt-form + 4 电商 tool-form)
 - Tool 重放路径加运行时自愈: step 失败 → 一次性 LLM 调用生成补丁 steps → static-scan 拒 dangerous → appendVersion v(N+1) 继续跑
 - 曝光通路: tab-watcher 合并 preset 匹配 → quick-actions URL 命中优先 → 新 `#/scenarios` 场景库页
 - 设置加两个开关: `selfHealEnabled`(默认 on), `maxSelfHealOutputTokens`(默认 4096)
@@ -2654,7 +2654,7 @@ export async function exportTools() {
 
 // 在 importTools 里静默丢弃未知 preset origin:
 export async function importTools(bundle) {
-  const { PRESETS } = await import("@atwebpilot/shared/presets");
+  const { PRESETS } = await import("@aipagego/shared/presets");
   const validIds = new Set(PRESETS.map((p) => p.id));
   for (const raw of bundle.tools) {
     if (raw.origin?.kind === "preset" && !validIds.has(raw.origin.presetId)) {
@@ -2669,12 +2669,12 @@ export async function importTools(bundle) {
 
 ### Placeholder Scan
 
-- ✅ 无 `TBD`/`TODO`/`FIXME`(除 Task 14 Step 3 里 `staticScan: () => []  // TODO Task 15: wire real static-scan` — 这实际上应由 `@atwebpilot/shared/static-scan` 提供;修正为直接调 real static-scan)
+- ✅ 无 `TBD`/`TODO`/`FIXME`(除 Task 14 Step 3 里 `staticScan: () => []  // TODO Task 15: wire real static-scan` — 这实际上应由 `@aipagego/shared/static-scan` 提供;修正为直接调 real static-scan)
 
 Fix inline in Task 14 Step 3:
 
 ```ts
-import { staticScan as sharedStaticScan } from "@atwebpilot/shared/static-scan";
+import { staticScan as sharedStaticScan } from "@aipagego/shared/static-scan";
 // ...
 staticScan: (steps) => steps.flatMap((s) =>
   s.kind === "js" ? sharedStaticScan(s.source).map((f) => f.severity) : []

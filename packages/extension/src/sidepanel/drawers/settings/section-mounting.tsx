@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
-import { normalizeHostPattern, resolveInjectionPolicy } from "@atwebpilot/shared";
-import type { InjectionMode, SiteInjectionRule } from "@atwebpilot/shared/types";
+import { normalizeHostPattern, resolveInjectionPolicy } from "@aipagego/shared";
+import type { InjectionMode, SiteInjectionRule } from "@aipagego/shared/types";
 import { useSettings } from "@/sidepanel/chat/settings-store";
 
 const MODES: Array<{ value: InjectionMode; label: string }> = [

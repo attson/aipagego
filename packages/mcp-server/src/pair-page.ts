@@ -1,4 +1,4 @@
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import type { PairPayload } from "@aipagego/shared/pairing";
 
 /**
  * The pairing page is a *carrier*, not an authority. It hands the extension a
@@ -12,29 +12,29 @@ export function renderPairPage(payload: PairPayload): string {
   const json = JSON.stringify(payload).replace(/</g, "\\u003c");
   return `<!doctype html>
 <meta charset="utf-8">
-<title>AtWebPilot 配对</title>
+<title>AIPageGo 配对</title>
 <body style="font:14px/1.6 system-ui,sans-serif;padding:2rem;max-width:32rem;margin:auto;color:#222">
-<h1 style="font-size:1.1rem;margin:0 0 1rem">AtWebPilot 配对</h1>
-<p id="atwebpilot-status">正在联系扩展…</p>
+<h1 style="font-size:1.1rem;margin:0 0 1rem">AIPageGo 配对</h1>
+<p id="aipagego-status">正在联系扩展…</p>
 <p style="color:#666;font-size:13px">会话：${escapeHtml(payload.label)} · pid ${payload.pid} · 端口 ${payload.port} · ${payload.mcpVersion ? `MCP v${escapeHtml(payload.mcpVersion)}` : "MCP 版本未知"}</p>
-<p style="color:#666;font-size:13px">没有反应？请确认这个浏览器已安装并启用 AtWebPilot 扩展，然后刷新本页。</p>
+<p style="color:#666;font-size:13px">没有反应？请确认这个浏览器已安装并启用 AIPageGo 扩展，然后刷新本页。</p>
 <script>
 (function () {
   var payload = ${json};
   var done = false;
 
   function announce() {
-    if (!done) window.postMessage({ source: "atwebpilot-pair", payload: payload }, "*");
+    if (!done) window.postMessage({ source: "aipagego-pair", payload: payload }, "*");
   }
 
   window.addEventListener("message", function (e) {
     if (!e.data) return;
     // The extension's relay installs at document_idle, i.e. after this script
     // has already run. It says hello when it is ready; that is our cue.
-    if (e.data.source === "atwebpilot-pair-ready") { announce(); return; }
-    if (e.data.source !== "atwebpilot-pair-result") return;
+    if (e.data.source === "aipagego-pair-ready") { announce(); return; }
+    if (e.data.source !== "aipagego-pair-result") return;
     done = true;
-    var el = document.getElementById("atwebpilot-status");
+    var el = document.getElementById("aipagego-status");
     if (e.data.ok) {
       if (typeof e.data.versionWarning === "string" && e.data.versionWarning) {
         el.textContent = "版本提醒：" + e.data.versionWarning + "。会话已连接，可以关闭本页。";
@@ -69,8 +69,8 @@ export function renderPairPage(payload: PairPayload): string {
     if (done || ++tries > 40) {
       clearInterval(timer);
       if (!done) {
-        document.getElementById("atwebpilot-status").textContent =
-          "没有联系上扩展。请确认这个浏览器已安装并启用 AtWebPilot 扩展，然后刷新本页。";
+        document.getElementById("aipagego-status").textContent =
+          "没有联系上扩展。请确认这个浏览器已安装并启用 AIPageGo 扩展，然后刷新本页。";
       }
       return;
     }

@@ -2,15 +2,15 @@
 
 **状态**：草稿 · 2026-07-08 · 作者:assistant + attson
 
-在每个可注入网页右下角提供一个可拖动 FAB,点开一个 Shadow DOM 承载的 mini 对话面板,让 AtWebPilot 的"读/写/采"能在页内直接完成。sidepanel 保留为全功能后备(工具库/场景库/settings/诊断);widget 是**同一份会话**的第二个入口,不重写不分叉。
+在每个可注入网页右下角提供一个可拖动 FAB,点开一个 Shadow DOM 承载的 mini 对话面板,让 AIPageGo 的"读/写/采"能在页内直接完成。sidepanel 保留为全功能后备(工具库/场景库/settings/诊断);widget 是**同一份会话**的第二个入口,不重写不分叉。
 
 ## 1 · 背景
 
-现状:AtWebPilot 唯一入口是浏览器右上角扩展图标 → sidepanel。这有两个心智门槛:
+现状:AIPageGo 唯一入口是浏览器右上角扩展图标 → sidepanel。这有两个心智门槛:
 - **入口不显眼**:非重度用户每次要点扩展图标,失去"聊天永远在手边"的感觉
 - **占屏严重**:sidepanel 会挤压主内容区域;很多"看一眼、问一句"的场景不值得撑开面板
 
-同类产品(Intercom / Notion AI / Google Gemini in-page bubble / ChatGPT sidebar)证明:**页内浮窗**是 AI 助手最贴近用户心智的形态。AtWebPilot 的核心资产(自愈 / 场景 preset / 36 工具)全在页面上生效,理应把入口也放到页面。
+同类产品(Intercom / Notion AI / Google Gemini in-page bubble / ChatGPT sidebar)证明:**页内浮窗**是 AI 助手最贴近用户心智的形态。AIPageGo 的核心资产(自愈 / 场景 preset / 36 工具)全在页面上生效,理应把入口也放到页面。
 
 ## 2 · 目标
 
@@ -38,7 +38,7 @@
 │  packages/extension/src/content/widget/                        │
 │  (新增第 5 个 content-script bundle,与 breathing-border 并列) │
 │                                                                │
-│  ├─ mount.ts          document_idle → 创建 <atwebpilot-widget> │
+│  ├─ mount.ts          document_idle → 创建 <aipagego-widget> │
 │  │                    custom element + attachShadow({mode:open})│
 │  ├─ fab.tsx           悬浮球:拖动 / 双击最小化 / 右键小菜单   │
 │  ├─ panel.tsx         mini shell:header + chat + input        │
@@ -79,17 +79,17 @@
 ### 5.1 chrome.storage.local(新增 key)
 
 ```ts
-"atwebpilot.widget.hiddenHosts"     // string[]  精确匹配 host
-"atwebpilot.widget.fabPos"          // { [host: string]: { x, y } }
-"atwebpilot.widget.panelSize"       // { w, h }  全局记忆
+"aipagego.widget.hiddenHosts"     // string[]  精确匹配 host
+"aipagego.widget.fabPos"          // { [host: string]: { x, y } }
+"aipagego.widget.panelSize"       // { w, h }  全局记忆
 ```
 
-**注**:总闸 `widgetEnabled` 走 LlmSettings(存于 `atwebpilot.llm`),不引入独立 `atwebpilot.widget.globalEnabled`;这样设置页与其他 LLM 偏好一同展示,CRUD 路径统一。
+**注**:总闸 `widgetEnabled` 走 LlmSettings(存于 `aipagego.llm`),不引入独立 `aipagego.widget.globalEnabled`;这样设置页与其他 LLM 偏好一同展示,CRUD 路径统一。
 
 ### 5.2 LlmSettings 扩展(`packages/shared/src/types.ts`)
 
 ```ts
-widgetEnabled: boolean;    // 默认 true;总闸;存于 atwebpilot.llm 下
+widgetEnabled: boolean;    // 默认 true;总闸;存于 aipagego.llm 下
 ```
 
 ### 5.3 SessionData 加 `_rev`
@@ -107,7 +107,7 @@ type SessionData = {
 ### 5.4 pendingApprovalId 中继(chrome.storage.session)
 
 ```ts
-"atwebpilot.pendingApproval"       // { tabId, approvalId, ts } | null
+"aipagego.pendingApproval"       // { tabId, approvalId, ts } | null
 ```
 
 Widget 触发 sidebar 打开时写入;sidepanel 起来后 `useEffect` 读一次,scroll 到该 step-card + 高亮 2s;读完立刻 clear。
@@ -120,13 +120,13 @@ Widget 触发 sidebar 打开时写入;sidepanel 起来后 `useEffect` 读一次,
 async function mount() {
   if (window !== window.top) return;                      // 只顶层
   if (document.contentType !== "text/html") return;       // 不是 HTML
-  const s = await chrome.storage.local.get(["atwebpilot.llm"]);
-  const enabled = s["atwebpilot.llm"]?.widgetEnabled !== false;
+  const s = await chrome.storage.local.get(["aipagego.llm"]);
+  const enabled = s["aipagego.llm"]?.widgetEnabled !== false;
   if (!enabled) return;
-  const hosts = (await chrome.storage.local.get(["atwebpilot.widget.hiddenHosts"]))["atwebpilot.widget.hiddenHosts"] ?? [];
+  const hosts = (await chrome.storage.local.get(["aipagego.widget.hiddenHosts"]))["aipagego.widget.hiddenHosts"] ?? [];
   if (hosts.includes(location.host)) return;
 
-  const el = document.createElement("atwebpilot-widget");
+  const el = document.createElement("aipagego-widget");
   document.documentElement.appendChild(el);
   const shadow = el.attachShadow({ mode: "open" });
   await bootstrapReact(shadow);
@@ -146,7 +146,7 @@ async function mount() {
 布局:
 ```
 ┌──────────────────────────────────────┐
-│ ⚡AtWebPilot [↗sidepanel] [—] [×]     │  header (拖动)
+│ ⚡AIPageGo [↗sidepanel] [—] [×]     │  header (拖动)
 ├──────────────────────────────────────┤
 │ (URL 命中的 preset 卡片 - EmptySuggestions) │
 ├──────────────────────────────────────┤
@@ -256,7 +256,7 @@ case "widget.openSidepanel": {
   await chrome.sidePanel.open({ tabId: req.tabId });
   if (req.pendingApprovalId) {
     await chrome.storage.session.set({
-      "atwebpilot.pendingApproval": { tabId: req.tabId, approvalId: req.pendingApprovalId, ts: Date.now() }
+      "aipagego.pendingApproval": { tabId: req.tabId, approvalId: req.pendingApprovalId, ts: Date.now() }
     });
   }
   return null;
@@ -271,12 +271,12 @@ case "widget.openSidepanel": {
 Sidepanel mount 时的 `useEffect`:
 ```ts
 useEffect(() => {
-  chrome.storage.session.get(["atwebpilot.pendingApproval"]).then((res) => {
-    const p = res["atwebpilot.pendingApproval"];
+  chrome.storage.session.get(["aipagego.pendingApproval"]).then((res) => {
+    const p = res["aipagego.pendingApproval"];
     if (!p) return;
     if (Date.now() - p.ts > 30_000) return;  // 太老忽略
     scrollToStepCard(p.approvalId);
-    chrome.storage.session.remove(["atwebpilot.pendingApproval"]);
+    chrome.storage.session.remove(["aipagego.pendingApproval"]);
   });
 }, []);
 ```
@@ -332,7 +332,7 @@ Approver 是同一个单例 → widget 的 pending Promise 在 sidepanel approve
 
 ## 13 · 度量 & 观测
 
-- widget mount 每次打 `console.info("[atwebpilot-widget] mounted on", location.host)`
+- widget mount 每次打 `console.info("[aipagego-widget] mounted on", location.host)`
 - 诊断包(现有 `[导出诊断包]`)加两段:`fabPos` / `hiddenHosts` / `widgetEnabled` 值
 - 会话消息里若一条来自 widget、后续 sidepanel 补的,不做区分标签(共享 session,溯源无意义)
 

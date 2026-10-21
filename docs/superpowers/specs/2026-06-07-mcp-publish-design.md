@@ -1,32 +1,32 @@
-# 发布 @attson/atwebpilot-mcp 到 npm — 设计文档
+# 发布 @attson/aipagego-mcp 到 npm — 设计文档
 
 > 状态：设计已评审通过，待 writing-plans。
 > 对应 plan：`../plans/2026-06-07-mcp-publish.md`（待生成）。
 
 ## 1. 目标
 
-让别人能用一行命令装 atwebpilot 的 MCP server：
+让别人能用一行命令装 aipagego 的 MCP server：
 
 ```
-claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 ```
 
-不再需要 clone monorepo、配 tsx 绝对路径。Chrome 扩展侧的分发仍走「下载 [v* tag 的 release zip](https://github.com/attson/atwebpilot/releases/latest) → 加载已解压扩展」（Chrome Web Store 上架不在本期）。
+不再需要 clone monorepo、配 tsx 绝对路径。Chrome 扩展侧的分发仍走「下载 [v* tag 的 release zip](https://github.com/attson/aipagego/releases/latest) → 加载已解压扩展」（Chrome Web Store 上架不在本期）。
 
 ## 2. 范围决策（brainstorming 结论）
 
 | 维度 | 决策 |
 |---|---|
-| 包名 | `@attson/atwebpilot-mcp`（个人 scope `@attson`，公开包） |
+| 包名 | `@attson/aipagego-mcp`（个人 scope `@attson`，公开包） |
 | Bundler | **tsup**（esbuild-based, 零配置） |
-| Workspace 依赖处理 | **内联**进单文件 `dist/index.js`（`@atwebpilot/shared` 和 `@atwebpilot/coordinator` 不发 npm） |
+| Workspace 依赖处理 | **内联**进单文件 `dist/index.js`（`@aipagego/shared` 和 `@aipagego/coordinator` 不发 npm） |
 | 运行时依赖（external） | `ws`, `@modelcontextprotocol/sdk`, `zod` —— 这三个不内联，由 npm 自动装到用户机器 |
 | Shebang | tsup `banner: { js: "#!/usr/bin/env node" }`；publish 时给 `dist/index.js` 加 `executable` bit（npm 自动处理 bin 字段对应文件） |
 | Version | 与 root `package.json` 版本同步；首发即 `0.0.19` |
 | License | **Apache-2.0**，加 `LICENSE` 全文 + copyright Attson 2026 |
 | 发布触发 | CI auto-publish：v* tag 推上 → 新 workflow `publish-mcp-server.yml` 跑 → `npm publish` |
 | npm scope 可见性 | `publishConfig.access: "public"`（scoped 包默认 private，需显式放开） |
-| env var 改名 | **本 plan 包含** `WEBPILOT_*` → `ATWEBPILOT_*`，硬切换无回退 |
+| env var 改名 | **本 plan 包含** `WEBPILOT_*` → `AIPAGEGO_*`，硬切换无回退 |
 | 其余包 | `packages/shared` `packages/coordinator` `packages/extension` 保持 `"private": true` |
 | 安装文档 | 根 README 顶部加 `## 安装` 小节；`packages/mcp-server/README.md` 改 npx 优先；AGENTS.md 不动 |
 
@@ -59,17 +59,17 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
  │  publish-mcp-server.yml (new workflow)        │
  │   on push tag v*                              │
  │     pnpm install --frozen-lockfile            │
- │     pnpm -F @atwebpilot/mcp-server build      │
+ │     pnpm -F @aipagego/mcp-server build      │
  │     cd packages/mcp-server                    │
  │     npm publish --provenance --access public  │
  │       NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}} │
  └───────────────────────────────────────────────┘
                      │
                      ▼
- ┌───── npm registry: @attson/atwebpilot-mcp ────┐
+ ┌───── npm registry: @attson/aipagego-mcp ────┐
  │  versions: 0.0.19, 0.0.20, ...                │
  │  package.json fields:                          │
- │    bin: { "atwebpilot-mcp": "dist/index.js" } │
+ │    bin: { "aipagego-mcp": "dist/index.js" } │
  │    files: ["dist","README.md","LICENSE"]      │
  │    license: "Apache-2.0"                       │
  │    publishConfig.access: "public"              │
@@ -78,7 +78,7 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
                      ▼
  ┌── 用户机器 ─────────────────────────────────────┐
  │  ~/.claude.json:                                │
- │    "command":"npx", "args":["-y","@attson/atwebpilot-mcp"] │
+ │    "command":"npx", "args":["-y","@attson/aipagego-mcp"] │
  │  Claude Code 启会话 → npx 自动拉最新 → spawn   │
  │  stdio MCP 通；ws 服务端口 8787 监听            │
  │                                                 │
@@ -94,11 +94,11 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 改动前（关键字段）：
 ```json
 {
-  "name": "@atwebpilot/mcp-server",
+  "name": "@aipagego/mcp-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "bin": { "atwebpilot-mcp": "./src/index.ts" },
+  "bin": { "aipagego-mcp": "./src/index.ts" },
   "exports": { ".": "./src/index.ts" },
   "scripts": { "start": "tsx src/index.ts" }
 }
@@ -107,14 +107,14 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 改动后：
 ```json
 {
-  "name": "@attson/atwebpilot-mcp",                     ← 改 scope 到 @attson（用户个人 scope）
+  "name": "@attson/aipagego-mcp",                     ← 改 scope 到 @attson（用户个人 scope）
   "version": "0.0.19",                                  ← 与 root 同步，首发
   "license": "Apache-2.0",                              ← 新增
-  "description": "MCP server for the atwebpilot browser extension — let Claude Code drive your browser.",
-  "homepage": "https://github.com/attson/atwebpilot#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/attson/atwebpilot.git" },
+  "description": "MCP server for the aipagego browser extension — let Claude Code drive your browser.",
+  "homepage": "https://github.com/attson/aipagego#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/attson/aipagego.git" },
   "type": "module",
-  "bin": { "atwebpilot-mcp": "./dist/index.js" },       ← 指向 bundled 输出
+  "bin": { "aipagego-mcp": "./dist/index.js" },       ← 指向 bundled 输出
   "exports": { ".": "./dist/index.js" },                ← 同上
   "files": ["dist", "README.md", "LICENSE"],            ← 控制 tarball 内容
   "publishConfig": { "access": "public" },              ← scoped 包须显式 public
@@ -130,8 +130,8 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@atwebpilot/shared": "workspace:*",                ← 从 deps 移到 devDeps（构建期用，内联不再是运行期依赖）
-    "@atwebpilot/coordinator": "workspace:*",
+    "@aipagego/shared": "workspace:*",                ← 从 deps 移到 devDeps（构建期用，内联不再是运行期依赖）
+    "@aipagego/coordinator": "workspace:*",
     "@types/node": "^20",
     "@types/ws": "^8.5.12",
     "typescript": "^5.5.4",
@@ -142,9 +142,9 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 }
 ```
 
-> **关键决策**：name 从 `@atwebpilot/mcp-server` 改成 `@attson/atwebpilot-mcp`。原因：`@atwebpilot` 是个未注册的 npm scope（要发的话用户得注册一个 organization）；`@attson` 是用户已有的 npm 用户名 scope，零额外注册。**所有源码 import 仍可保留 `@atwebpilot/shared|coordinator`**——因为这俩 workspace 包不发 npm，只内部用。
+> **关键决策**：name 从 `@aipagego/mcp-server` 改成 `@attson/aipagego-mcp`。原因：`@aipagego` 是个未注册的 npm scope（要发的话用户得注册一个 organization）；`@attson` 是用户已有的 npm 用户名 scope，零额外注册。**所有源码 import 仍可保留 `@aipagego/shared|coordinator`**——因为这俩 workspace 包不发 npm，只内部用。
 
-注意 workspace 包名仍是 `@atwebpilot/shared` 和 `@atwebpilot/coordinator`，本 plan 不动它们。只有 mcp-server 这一个外发包改名。
+注意 workspace 包名仍是 `@aipagego/shared` 和 `@aipagego/coordinator`，本 plan 不动它们。只有 mcp-server 这一个外发包改名。
 
 ### 5.2 `packages/mcp-server/tsup.config.ts`（新建）
 
@@ -159,7 +159,7 @@ export default defineConfig({
   clean: true,
   banner: { js: "#!/usr/bin/env node" },
   // 内联 workspace 包源码：npm 上无这俩包，必须 inline
-  noExternal: ["@atwebpilot/shared", "@atwebpilot/coordinator"],
+  noExternal: ["@aipagego/shared", "@aipagego/coordinator"],
   // 这三个声明在 dependencies，npm 自动装到用户机器
   external: ["ws", "@modelcontextprotocol/sdk", "zod"],
   // sourcemap 不要——增大 tarball 又无 user-debug 价值
@@ -178,32 +178,32 @@ export default defineConfig({
 ```diff
 - const port = Number(process.env.WEBPILOT_WS_PORT ?? 8787);
 - const token = process.env.WEBPILOT_WS_TOKEN || undefined;
-+ const port = Number(process.env.ATWEBPILOT_WS_PORT ?? 8787);
-+ const token = process.env.ATWEBPILOT_WS_TOKEN || undefined;
++ const port = Number(process.env.AIPAGEGO_WS_PORT ?? 8787);
++ const token = process.env.AIPAGEGO_WS_TOKEN || undefined;
 ```
 
 ### 5.4 `packages/mcp-server/README.md`（重写）
 
 ```markdown
-# @attson/atwebpilot-mcp
+# @attson/aipagego-mcp
 
-让 Claude Code 经一个本地 ws 中继驱动 atwebpilot 浏览器扩展操作网页。
+让 Claude Code 经一个本地 ws 中继驱动 aipagego 浏览器扩展操作网页。
 
 ## 给用户：一行装
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
 可选环境变量：
 
-- `ATWEBPILOT_WS_PORT`（默认 8787）：本地 ws 监听端口
-- `ATWEBPILOT_WS_TOKEN`（可选）：扩展连接时要求 `bearer.<token>` 子协议
+- `AIPAGEGO_WS_PORT`（默认 8787）：本地 ws 监听端口
+- `AIPAGEGO_WS_TOKEN`（可选）：扩展连接时要求 `bearer.<token>` 子协议
 
-然后[下载 release zip](https://github.com/attson/atwebpilot/releases/latest) 加载已解压扩展，
+然后[下载 release zip](https://github.com/attson/aipagego/releases/latest) 加载已解压扩展，
 在扩展设置 → Coordinator 子页填 `ws://127.0.0.1:8787/worker` → 连接。
 
 ## 给开发者：本地 monorepo
 
-    pnpm -F @attson/atwebpilot-mcp start
+    pnpm -F @attson/aipagego-mcp start
 
 ## 工具
 
@@ -260,7 +260,7 @@ jobs:
           corepack enable
           corepack prepare pnpm@9 --activate
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -F @attson/atwebpilot-mcp build
+      - run: pnpm -F @attson/aipagego-mcp build
       - name: Verify dist
         run: |
           test -f packages/mcp-server/dist/index.js
@@ -282,20 +282,20 @@ jobs:
 
 只想 **用**（不开发）：
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
-然后下载 [最新 release zip](https://github.com/attson/atwebpilot/releases/latest)，在
+然后下载 [最新 release zip](https://github.com/attson/aipagego/releases/latest)，在
 `chrome://extensions` 加载已解压扩展，扩展设置 → Coordinator 填
 `ws://127.0.0.1:8787/worker` → 连接。
 
-可选环境变量：`ATWEBPILOT_WS_PORT` / `ATWEBPILOT_WS_TOKEN`。
+可选环境变量：`AIPAGEGO_WS_PORT` / `AIPAGEGO_WS_TOKEN`。
 ```
 
 ## 6. 前置准备（一次性手动，发布前必须做完）
 
 1. **npmjs.com 账号**：用户 `attson` 应已有（个人 scope `@attson` = npm 用户名）。如果还没注册，先注册。
 2. **生成 access token**：npmjs.com → Profile → Access Tokens → **Granular** token：
-   - Token name: `atwebpilot-github-actions`
+   - Token name: `aipagego-github-actions`
    - Expiration: 1 year（或 No expiration）
    - Permissions: **Read and write**
    - Packages and scopes: limit to `@attson/*`
@@ -305,15 +305,15 @@ jobs:
 
 ## 7. 验收
 
-- [ ] `pnpm -F @attson/atwebpilot-mcp build` 出 `dist/index.js`，含 shebang，文件大小 < 2 MB
+- [ ] `pnpm -F @attson/aipagego-mcp build` 出 `dist/index.js`，含 shebang，文件大小 < 2 MB
 - [ ] `node packages/mcp-server/dist/index.js` 启动正常（stderr 打印 ready 行）
 - [ ] `pnpm -r typecheck/test` 519 测试零回归
-- [ ] `pnpm -F @atwebpilot/extension build` 仍正常（扩展包名 `@atwebpilot/extension` 不变）
+- [ ] `pnpm -F @aipagego/extension build` 仍正常（扩展包名 `@aipagego/extension` 不变）
 - [ ] PR 合 main 后 bump root v0.0.19 + tag → 两个 workflow 都触发：
-  - `build-extension.yml`：出 GitHub Release `atwebpilot-0.0.19.zip`
+  - `build-extension.yml`：出 GitHub Release `aipagego-0.0.19.zip`
   - `publish-mcp-server.yml`：`npm publish` 成功
-- [ ] `npm view @attson/atwebpilot-mcp` 显示 0.0.19
-- [ ] 在 monorepo 之外的目录 `npx -y @attson/atwebpilot-mcp` 启动 ws server，打印 ready 行
+- [ ] `npm view @attson/aipagego-mcp` 显示 0.0.19
+- [ ] 在 monorepo 之外的目录 `npx -y @attson/aipagego-mcp` 启动 ws server，打印 ready 行
 - [ ] 用户更新 `~/.claude.json` 改用 npx 配置 + 改 env var 名，新会话能 `list_tabs`
 
 ## 8. 风险
@@ -324,7 +324,7 @@ jobs:
 | tsup bundle 出错（如 import.meta 或 dynamic require 问题） | 中 | 本地 `pnpm build` 后跑 `node dist/index.js` 烟测；CI 也跑同样的 verify dist 步骤 |
 | 内联的 workspace 包源码无意引入 dev-only 代码（如 vitest 类） | 低 | tsup 默认只跟 entry 的静态 import；监控 bundle size |
 | 用户 `~/.claude.json` 配的旧 env var 名未更新 → server 用默认 port 8787 / 无 token | 已接受 | plan 里给一行 `sed` 命令改用户 config；用户主动改 |
-| 包名 `@attson/atwebpilot-mcp` 在 npm 上被抢注（虽个人 scope 应独占） | 极低 | publish 前 `npm view @attson/atwebpilot-mcp` 应 404 |
+| 包名 `@attson/aipagego-mcp` 在 npm 上被抢注（虽个人 scope 应独占） | 极低 | publish 前 `npm view @attson/aipagego-mcp` 应 404 |
 | 两个 workflow on `v*` tag 同时跑 → race | 已分析无害 | 两 workflow 互不依赖、产出不同（GitHub Release vs npm registry） |
 
 ## 9. 后续

@@ -1,4 +1,4 @@
-import { RpcRequest as RpcRequestSchema } from "@atwebpilot/shared/messages";
+import { RpcRequest as RpcRequestSchema } from "@aipagego/shared/messages";
 import { handleRpc, setRecorderPolicy } from "./rpc-handlers";
 import { installTabWatcher } from "./tab-watcher";
 import { installTabCloseArchiver } from "./tab-close-archiver";
@@ -23,7 +23,7 @@ import { CoordinatorPool } from "./coordinator-pool";
 import { TabOwnership } from "./tab-ownership";
 import { installTabsBroadcast } from "./tabs-broadcast";
 import { approve, decidePairing } from "./pairing-host";
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import type { PairPayload } from "@aipagego/shared/pairing";
 import { readPolicyForTab } from "@/injection-policy";
 import { TabSessionGroupManager } from "./tab-session-groups";
 import { LocalSessionGroupSync } from "./local-session-groups";
@@ -33,7 +33,7 @@ import { LocalSessionGroupSync } from "./local-session-groups";
 installCdpListeners();
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("[atwebpilot] service worker installed");
+  console.info("[aipagego] service worker installed");
   registerContextMenus();
 });
 
@@ -55,7 +55,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((e) => console.error("[atwebpilot] sidePanel setPanelBehavior", e));
+  .catch((e) => console.error("[aipagego] sidePanel setPanelBehavior", e));
 
 installTabWatcher();
 installTabCloseArchiver();
@@ -64,7 +64,7 @@ const localSessionGroups = new LocalSessionGroupSync(tabSessionGroups);
 installSessionBroker({
   onSnapshot: (tabId, snapshot) =>
     localSessionGroups.sync(tabId, snapshot as Parameters<LocalSessionGroupSync["sync"]>[1])
-      .catch((e) => console.warn("[atwebpilot] local tab grouping failed", e))
+      .catch((e) => console.warn("[aipagego] local tab grouping failed", e))
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
@@ -79,11 +79,11 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // Tiny side-channel for content scripts that need to know their own tabId
   // (used by breathing-border). Bypass the RpcRequest schema for this one.
-  if (msg && typeof msg === "object" && (msg as { type?: string }).type === "atwebpilot.getTabId") {
+  if (msg && typeof msg === "object" && (msg as { type?: string }).type === "aipagego.getTabId") {
     sendResponse({ tabId: sender.tab?.id ?? null });
     return false;
   }
-  if (msg && typeof msg === "object" && (msg as { type?: string }).type === "atwebpilot.recorderPolicy") {
+  if (msg && typeof msg === "object" && (msg as { type?: string }).type === "aipagego.recorderPolicy") {
     const tabId = sender.tab?.id;
     if (tabId == null) {
       sendResponse({ ok: false, error: "tab missing" });
@@ -101,7 +101,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (
     msg &&
     typeof msg === "object" &&
-    (msg as { type?: string }).type === "atwebpilot.externalReplay"
+    (msg as { type?: string }).type === "aipagego.externalReplay"
   ) {
     const m = msg as { payload?: unknown; sourceUrl?: string };
     const sourceUrl = m.sourceUrl ?? sender.tab?.url ?? "(unknown)";
@@ -338,7 +338,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (
     keys.some(
       (k) =>
-        k === "atwebpilot.coordinator.config" || k === "atwebpilot.coordinator.token"
+        k === "aipagego.coordinator.config" || k === "aipagego.coordinator.token"
     )
   ) {
     void (async () => {

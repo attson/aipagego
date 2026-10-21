@@ -3,7 +3,7 @@ import { runChatSession, type SessionEvent } from "@/sidepanel/chat/run-session"
 import { Approver } from "@/sidepanel/chat/approval";
 import type { LlmClient, LlmStreamEvent } from "@/sidepanel/llm/types";
 import type { ToolRunner } from "@/sidepanel/chat/tool-runner";
-import type { ChatMessage, ImagePart, Json, Step } from "@atwebpilot/shared/types";
+import type { ChatMessage, ImagePart, Json, Step } from "@aipagego/shared/types";
 
 function streamFrom(events: LlmStreamEvent[]): AsyncIterable<LlmStreamEvent> {
   return (async function* () {

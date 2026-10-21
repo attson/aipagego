@@ -165,13 +165,13 @@ function toOpenAiContent(c: TextPart | ImagePart | ToolResultPart) {
 
 mcp-server 已经有 `tools/list` 返回 19 个浏览器工具。再加：
 
-- 新 MCP tool `atwebpilot.skill.read`：返回 `SKILL.md` 内容
+- 新 MCP tool `aipagego.skill.read`：返回 `SKILL.md` 内容
 - mcp-server `prompts/list`：曝光 `aipex-browser` 类似的 prompt 模板
 
 ### 6.3 测试
 
 - `read` 返回 SKILL.md 文件内容
-- prompts list 包含一个名为 `atwebpilot-browser` 的 prompt
+- prompts list 包含一个名为 `aipagego-browser` 的 prompt
 
 ## 7 · 文件计划
 

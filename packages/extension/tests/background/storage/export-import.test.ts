@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { _resetDBForTests } from "@/background/storage/db";
 import { exportAll, importBundle } from "@/background/storage/export-import";
 import { listTools, materializePreset, saveDraft } from "@/background/storage/tools";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { PRESETS } from "@aipagego/shared/presets";
 
 function stepsDraft(name: string) {
   return {
@@ -25,7 +25,7 @@ describe("export-import", () => {
   it("exportAll produces a valid v2 bundle", async () => {
     const t = await saveDraft(stepsDraft("A"));
     const bundle = await exportAll();
-    expect(bundle.schema).toBe("atwebpilot.tools/v2");
+    expect(bundle.schema).toBe("aipagego.tools/v2");
     expect(bundle.tools).toHaveLength(1);
     expect(bundle.tools[0].id).toBe(t.id);
   });
@@ -39,14 +39,14 @@ describe("export-import", () => {
       prompt: "请总结当前页面"
     });
     const bundle = await exportAll();
-    expect(bundle.schema).toBe("atwebpilot.tools/v2");
+    expect(bundle.schema).toBe("aipagego.tools/v2");
     expect(bundle.tools[0]).toMatchObject({ id: t.id, kind: "prompt", prompt: "请总结当前页面" });
   });
 
   it("importBundle merges tools by id (default skip)", async () => {
     const t = await saveDraft(stepsDraft("A"));
     const bundle = {
-      schema: "atwebpilot.tools/v2" as const,
+      schema: "aipagego.tools/v2" as const,
       exportedAt: Date.now(),
       tools: [{ ...t, name: "A-modified" }]
     };
@@ -60,7 +60,7 @@ describe("export-import", () => {
   it("importBundle overwrite replaces existing", async () => {
     const t = await saveDraft(stepsDraft("A"));
     const bundle = {
-      schema: "atwebpilot.tools/v2" as const,
+      schema: "aipagego.tools/v2" as const,
       exportedAt: Date.now(),
       tools: [{ ...t, name: "A-modified" }]
     };
@@ -73,7 +73,7 @@ describe("export-import", () => {
   it("importBundle copy creates a new id", async () => {
     const t = await saveDraft(stepsDraft("A"));
     const bundle = {
-      schema: "atwebpilot.tools/v2" as const,
+      schema: "aipagego.tools/v2" as const,
       exportedAt: Date.now(),
       tools: [{ ...t, name: "A-modified" }]
     };
@@ -87,7 +87,7 @@ describe("export-import", () => {
   it("importBundle rejects invalid schema", async () => {
     await expect(
       importBundle(
-        { schema: "atwebpilot.tools/v1", exportedAt: Date.now(), tools: [] } as never,
+        { schema: "aipagego.tools/v1", exportedAt: Date.now(), tools: [] } as never,
         { onConflict: "skip" }
       )
     ).rejects.toThrow("schema mismatch");
@@ -123,7 +123,7 @@ describe("export-import", () => {
       origin: { kind: "preset" as const, presetId: "unknown-preset-xyz", presetVersion: 1 }
     };
     const bundle = {
-      schema: "atwebpilot.tools/v2" as const,
+      schema: "aipagego.tools/v2" as const,
       exportedAt: Date.now(),
       tools: [toolWithUnknownOrigin]
     };
@@ -141,7 +141,7 @@ describe("export-import", () => {
       origin: { kind: "preset" as const, presetId: preset.id, presetVersion: preset.version }
     };
     const bundle = {
-      schema: "atwebpilot.tools/v2" as const,
+      schema: "aipagego.tools/v2" as const,
       exportedAt: Date.now(),
       tools: [toolWithKnownOrigin]
     };

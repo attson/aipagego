@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { screenshot } from "./bg-tools/capture";
 import { downloadImage, downloadSpreadsheet } from "./bg-tools/downloads";
 import { navigateBack, navigateForward, resize } from "./bg-tools/nav";

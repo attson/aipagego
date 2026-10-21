@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让一个 AtWebPilot 会话有受控地访问多个浏览器 tab：通过 `@` 选 / AI `openTab`（含被动新开）/ AI `attachTab` 申请三种入口把 tab 纳入会话信任集合；现有 19 工具按可选 `tabId` 行为，新增 4 个控制面工具。
+**Goal:** 让一个 AIPageGo 会话有受控地访问多个浏览器 tab：通过 `@` 选 / AI `openTab`（含被动新开）/ AI `attachTab` 申请三种入口把 tab 纳入会话信任集合；现有 19 工具按可选 `tabId` 行为，新增 4 个控制面工具。
 
 **Architecture:**
 - 会话维度新增 `attachedTabs: AttachedTab[]`，存在 `SessionData` 上、跟着 closed-sessions 一起 5 分钟回收。
@@ -644,7 +644,7 @@ export function buildSystemPrompt(input: {
   ];
 
   return [
-    "你是 AtWebPilot，一个嵌入到浏览器侧边面板的 AI 网页助手。",
+    "你是 AIPageGo，一个嵌入到浏览器侧边面板的 AI 网页助手。",
     // ... (保留原内容)
     `当前页面 URL: ${input.url}`,
     input.title ? `页面标题: ${input.title}` : "",

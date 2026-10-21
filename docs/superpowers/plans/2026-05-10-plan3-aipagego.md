@@ -1,8 +1,8 @@
-# Plan 3: AtWebPilot — 网页助手定位与操作工具集 实施计划
+# Plan 3: AIPageGo — 网页助手定位与操作工具集 实施计划
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 把当前"AI 网页采集器"重新定位为"AtWebPilot — AI 网页助手"，新增 9 个交互工具（fillInput / setCheckbox / selectOption / submitForm / hover / focus / uploadFile / getValue / extractFormState）支持读 / 写 / 采全场景任务，引入按工具名粒度的 dangerous 自动通过白名单（对话页 + 设置页双向同步），重写 system prompt 与全部用户可见文案。
+**Goal:** 把当前"AI 网页采集器"重新定位为"AIPageGo — AI 网页助手"，新增 9 个交互工具（fillInput / setCheckbox / selectOption / submitForm / hover / focus / uploadFile / getValue / extractFormState）支持读 / 写 / 采全场景任务，引入按工具名粒度的 dangerous 自动通过白名单（对话页 + 设置页双向同步），重写 system prompt 与全部用户可见文案。
 
 **Architecture:** 完全沿用 Plan 1+2 的三入口架构。本计划只是工具集扩展 + 严重度策略增强 + 文案换皮；IDB DB_NAME 与 import 别名不变，避免数据丢失与大规模 churn。仓库目录重命名留给用户在计划完成后手动 `mv`。
 
@@ -13,8 +13,8 @@
 ## 文件结构（Plan 3 增量）
 
 ```
-atwebpilot2/                                  ← 仓库目录暂不动
-├─ package.json                          # MOD: name → atwebpilot, description
+aipagego2/                                  ← 仓库目录暂不动
+├─ package.json                          # MOD: name → aipagego, description
 ├─ README.md                             # MOD: 全篇重写为"网页助手"
 ├─ src/
 │  ├─ manifest.ts                        # MOD: name/description/title
@@ -2190,7 +2190,7 @@ git commit -m "feat(llm): add 9 new tool definitions"
 // src/sidepanel/llm/system-prompt.ts
 export function buildSystemPrompt(input: { url: string; title?: string }): string {
   return [
-    "你是 AtWebPilot，一个嵌入到浏览器侧边面板的 AI 网页助手。",
+    "你是 AIPageGo，一个嵌入到浏览器侧边面板的 AI 网页助手。",
     "用户在浏览网页时会请你完成各种任务：",
     "",
     "1. 阅读类：总结、翻译、提取重点、回答关于本页内容的问题",
@@ -2252,10 +2252,10 @@ git commit -m "feat(llm): rewrite system prompt for read/write/collect/multi-ste
 
 ```json
 {
-  "name": "atwebpilot",
+  "name": "aipagego",
   "private": true,
   "version": "0.0.1",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）",
+  "description": "AIPageGo — AI 网页助手（侧边面板）",
   "type": "module",
   ...
 }
@@ -2268,10 +2268,10 @@ git commit -m "feat(llm): rewrite system prompt for read/write/collect/multi-ste
 ```ts
 export default defineManifest({
   manifest_version: 3,
-  name: "AtWebPilot — AI 网页助手",
+  name: "AIPageGo — AI 网页助手",
   description: "让 AI 帮你浏览、总结、操作网页，并把成功的对话固化为可复用工具",
   version: pkg.version,
-  action: { default_title: "AtWebPilot" },
+  action: { default_title: "AIPageGo" },
   side_panel: { default_path: "src/sidepanel/index.html" },
   background: { service_worker: "src/background/index.ts", type: "module" },
   permissions: ["sidePanel", "storage", "scripting", "activeTab", "tabs", "webNavigation"],
@@ -2294,38 +2294,38 @@ export default defineManifest({
 
 - [ ] **Step 3: `src/sidepanel/index.html`**
 
-把 `<title>atwebpilot2</title>` 改成 `<title>AtWebPilot</title>`。
+把 `<title>aipagego2</title>` 改成 `<title>AIPageGo</title>`。
 
 - [ ] **Step 4: console 前缀替换**
 
 `src/background/index.ts` 中：
 
 ```ts
-console.info("[atwebpilot2] service worker installed");
+console.info("[aipagego2] service worker installed");
 ```
 
-改 `[atwebpilot]`。同样改 `console.error("[atwebpilot2] sidePanel ...")`。
+改 `[aipagego]`。同样改 `console.error("[aipagego2] sidePanel ...")`。
 
 `src/content/index.ts` 中：
 
 ```ts
-console.info("[atwebpilot2] content script loaded on", location.href);
+console.info("[aipagego2] content script loaded on", location.href);
 ```
 
-改 `[atwebpilot]`。
+改 `[aipagego]`。
 
 `src/background/tab-watcher.ts` 中：
 
 ```ts
-console.warn("[atwebpilot2] content script inject failed", e);
+console.warn("[aipagego2] content script inject failed", e);
 ```
 
-改 `[atwebpilot]`（如果有）。
+改 `[aipagego]`（如果有）。
 
 也 grep 一遍：
 
-Run: `grep -rn "atwebpilot2" src/`
-确认所有 `[atwebpilot2]` 都改成 `[atwebpilot]`。允许残留的：`@/...` 别名（与 `atwebpilot2` 无关）、`.gitignore`（无关）、`docs/superpowers/` 下的 spec 引用（历史文档，保留）。
+Run: `grep -rn "aipagego2" src/`
+确认所有 `[aipagego2]` 都改成 `[aipagego]`。允许残留的：`@/...` 别名（与 `aipagego2` 无关）、`.gitignore`（无关）、`docs/superpowers/` 下的 spec 引用（历史文档，保留）。
 
 - [ ] **Step 5: chat-page placeholder**
 
@@ -2375,20 +2375,20 @@ Run: `grep -rn "atwebpilot2" src/`
 
 ```tsx
           initialName={
-            recommendations[0]?.name ?? `AtWebPilot 任务 ${new Date().toISOString().slice(0, 10)}`
+            recommendations[0]?.name ?? `AIPageGo 任务 ${new Date().toISOString().slice(0, 10)}`
           }
 ```
 
 - [ ] **Step 8: 类型检查 + 构建确认**
 
 Run: `pnpm typecheck && pnpm build`
-Expected: 退出码 0；`dist/manifest.json` `name` 字段是 `AtWebPilot — AI 网页助手`。
+Expected: 退出码 0；`dist/manifest.json` `name` 字段是 `AIPageGo — AI 网页助手`。
 
 - [ ] **Step 9: Commit**
 
 ```bash
 git add package.json src/manifest.ts src/sidepanel/index.html src/background/index.ts src/content/index.ts src/sidepanel/pages/chat-page.tsx src/sidepanel/components/chat-view.tsx src/background/tab-watcher.ts
-git commit -m "chore: rename atwebpilot2 → AtWebPilot in user-facing strings"
+git commit -m "chore: rename aipagego2 → AIPageGo in user-facing strings"
 ```
 
 ---
@@ -2401,7 +2401,7 @@ git commit -m "chore: rename atwebpilot2 → AtWebPilot in user-facing strings"
 - [ ] **Step 1: 全文替换**
 
 ```markdown
-# AtWebPilot — AI 网页助手
+# AIPageGo — AI 网页助手
 
 一个浏览器侧边面板里的 AI 助手，能在你正在浏览的网页上：
 
@@ -2482,7 +2482,7 @@ pnpm test:watch
 
 ```bash
 git add README.md
-git commit -m "docs: rewrite README for AtWebPilot positioning (read/write/collect)"
+git commit -m "docs: rewrite README for AIPageGo positioning (read/write/collect)"
 ```
 
 ---
@@ -2523,7 +2523,7 @@ Expected: 所有 test PASS。预期数：
 
 Run: `pnpm build`
 Expected: 退出码 0；`dist/manifest.json` 中：
-- `name` = `AtWebPilot — AI 网页助手`
+- `name` = `AIPageGo — AI 网页助手`
 - `description` 含"浏览、总结、操作"
 - `permissions` 含 `webNavigation`
 - `host_permissions` 含 `https://*/*`
@@ -2551,12 +2551,12 @@ echo "Plan 3 complete"
 
 - [ ] 全量单元测试通过（约 134 个）
 - [ ] 类型检查通过
-- [ ] dist 装载后扩展名显示 `AtWebPilot — AI 网页助手`
+- [ ] dist 装载后扩展名显示 `AIPageGo — AI 网页助手`
 - [ ] 对话页 placeholder + 空状态文案是新版
 - [ ] 设置页有「自动通过策略」段，含 5 个 dangerous 复选框
 - [ ] 对话页底部有 ⚠ dangerous 自动 popover，与设置页双向同步
 - [ ] 总结 / 填表 / 采集三个手测脚本都跑通
 - [ ] 保存为工具仍只在用户点按钮时弹出（保留 Plan 2 的修正）
-- [ ] 既有用户的 IDB 工具不丢（DB_NAME 仍是 "atwebpilot"）
+- [ ] 既有用户的 IDB 工具不丢（DB_NAME 仍是 "aipagego"）
 
 完成后即可启动 Plan 4 候选（动态 host_permissions / 多模态截屏 / navigate / e2e 自动化）。

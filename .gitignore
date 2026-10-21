@@ -15,6 +15,15 @@ docs/tasks/
 docs/brainstorm/drafts/
 docs/brainstorm/notes/
 docs/superpowers/
+!docs/superpowers/
+docs/superpowers/*
+!docs/superpowers/plans/
+docs/superpowers/plans/*
+!docs/superpowers/plans/2026-05-10-plan3-aipagego.md
+!docs/superpowers/plans/2026-06-06-aipagego-rename.md
+!docs/superpowers/specs/
+docs/superpowers/specs/*
+!docs/superpowers/specs/2026-06-06-aipagego-rename-design.md
 .claude/settings.local.json
 *.local
 *.local.*
@@ -24,5 +33,5 @@ docs-site/node_modules/
 docs-site/.vitepress/dist/
 docs-site/.vitepress/cache/
 
-# 由 `pnpm -F @atwebpilot/extension build:demo` 生成
+# 由 `pnpm -F @aipagego/extension build:demo` 生成
 docs-site/public/demo/

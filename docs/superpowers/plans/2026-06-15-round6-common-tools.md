@@ -174,7 +174,7 @@ Expected: FAIL — `Cannot find module '@/content/tools/navigate'` or similar re
 Create `packages/extension/src/content/tools/navigate.ts`:
 
 ```ts
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 type Args = {
   action: "back" | "forward" | "reload" | "goto";
@@ -317,7 +317,7 @@ Expected: FAIL — module not found.
 Create `packages/extension/src/content/tools/get-page-info.ts`:
 
 ```ts
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 const OG_KEYS = ["title", "type", "image", "url", "site_name", "description"] as const;
 const STR_CAP = 200;
@@ -465,7 +465,7 @@ Expected: FAIL — module not found.
 Create `packages/extension/src/content/tools/press-key.ts`:
 
 ```ts
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 type Args = {
   key: string;
@@ -590,7 +590,7 @@ Expected: FAIL — module not found.
 Create `packages/extension/src/content/tools/write-storage.ts`:
 
 ```ts
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 type Args = { store: "local" | "session"; key: string; value: string };
 

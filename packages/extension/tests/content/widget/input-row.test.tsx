@@ -3,7 +3,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { InputRow } from "@/content/widget/input-row";
 import type { SessionData } from "@/sidepanel/chat/session-store";
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 
 vi.mock("@/sidepanel/chat/session-store", async (orig) => {
   const actual = await orig<typeof import("@/sidepanel/chat/session-store")>();

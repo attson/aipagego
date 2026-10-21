@@ -1,17 +1,17 @@
 {
-  "name": "atwebpilot-monorepo",
+  "name": "aipagego-monorepo",
   "private": true,
-  "version": "0.0.83",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）monorepo root",
+  "version": "0.1.0",
+  "description": "AIPageGo — AI 网页助手（侧边面板）monorepo root",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @atwebpilot/extension dev",
-    "build": "pnpm --filter @atwebpilot/extension build",
-    "preview": "pnpm --filter @atwebpilot/extension preview",
+    "dev": "pnpm --filter @aipagego/extension dev",
+    "build": "pnpm --filter @aipagego/extension build",
+    "preview": "pnpm --filter @aipagego/extension preview",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:watch": "pnpm --filter @atwebpilot/extension test:watch",
-    "analyze:sessions": "pnpm --filter @attson/atwebpilot-mcp analyze:sessions"
+    "test:watch": "pnpm --filter @aipagego/extension test:watch",
+    "analyze:sessions": "pnpm --filter @attson/aipagego-mcp analyze:sessions"
   },
   "packageManager": "pnpm@9.0.0"
 }

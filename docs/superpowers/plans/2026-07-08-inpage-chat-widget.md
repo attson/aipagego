@@ -4,13 +4,13 @@
 
 **Goal:** 给每个可注入网页右下角加一个可拖动 FAB + Shadow DOM 承载的 mini 对话面板,与 sidepanel 共享同 tab 会话,让 90% 常见对话不用打开 sidepanel。
 
-**Architecture:** 新增第 5 个 content-script bundle `content/widget/`;创建 `<atwebpilot-widget>` custom element,`attachShadow({mode:"open"})` 后 mount 一个轻量 React 子集(复用 ChatView / EmptySuggestions / input-box);widget 与 sidepanel 各持一个 zustand session-store 实例,通过 BG `session-broker.ts` 广播 `session.state.changed` 事件按 `_rev` 号收敛;dangerous step 触发时 widget 调 `widget.openSidepanel` RPC + 存 `pendingApprovalId` 到 `chrome.storage.session`,sidepanel 起来 focus 到该 step 并复用 `getApproverForTab(tabId)` 单例接手 approve。
+**Architecture:** 新增第 5 个 content-script bundle `content/widget/`;创建 `<aipagego-widget>` custom element,`attachShadow({mode:"open"})` 后 mount 一个轻量 React 子集(复用 ChatView / EmptySuggestions / input-box);widget 与 sidepanel 各持一个 zustand session-store 实例,通过 BG `session-broker.ts` 广播 `session.state.changed` 事件按 `_rev` 号收敛;dangerous step 触发时 widget 调 `widget.openSidepanel` RPC + 存 `pendingApprovalId` 到 `chrome.storage.session`,sidepanel 起来 focus 到该 step 并复用 `getApproverForTab(tabId)` 单例接手 approve。
 
 **Tech Stack:** TypeScript 5、React 18、zustand 4、Tailwind 3 → `adoptedStyleSheets`、Shadow DOM、`@crxjs/vite-plugin` 多 content_script entry;零新 npm 依赖。
 
 ## Global Constraints
 
-- **IDB DB name `atwebpilot`** — 不可改
+- **IDB DB name `aipagego`** — 不可改
 - **No new dependencies**(AGENTS.md hard rule)
 - **API key 只在 sidepanel/widget 扩展代码域**;host page 脚本不可读
 - **Shadow DOM `mode:"open"`**(便于调试;安全依赖扩展代码域隔离,不依赖 closed)
@@ -100,7 +100,7 @@ describe("LlmSettings.widgetEnabled", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/shared test llm-settings-widget
+pnpm --filter @aipagego/shared test llm-settings-widget
 ```
 Expected: TS error "Object literal may only specify known properties" — `widgetEnabled` not in LlmSettings.
 
@@ -125,7 +125,7 @@ Right after `maxSelfHealOutputTokens: 4096,` — keep trailing comma consistent 
 - [ ] **Step 5: Run tests + typecheck**
 
 ```bash
-pnpm --filter @atwebpilot/shared test llm-settings-widget
+pnpm --filter @aipagego/shared test llm-settings-widget
 pnpm -r typecheck
 ```
 Expected: pass; TS build clean.
@@ -166,7 +166,7 @@ describe("SessionData._rev", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-store-rev
+pnpm --filter @aipagego/extension test session-store-rev
 ```
 Expected: `_rev` not on `SessionData`.
 
@@ -185,7 +185,7 @@ Find `export function makeEmptySession(...)` return object;append `_rev: 0` at t
 - [ ] **Step 5: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-store-rev
+pnpm --filter @aipagego/extension test session-store-rev
 pnpm -r typecheck
 ```
 Expected: pass.
@@ -248,16 +248,16 @@ describe("widget RPCs", () => {
     await dispatch({ type: "widget.openSidepanel", tabId: 42, pendingApprovalId: "abc" } as any);
     expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });
     expect(chrome.storage.session.set).toHaveBeenCalledWith(
-      expect.objectContaining({ "atwebpilot.pendingApproval": expect.objectContaining({ tabId: 42, approvalId: "abc" }) })
+      expect.objectContaining({ "aipagego.pendingApproval": expect.objectContaining({ tabId: 42, approvalId: "abc" }) })
     );
   });
 
   it("widget.markHostHidden appends host to hiddenHosts list", async () => {
-    (chrome.storage.local.get as any).mockResolvedValueOnce({ "atwebpilot.widget.hiddenHosts": ["foo.com"] });
+    (chrome.storage.local.get as any).mockResolvedValueOnce({ "aipagego.widget.hiddenHosts": ["foo.com"] });
     const { dispatch } = await import("@/background/rpc-handlers");
     await dispatch({ type: "widget.markHostHidden", host: "bar.com" } as any);
     expect(chrome.storage.local.set).toHaveBeenCalledWith(
-      expect.objectContaining({ "atwebpilot.widget.hiddenHosts": ["foo.com", "bar.com"] })
+      expect.objectContaining({ "aipagego.widget.hiddenHosts": ["foo.com", "bar.com"] })
     );
   });
 });
@@ -266,7 +266,7 @@ describe("widget RPCs", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test widget-rpc
+pnpm --filter @aipagego/extension test widget-rpc
 ```
 Expected: `widget.openSidepanel` not recognized in RpcRequest union.
 
@@ -295,7 +295,7 @@ In `packages/extension/src/background/rpc-handlers.ts` `dispatch` switch, add tw
       await chrome.sidePanel.open({ tabId: req.tabId });
       if (req.pendingApprovalId) {
         await chrome.storage.session.set({
-          "atwebpilot.pendingApproval": {
+          "aipagego.pendingApproval": {
             tabId: req.tabId,
             approvalId: req.pendingApprovalId,
             ts: Date.now()
@@ -305,7 +305,7 @@ In `packages/extension/src/background/rpc-handlers.ts` `dispatch` switch, add tw
       return null;
     }
     case "widget.markHostHidden": {
-      const KEY = "atwebpilot.widget.hiddenHosts";
+      const KEY = "aipagego.widget.hiddenHosts";
       const raw = (await chrome.storage.local.get([KEY]))[KEY];
       const list = Array.isArray(raw) ? [...raw] : [];
       if (!list.includes(req.host)) list.push(req.host);
@@ -328,7 +328,7 @@ In `packages/extension/src/sidepanel/rpc.ts` `export const rpc = { ... }` add:
 - [ ] **Step 6: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test widget-rpc
+pnpm --filter @aipagego/extension test widget-rpc
 pnpm -r typecheck
 ```
 Expected: pass.
@@ -407,7 +407,7 @@ describe("installSessionBroker", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-broker
+pnpm --filter @aipagego/extension test session-broker
 ```
 Expected: module not found.
 
@@ -454,7 +454,7 @@ installSessionBroker();
 - [ ] **Step 5: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-broker
+pnpm --filter @aipagego/extension test session-broker
 pnpm -r typecheck
 ```
 Expected: pass.
@@ -565,7 +565,7 @@ describe("session-store broadcast", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-store-broadcast
+pnpm --filter @aipagego/extension test session-store-broadcast
 ```
 Expected: `installBroadcastSubscriber` / `SELF_INSTANCE_ID` not exported;`_rev` still 0 after mutation.
 
@@ -679,8 +679,8 @@ useEffect(() => {
 - [ ] **Step 7: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-store-broadcast
-pnpm --filter @atwebpilot/extension test session-store       # regression
+pnpm --filter @aipagego/extension test session-store-broadcast
+pnpm --filter @aipagego/extension test session-store       # regression
 pnpm -r typecheck
 ```
 Expected: all pass (some existing tests may be affected by `_rev` field appearing; adjust snapshots if needed).
@@ -760,7 +760,7 @@ describe("widget/per-site", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/per-site
+pnpm --filter @aipagego/extension test content/widget/per-site
 ```
 Expected: module not found.
 
@@ -768,9 +768,9 @@ Expected: module not found.
 
 ```ts
 // packages/extension/src/content/widget/per-site.ts
-const HIDDEN_KEY = "atwebpilot.widget.hiddenHosts";
-const FAB_KEY = "atwebpilot.widget.fabPos";
-const SIZE_KEY = "atwebpilot.widget.panelSize";
+const HIDDEN_KEY = "aipagego.widget.hiddenHosts";
+const FAB_KEY = "aipagego.widget.fabPos";
+const SIZE_KEY = "aipagego.widget.panelSize";
 const DEFAULT_SIZE = { w: 320, h: 480 };
 
 export async function getHiddenHosts(): Promise<string[]> {
@@ -817,7 +817,7 @@ export async function setPanelSize(size: { w: number; h: number }): Promise<void
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/per-site
+pnpm --filter @aipagego/extension test content/widget/per-site
 ```
 Expected: 4/4 pass.
 
@@ -848,7 +848,7 @@ git commit -m "feat(widget): per-site storage helper — hiddenHosts / fabPos / 
 // packages/extension/tests/content/widget/mount.test.ts
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const storage: Record<string, any> = { "atwebpilot.llm": { widgetEnabled: true } };
+const storage: Record<string, any> = { "aipagego.llm": { widgetEnabled: true } };
 (globalThis as any).chrome = {
   storage: {
     local: {
@@ -861,38 +861,38 @@ const storage: Record<string, any> = { "atwebpilot.llm": { widgetEnabled: true }
 describe("mountWidget", () => {
   beforeEach(() => {
     document.documentElement.innerHTML = "<head></head><body></body>";
-    for (const k of Object.keys(storage)) if (k !== "atwebpilot.llm") delete storage[k];
-    storage["atwebpilot.llm"] = { widgetEnabled: true };
+    for (const k of Object.keys(storage)) if (k !== "aipagego.llm") delete storage[k];
+    storage["aipagego.llm"] = { widgetEnabled: true };
     vi.clearAllMocks();
   });
 
-  it("creates <atwebpilot-widget> element on top window", async () => {
+  it("creates <aipagego-widget> element on top window", async () => {
     const { mountWidget } = await import("@/content/widget/mount");
     await mountWidget();
-    const el = document.querySelector("atwebpilot-widget");
+    const el = document.querySelector("aipagego-widget");
     expect(el).toBeTruthy();
     expect(el?.shadowRoot).toBeTruthy();
   });
 
   it("does NOT mount when widgetEnabled=false", async () => {
-    storage["atwebpilot.llm"] = { widgetEnabled: false };
+    storage["aipagego.llm"] = { widgetEnabled: false };
     const { mountWidget } = await import("@/content/widget/mount");
     await mountWidget();
-    expect(document.querySelector("atwebpilot-widget")).toBeNull();
+    expect(document.querySelector("aipagego-widget")).toBeNull();
   });
 
   it("does NOT mount when host is in hiddenHosts", async () => {
-    storage["atwebpilot.widget.hiddenHosts"] = [location.host];
+    storage["aipagego.widget.hiddenHosts"] = [location.host];
     const { mountWidget } = await import("@/content/widget/mount");
     await mountWidget();
-    expect(document.querySelector("atwebpilot-widget")).toBeNull();
+    expect(document.querySelector("aipagego-widget")).toBeNull();
   });
 
   it("mounts only once when called twice", async () => {
     const { mountWidget } = await import("@/content/widget/mount");
     await mountWidget();
     await mountWidget();
-    expect(document.querySelectorAll("atwebpilot-widget").length).toBe(1);
+    expect(document.querySelectorAll("aipagego-widget").length).toBe(1);
   });
 });
 ```
@@ -900,7 +900,7 @@ describe("mountWidget", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/mount
+pnpm --filter @aipagego/extension test content/widget/mount
 ```
 Expected: module not found.
 
@@ -910,8 +910,8 @@ Expected: module not found.
 // packages/extension/src/content/widget/mount.ts
 import { isHostHidden } from "./per-site";
 
-const HOST_TAG = "atwebpilot-widget";
-const SETTINGS_KEY = "atwebpilot.llm";
+const HOST_TAG = "aipagego-widget";
+const SETTINGS_KEY = "aipagego.llm";
 
 export async function mountWidget(): Promise<void> {
   // Idempotent
@@ -938,11 +938,11 @@ export async function mountWidget(): Promise<void> {
 
   // Placeholder — the React root will replace this in Task 8.
   const div = document.createElement("div");
-  div.textContent = "AtWebPilot widget mounted";
-  div.setAttribute("data-atwebpilot", "placeholder");
+  div.textContent = "AIPageGo widget mounted";
+  div.setAttribute("data-aipagego", "placeholder");
   shadow.appendChild(div);
 
-  console.info("[atwebpilot-widget] mounted on", location.host);
+  console.info("[aipagego-widget] mounted on", location.host);
 }
 
 // Auto-mount at document_idle (crxjs runs this at run_at time).
@@ -978,7 +978,7 @@ Full block after edit:
 - [ ] **Step 5: Run tests + build**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/mount
+pnpm --filter @aipagego/extension test content/widget/mount
 pnpm build
 ```
 Expected: 4/4 pass;build produces `packages/extension/dist/` including widget bundle chunk.
@@ -1116,7 +1116,7 @@ describe("widget/store", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/store
+pnpm --filter @aipagego/extension test content/widget/store
 ```
 
 - [ ] **Step 3: Implement**
@@ -1136,7 +1136,7 @@ export function startWidgetStoreSync(): () => void {
 - [ ] **Step 4: Run tests**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/store
+pnpm --filter @aipagego/extension test content/widget/store
 ```
 
 - [ ] **Step 5: Commit**
@@ -1231,7 +1231,7 @@ export function FAB({ onToggle, active }: Props) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onContextMenu={onContextMenu}
-        aria-label="AtWebPilot 助手"
+        aria-label="AIPageGo 助手"
         className={
           "w-12 h-12 rounded-full flex items-center justify-center shadow-lg cursor-pointer " +
           (active ? "bg-emerald-600 text-white" : "bg-zinc-800 text-emerald-400 border border-zinc-700")
@@ -1258,7 +1258,7 @@ export function FAB({ onToggle, active }: Props) {
           <button className="block w-full text-left px-3 py-2 hover:bg-zinc-800 text-amber-400"
             onClick={async () => {
               await hideHost(location.host);
-              document.querySelector("atwebpilot-widget")?.remove();
+              document.querySelector("aipagego-widget")?.remove();
             }}>
             本站不再显示
           </button>
@@ -1351,7 +1351,7 @@ vi.mock("@/content/widget/per-site", () => ({
 describe("FAB", () => {
   it("renders as button with aria-label", () => {
     const { getByLabelText } = render(<FAB onToggle={() => {}} active={false} />);
-    expect(getByLabelText("AtWebPilot 助手")).toBeTruthy();
+    expect(getByLabelText("AIPageGo 助手")).toBeTruthy();
   });
 });
 ```
@@ -1361,7 +1361,7 @@ Note: If `@testing-library/react` is not a dependency, replace this test with a 
 - [ ] **Step 6: Run tests + build**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/fab
+pnpm --filter @aipagego/extension test content/widget/fab
 pnpm build
 ```
 
@@ -1441,7 +1441,7 @@ export function Panel({ onClose, onMinimize }: Props) {
       className="bg-zinc-900 text-zinc-100 rounded-lg border border-zinc-700 shadow-2xl flex flex-col overflow-hidden"
     >
       <header className="flex items-center gap-2 px-3 py-2 border-b border-zinc-800 text-xs">
-        <b className="flex-1 select-none">⚡ AtWebPilot</b>
+        <b className="flex-1 select-none">⚡ AIPageGo</b>
         <button className="p-1 hover:bg-zinc-800 rounded" title="打开扩展面板" onClick={onOpenSidepanel}>
           <ExternalLink size={14} />
         </button>
@@ -1459,7 +1459,7 @@ export function Panel({ onClose, onMinimize }: Props) {
               presets={[]}
               onPresetPick={() => {}}
             />
-            <div className="mt-3">今天想让 AtWebPilot 帮你做什么？</div>
+            <div className="mt-3">今天想让 AIPageGo 帮你做什么？</div>
           </div>
         ) : (
           <ChatView session={session} />
@@ -1630,7 +1630,7 @@ describe("runFromInput", () => {
 - [ ] **Step 3: Run test + typecheck**
 
 ```bash
-pnpm --filter @atwebpilot/extension test run-widget-session
+pnpm --filter @aipagego/extension test run-widget-session
 pnpm -r typecheck
 ```
 
@@ -1648,7 +1648,7 @@ git commit -m "feat(widget): runFromInput — 复用 runChatSession + LlmClient"
 **Files:**
 - Create: `packages/extension/src/content/widget/handoff.ts` — 封装 `widget.openSidepanel` 调用
 - Modify: `packages/extension/src/content/widget/run-widget-session.ts` — wrap approver;dangerous → handoff
-- Modify: `packages/extension/src/sidepanel/shell/app-shell.tsx` — `useEffect` 读 `atwebpilot.pendingApproval` + scroll 到该 step-card + 高亮
+- Modify: `packages/extension/src/sidepanel/shell/app-shell.tsx` — `useEffect` 读 `aipagego.pendingApproval` + scroll 到该 step-card + 高亮
 
 **Interfaces:**
 - Produces:
@@ -1700,7 +1700,7 @@ In `packages/extension/src/sidepanel/shell/app-shell.tsx`, add a `useEffect(() =
 
 ```tsx
 useEffect(() => {
-  const KEY = "atwebpilot.pendingApproval";
+  const KEY = "aipagego.pendingApproval";
   void chrome.storage.session.get([KEY]).then(async (res) => {
     const p = (res as any)[KEY] as { tabId: number; approvalId: string; ts: number } | undefined;
     if (!p) return;

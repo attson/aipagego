@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **IDB DB name `atwebpilot`** 不改
+- **IDB DB name `aipagego`** 不改
 - **No new dependencies**
 - **API key 永远不进 BG**
 - **Shadow DOM `mode: "open"`**;widget/index.css 里 `:host` 定义 `--c-zinc-*` 变量(v0.0.47)
@@ -76,7 +76,7 @@
   - `StepCardState._runningStartAt?: number` — 在 setCardStatus 到 running 时盖 `Date.now()`;后续 status change 不清
   - RPC `widget.openSidepanelWithSave { tabId } → null`
   - `rpc.widgetOpenSidepanelWithSave(input: { tabId: number }): Promise<null>`
-  - sidepanel `useEffect` 读 `atwebpilot.pendingSave` 后调 `showSave(tabId)` 并 clear
+  - sidepanel `useEffect` 读 `aipagego.pendingSave` 后调 `showSave(tabId)` 并 clear
 
 - [ ] **Step 1: Write failing test for `_runningStartAt` stamping**
 
@@ -126,7 +126,7 @@ describe("setCardStatus stamps _runningStartAt on running", () => {
 - [ ] **Step 2: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-store-running-start-at
+pnpm --filter @aipagego/extension test session-store-running-start-at
 ```
 Expected: FAIL — `_runningStartAt` is undefined.
 
@@ -180,7 +180,7 @@ export function setCardStatus(
 - [ ] **Step 5: Run test to verify it passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test session-store-running-start-at
+pnpm --filter @aipagego/extension test session-store-running-start-at
 ```
 Expected: PASS
 
@@ -219,7 +219,7 @@ describe("widget.openSidepanelWithSave", () => {
     expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });
     expect(chrome.storage.session.set).toHaveBeenCalledWith(
       expect.objectContaining({
-        "atwebpilot.pendingSave": expect.objectContaining({ tabId: 42 })
+        "aipagego.pendingSave": expect.objectContaining({ tabId: 42 })
       })
     );
   });
@@ -229,7 +229,7 @@ describe("widget.openSidepanelWithSave", () => {
 - [ ] **Step 7: Verify test fails**
 
 ```bash
-pnpm --filter @atwebpilot/extension test widget-save-rpc
+pnpm --filter @aipagego/extension test widget-save-rpc
 ```
 Expected: FAIL — `widget.openSidepanelWithSave` not recognized in RpcRequest union.
 
@@ -252,7 +252,7 @@ In `packages/extension/src/background/rpc-handlers.ts` `dispatch` switch, add:
     case "widget.openSidepanelWithSave": {
       await chrome.sidePanel.open({ tabId: req.tabId });
       await chrome.storage.session.set({
-        "atwebpilot.pendingSave": { tabId: req.tabId, ts: Date.now() }
+        "aipagego.pendingSave": { tabId: req.tabId, ts: Date.now() }
       });
       return null;
     }
@@ -270,19 +270,19 @@ In `packages/extension/src/sidepanel/rpc.ts` `export const rpc = { ... }`, add:
 - [ ] **Step 11: Run test to verify pass**
 
 ```bash
-pnpm --filter @atwebpilot/extension test widget-save-rpc
+pnpm --filter @aipagego/extension test widget-save-rpc
 ```
 Expected: PASS
 
 - [ ] **Step 12: Add pendingSave focus effect in app-shell.tsx**
 
-In `packages/extension/src/sidepanel/shell/app-shell.tsx`, near the `atwebpilot.pendingApproval` effect, add:
+In `packages/extension/src/sidepanel/shell/app-shell.tsx`, near the `aipagego.pendingApproval` effect, add:
 
 ```tsx
   // Widget 通过 widget.openSidepanelWithSave 唤起本面板时,BG 会在 chrome.storage.session
-  // 存 atwebpilot.pendingSave;这里读到就调 showSave(tabId) 弹保存对话框。
+  // 存 aipagego.pendingSave;这里读到就调 showSave(tabId) 弹保存对话框。
   useEffect(() => {
-    const KEY = "atwebpilot.pendingSave";
+    const KEY = "aipagego.pendingSave";
     void chrome.storage.session.get([KEY]).then(async (res) => {
       const p = (res as any)[KEY] as { tabId: number; ts: number } | undefined;
       if (!p) return;
@@ -302,7 +302,7 @@ If `showSave` is not currently imported in `app-shell.tsx`, add it to the import
 
 ```bash
 pnpm -r typecheck
-pnpm --filter @atwebpilot/extension test content/widget session-store-running-start-at widget-save-rpc
+pnpm --filter @aipagego/extension test content/widget session-store-running-start-at widget-save-rpc
 ```
 Expected: all pass.
 
@@ -491,7 +491,7 @@ describe("StatusBar", () => {
 - [ ] **Step 3: Verify test passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/status-bar
+pnpm --filter @aipagego/extension test content/widget/status-bar
 ```
 Expected: 4 tests pass.
 
@@ -597,7 +597,7 @@ describe("ErrorBanner", () => {
 - [ ] **Step 6: Verify test passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/error-banner
+pnpm --filter @aipagego/extension test content/widget/error-banner
 ```
 Expected: 2 tests pass.
 
@@ -753,7 +753,7 @@ Then inside the body `<div>`, at the end (after ChatView / EmptySuggestions), ad
 - [ ] **Step 10: Run all widget tests + build**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget
+pnpm --filter @aipagego/extension test content/widget
 pnpm -r typecheck
 pnpm build
 ```
@@ -783,7 +783,7 @@ git commit -m "feat(widget): 状态条 + 错误条 + 保存工具入口"
 
 **Interfaces:**
 - Consumes:
-  - `matchPresetsByUrl(url) → Preset[]` from `@atwebpilot/shared/match-presets`
+  - `matchPresetsByUrl(url) → Preset[]` from `@aipagego/shared/match-presets`
   - `<EmptySuggestions matchedTools={[]} presets onPresetPick onRun onDetail />` — existing
   - `<QuickActions currentUrl onPick />` — existing
 - Produces:
@@ -795,8 +795,8 @@ git commit -m "feat(widget): 状态条 + 错误条 + 保存工具入口"
 // packages/extension/src/content/widget/empty-state.tsx
 import { EmptySuggestions } from "@/sidepanel/chat/empty-suggestions";
 import { QuickActions } from "@/sidepanel/chat/quick-actions";
-import { matchPresetsByUrl } from "@atwebpilot/shared/match-presets";
-import type { Preset } from "@atwebpilot/shared/preset";
+import { matchPresetsByUrl } from "@aipagego/shared/match-presets";
+import type { Preset } from "@aipagego/shared/preset";
 import type { SessionData } from "@/sidepanel/chat/session-store";
 
 type Props = {
@@ -850,7 +850,7 @@ import { EmptyState } from "@/content/widget/empty-state";
 import type { SessionData } from "@/sidepanel/chat/session-store";
 
 const mockMatch = vi.fn();
-vi.mock("@atwebpilot/shared/match-presets", () => ({
+vi.mock("@aipagego/shared/match-presets", () => ({
   matchPresetsByUrl: (url: string) => mockMatch(url),
 }));
 
@@ -927,7 +927,7 @@ describe("EmptyState", () => {
 - [ ] **Step 3: Verify test passes**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/empty-state
+pnpm --filter @aipagego/extension test content/widget/empty-state
 ```
 Expected: 2 tests pass.
 
@@ -946,12 +946,12 @@ import { EmptyState } from "./empty-state";
 )}
 ```
 
-Remove the old placeholder `<div>今天想让 AtWebPilot...</div>` block.
+Remove the old placeholder `<div>今天想让 AIPageGo...</div>` block.
 
 - [ ] **Step 5: Verify all widget tests still green**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget
+pnpm --filter @aipagego/extension test content/widget
 pnpm -r typecheck
 ```
 Expected: all pass.
@@ -998,7 +998,7 @@ import { InputBox } from "@/sidepanel/input/input-box";
 import { fileToImagePart, MAX_IMAGE_BYTES, MAX_IMAGES_PER_TURN } from "@/sidepanel/lib/image-utils";
 import { setPermissionMode } from "@/sidepanel/chat/session-store";
 import { useSettings } from "@/sidepanel/chat/settings-store";
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 import type { SessionData } from "@/sidepanel/chat/session-store";
 import type { PermissionMode } from "@/sidepanel/chat/severity";
 
@@ -1097,7 +1097,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { InputRow } from "@/content/widget/input-row";
 import type { SessionData } from "@/sidepanel/chat/session-store";
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 
 vi.mock("@/sidepanel/chat/session-store", async (orig) => {
   const actual = await orig<typeof import("@/sidepanel/chat/session-store")>();
@@ -1233,7 +1233,7 @@ describe("InputRow", () => {
 - [ ] **Step 3: Verify tests pass**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/input-row
+pnpm --filter @aipagego/extension test content/widget/input-row
 ```
 Expected: 4 tests pass.
 
@@ -1246,7 +1246,7 @@ Add imports:
 ```tsx
 import { InputRow } from "./input-row";
 import { appendUserMessageWithImages } from "@/sidepanel/chat/session-store";
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 ```
 
 Add state:
@@ -1283,7 +1283,7 @@ async function handleSubmit() {
     const { runFromInput } = await import("./run-widget-session");
     await runFromInput(tabId, text);
   } catch (e) {
-    console.warn("[atwebpilot-widget] runFromInput failed:", e);
+    console.warn("[aipagego-widget] runFromInput failed:", e);
   }
 }
 ```
@@ -1312,7 +1312,7 @@ Delete the old wrapper `<div className="border-t border-zinc-800 p-2 shrink-0">`
 - [ ] **Step 5: Run all widget tests + typecheck + build**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget
+pnpm --filter @aipagego/extension test content/widget
 pnpm -r typecheck
 pnpm build
 ```
@@ -1337,7 +1337,7 @@ git commit -m "feat(widget): input row — pill + 图片粘贴 + 发送/停止�
 - Test: `packages/extension/tests/content/widget/element-capture-hook.test.ts`
 
 **Interfaces:**
-- Consumes: existing `content/element-capture.ts` (already listens for `atwebpilot.startCapture`, emits `atwebpilot.captureResult`)
+- Consumes: existing `content/element-capture.ts` (already listens for `aipagego.startCapture`, emits `aipagego.captureResult`)
 - Produces:
   - `useElementCapture(onSelector: (selector: string) => void): { startCapture: () => void }` — hook exposing trigger + registering listener
 
@@ -1350,7 +1350,7 @@ import { useEffect } from "react";
 /**
  * Widget-side hook for element-capture flow:
  * - startCapture() 触发页面进入圈选模式(content/element-capture.ts 监听)
- * - 用户点选后 element-capture 发 atwebpilot.captureResult 消息
+ * - 用户点选后 element-capture 发 aipagego.captureResult 消息
  * - 本 hook 挂 chrome.runtime.onMessage listener,收到就调 onSelector
  */
 export function useElementCapture(onSelector: (selector: string) => void): {
@@ -1359,7 +1359,7 @@ export function useElementCapture(onSelector: (selector: string) => void): {
   useEffect(() => {
     function listener(msg: unknown) {
       const m = msg as { type?: string; selector?: string } | null;
-      if (!m || m.type !== "atwebpilot.captureResult") return;
+      if (!m || m.type !== "aipagego.captureResult") return;
       if (typeof m.selector === "string") onSelector(m.selector);
     }
     try {
@@ -1374,7 +1374,7 @@ export function useElementCapture(onSelector: (selector: string) => void): {
 
   function startCapture(): void {
     try {
-      chrome.runtime.sendMessage({ type: "atwebpilot.startCapture" });
+      chrome.runtime.sendMessage({ type: "aipagego.startCapture" });
     } catch { /* noop */ }
   }
 
@@ -1428,8 +1428,8 @@ describe("useElementCapture", () => {
       return null;
     }
     await act(async () => root.render(<Test />));
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "atwebpilot.startCapture" });
-    listeners[0]({ type: "atwebpilot.captureResult", selector: "button.primary" });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "aipagego.startCapture" });
+    listeners[0]({ type: "aipagego.captureResult", selector: "button.primary" });
     expect(captured).toBe("button.primary");
   });
 
@@ -1450,7 +1450,7 @@ describe("useElementCapture", () => {
 - [ ] **Step 3: Verify tests pass**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/element-capture-hook
+pnpm --filter @aipagego/extension test content/widget/element-capture-hook
 ```
 Expected: 2 tests pass.
 
@@ -1488,7 +1488,7 @@ In the header JSX, insert the ⌖ button BEFORE the [+] new-chat button:
 - [ ] **Step 5: Run all widget tests + typecheck**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget
+pnpm --filter @aipagego/extension test content/widget
 pnpm -r typecheck
 ```
 Expected: all pass.
@@ -1653,7 +1653,7 @@ describe("ResizeHandle", () => {
 - [ ] **Step 3: Verify tests pass**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/resize-handle
+pnpm --filter @aipagego/extension test content/widget/resize-handle
 ```
 Expected: 2 tests pass.
 
@@ -1690,7 +1690,7 @@ Then just before the closing `</div>` of the Panel wrapper, add:
 - [ ] **Step 5: Run all widget tests + build**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget
+pnpm --filter @aipagego/extension test content/widget
 pnpm build
 ```
 Expected: all pass, build succeeds.
@@ -1925,7 +1925,7 @@ describe("HistoryMode", () => {
 - [ ] **Step 3: Verify tests pass**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget/history-mode
+pnpm --filter @aipagego/extension test content/widget/history-mode
 ```
 Expected: 3 tests pass.
 
@@ -2000,7 +2000,7 @@ Modify the footer JSX to add a history button on the left. Find the current foot
 - [ ] **Step 5: Run all widget tests + typecheck + build**
 
 ```bash
-pnpm --filter @atwebpilot/extension test content/widget
+pnpm --filter @aipagego/extension test content/widget
 pnpm -r typecheck
 pnpm build
 ```
@@ -2063,7 +2063,7 @@ gh pr create --title "feat(widget): round 2 — 11 项功能补齐" --body "$(ca
 - **元素圈选** —— header ⌖ 按钮 → 复用 element-capture content bundle → selector 塞进 input
 - **权限模式 pill** —— input 上方,复用 PermissionModePill 4-prop 签名
 - **error banner** —— chat body 顶部红条,setError(tabId, null) 关闭
-- **保存为工具入口** —— chat 尾部 "已执行 N 步 [保存为工具]";点击调 widget.openSidepanelWithSave RPC → sidepanel focus effect 读 atwebpilot.pendingSave → 弹 SaveAsToolCard
+- **保存为工具入口** —— chat 尾部 "已执行 N 步 [保存为工具]";点击调 widget.openSidepanelWithSave RPC → sidepanel focus effect 读 aipagego.pendingSave → 弹 SaveAsToolCard
 - **历史 mini drawer** —— footer [🕒 历史] 切 mode;body 换成 listArchivedByUrl 结果;点条目 restoreArchived
 
 对应 spec: docs/superpowers/specs/2026-07-10-widget-r2-11-feats-design.md

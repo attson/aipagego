@@ -8,9 +8,9 @@ block-list".
 ## Problem
 
 `@playwright/mcp --extension` (referred to below as *playwright-ext*) and
-AtWebPilot's MCP bridge solve the same shape of problem: let an external agent
+AIPageGo's MCP bridge solve the same shape of problem: let an external agent
 such as Claude Code drive a real browser tab through a Chrome extension. Today
-a user who wants both AtWebPilot's strengths (page-index, saved replayable
+a user who wants both AIPageGo's strengths (page-index, saved replayable
 tools, `.xlsx` export, self-heal) and playwright-ext's strengths (console
 capture, network capture, dialog handling, arbitrary JS, drag/drop, resize)
 must run both MCP servers.
@@ -24,7 +24,7 @@ playwright's accessibility-snapshot-plus-ref mechanism, and `clickByUid`,
 `fillByUid`, `fillForm`, `navigate`, `pressKey`, `screenshot`, `runJS`,
 `openTab`, `closeTab`, `switchToTab`, `downloadSpreadsheet` and the whole
 page-index family are all implemented and unreachable from MCP. External
-agents therefore see a strictly weaker AtWebPilot than the side panel does.
+agents therefore see a strictly weaker AIPageGo than the side panel does.
 
 **Gap B — capability does not exist.** The extension has no equivalent of
 `browser_console_messages`, `browser_network_requests`,
@@ -35,8 +35,8 @@ are the hard ones: in an MV3 isolated world the page's `console`, `fetch`,
 
 ## Goals
 
-- Make AtWebPilot a functional replacement for playwright-ext: every
-  playwright-ext capability has an AtWebPilot equivalent reachable over MCP.
+- Make AIPageGo a functional replacement for playwright-ext: every
+  playwright-ext capability has an AIPageGo equivalent reachable over MCP.
 - Expose the full built-in tool set over MCP rather than a hand-maintained
   subset, so future built-ins reach external agents without a second edit.
 - Add page-event recording (console, network, dialog) with a default posture
@@ -119,7 +119,7 @@ is a `document_start`-to-first-drain window on a fresh page load while the
 switch is off, during which the two cheap buffers fill and are then discarded.
 The settings copy states this.
 
-The recorder installs `window.__ATWEBPILOT_REC__`, holding three ring buffers.
+The recorder installs `window.__AIPAGEGO_REC__`, holding three ring buffers.
 Reads reuse the existing one-shot `injectMainWorld`
 (`packages/extension/src/background/rpc-handlers.ts:497`): the drain script runs
 in the same MAIN world and shares the global, so no new message channel is
@@ -276,11 +276,11 @@ is a `TOOL_DEFS` entry without a union member because it is a distinct step
 kind.) playwright-ext exposes 24. The schemas cost roughly 20 KB of context on
 every request.
 
-### The `ATWEBPILOT_MCP_TOOLS` knob
+### The `AIPAGEGO_MCP_TOOLS` knob
 
 An environment variable with two values. `full` is the default and produces all
 53. `parity` produces the smaller set whose capabilities cover playwright-ext's
-24 tools one-for-one — still under AtWebPilot names — for users who would rather
+24 tools one-for-one — still under AIPageGo names — for users who would rather
 have the context back. Default behaviour is unchanged by this knob's existence.
 
 ### Image results
@@ -305,7 +305,7 @@ back to the current 19-tool list.
 ### Skill bundle
 
 `skill/SKILL.md` is updated with the new tools, the recorder's arming model, and
-the backend-fidelity distinction, since `atwebpilot_skill_read` is how agents
+the backend-fidelity distinction, since `aipagego_skill_read` is how agents
 learn the intended flow.
 
 ## Error Handling

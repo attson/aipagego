@@ -68,7 +68,7 @@ export function FAB({ onToggle, active }: Props) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onContextMenu={onContextMenu}
-        aria-label="AtWebPilot 助手"
+        aria-label="AIPageGo 助手"
         className={
           "w-12 h-12 rounded-full flex items-center justify-center shadow-lg cursor-pointer " +
           (active
@@ -100,7 +100,7 @@ export function FAB({ onToggle, active }: Props) {
                 const { tabId } = await getWidgetTabInfo();
                 await rpc.widgetOpenSidepanel({ tabId });
               } catch (e) {
-                console.warn("[atwebpilot-widget] openSidepanel failed:", e);
+                console.warn("[aipagego-widget] openSidepanel failed:", e);
               }
               setMenu(false);
             }}

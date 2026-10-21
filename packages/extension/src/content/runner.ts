@@ -1,4 +1,4 @@
-import type { BuiltinTool, Json, RunStatus, RunStepLogEntry, Step } from "@atwebpilot/shared/types";
+import type { BuiltinTool, Json, RunStatus, RunStepLogEntry, Step } from "@aipagego/shared/types";
 import { RunContext } from "./ctx";
 
 export type RunnerHandlers = {

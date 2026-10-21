@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { getCdpResizer } from "../recorder/host";
 
 function asObj(raw: Json): Record<string, unknown> {

@@ -90,7 +90,7 @@ function bytes(value: number): string {
 export function renderReport(report: AnalysisReport, format: "text" | "json"): string {
   if (format === "json") return JSON.stringify(report, null, 2);
   const lines = [
-    "AtWebPilot local session analysis",
+    "AIPageGo local session analysis",
     `Period: ${report.since} -> ${report.generatedAt}`,
     "",
     `Calls: ${report.summary.toolCalls} (${report.summary.exactCalls} exact, ${report.summary.derivedCalls} derived)`,
@@ -129,7 +129,7 @@ Options:
   --since <duration>       Lookback such as 24h, 7d, 4w (default: 30d)
   --clients <list>         claude,codex (default: both)
   --format <text|json>     Output format (default: text)
-  --latest-session        Analyze only the latest session with an AtWebPilot call
+  --latest-session        Analyze only the latest session with an AIPageGo call
   --claude-dir <path>      Override ~/.claude/projects
   --codex-dir <path>       Override ~/.codex/sessions
   -h, --help               Show this help

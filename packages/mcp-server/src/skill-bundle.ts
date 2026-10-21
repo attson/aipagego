@@ -2,8 +2,8 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const SKILL_NAME = "atwebpilot-browser";
-const SKILL_DESCRIPTION = "Strategy + scenarios + safety rails for driving the AtWebPilot browser extension via MCP.";
+const SKILL_NAME = "aipagego-browser";
+const SKILL_DESCRIPTION = "Strategy + scenarios + safety rails for driving the AIPageGo browser extension via MCP.";
 
 export type SkillTopic =
   | "quickstart"
@@ -15,7 +15,7 @@ export type SkillTopic =
   | "full";
 
 const TOPICS: Record<Exclude<SkillTopic, "full">, string> = {
-  quickstart: `# AtWebPilot quickstart
+  quickstart: `# AIPageGo quickstart
 
 1. Call browser_start once. On first use it opens the pairing page and waits for authorization; when one tab is unambiguous it returns a ready session in the same call.
 2. If browser_start returns select_tab, call browser_start again with one returned tab_id. list_tabs and open_session remain lower-level compatibility tools.
@@ -25,23 +25,23 @@ const TOPICS: Record<Exclude<SkillTopic, "full">, string> = {
 6. Prefer purpose-built tools and verified results. Use browser_discoverTools only for capabilities outside the connected core surface. Its response always includes the selected schemas. If a newly enabled native tool is not visible in the current turn, call it immediately with browser_call; do not ask the user to send "continue".
 7. Close the session when finished.
 `,
-  pairing: `# AtWebPilot pairing
+  pairing: `# AIPageGo pairing
 
 list_tabs opens the pairing page when needed and waits up to 45 seconds for the extension's HELLO, so successful authorization normally returns connected tabs in the same call. pairing_status remains immediate and non-blocking. A pairing_required result from list_tabs means the bounded wait expired; show pair_url once and use pairing_status for a later check. Never ask the user to reply merely to continue, poll list_tabs, or inspect the pair-page HTML.
 `,
-  reading: `# AtWebPilot reading
+  reading: `# AIPageGo reading
 
 Call browser_getPageInfo first. For articles, products, tables, and forms, use browser_createPageIndex, then browser_extractPageFields or browser_searchPageIndex, and read only the relevant block with browser_readPageBlock. Avoid browser_extractText on body and full-DOM reads. Use targeted screenshots only when visual evidence matters.
 `,
-  interaction: `# AtWebPilot interaction
+  interaction: `# AIPageGo interaction
 
 Refresh browser_takeSnapshot before each major action. Prefer uid-based browser_clickByUid/browser_fillByUid, and use browser_fillForm for independent fields. Use condition-based browser_waitFor rather than fixed delays. Keep submit, upload, storage, and credentialed network actions as explicit reviewed steps.
 `,
-  visual: `# AtWebPilot visual validation
+  visual: `# AIPageGo visual validation
 
 Use browser_resize and trust its actualViewport/verified result. Capture one browser_screenshot after the page settles; target a selector or page-index block and lower scale when detail permits. Do not follow browser_resize or browser_screenshot with browser_runJS that only re-reads viewport dimensions.
 `,
-  debugging: `# AtWebPilot debugging
+  debugging: `# AIPageGo debugging
 
 Read browser_consoleMessages first, then browser_networkRequests summaries. Arm recorder bodies only when needed, reproduce once, and fetch one browser_networkRequestDetail. Poll incrementally with sinceId. Check backend and degradedReason before treating missing events as proof.
 `
@@ -80,16 +80,16 @@ export function readSkillBundle(rawTopic: unknown = "quickstart"): { name: strin
     } catch {
       cached =
         `${TOPICS.quickstart}\n# ${SKILL_NAME}\n\n${SKILL_DESCRIPTION}\n\n` +
-        `(Skill bundle not found at build time; see https://github.com/attson/atwebpilot)\n`;
+        `(Skill bundle not found at build time; see https://github.com/attson/aipagego)\n`;
     }
   }
   return { name: SKILL_NAME, description: SKILL_DESCRIPTION, content: cached };
 }
 
 export const SKILL_TOOL = {
-  name: "atwebpilot_skill_read",
+  name: "aipagego_skill_read",
   description:
-    "Return concise AtWebPilot guidance by topic. Defaults to quickstart; request full only when detailed reference is necessary.",
+    "Return concise AIPageGo guidance by topic. Defaults to quickstart; request full only when detailed reference is necessary.",
   inputSchema: {
     type: "object",
     properties: {

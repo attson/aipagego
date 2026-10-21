@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { CoordinatorClient } from "../../src/background/coordinator-client";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 class FakeWS {
   static instances: FakeWS[] = [];
@@ -142,7 +142,7 @@ describe("CoordinatorClient.connect", () => {
     ws.sent.length = 0; // clear HELLO
     // Trigger the heartbeat alarm
     const chromeMock = (globalThis as unknown as { chrome: { alarms: { _fire: (name: string) => void } } }).chrome;
-    chromeMock.alarms._fire("atwebpilot-coordinator-heartbeat");
+    chromeMock.alarms._fire("aipagego-coordinator-heartbeat");
     await new Promise((r) => setTimeout(r, 0));
     expect(ws.sent.length).toBe(1);
     const ping = JSON.parse(ws.sent[0]);
@@ -372,14 +372,14 @@ describe("CoordinatorClient.connect", () => {
     // The first close schedules a 1s backoff. Firing the alarm inside that
     // window must NOT reconnect — the alarm used to ignore the backoff
     // entirely, which made the exponential delay decorative.
-    chromeMock.alarms._fire("atwebpilot-coordinator-heartbeat");
+    chromeMock.alarms._fire("aipagego-coordinator-heartbeat");
     await vi.advanceTimersByTimeAsync(0);
     expect(FakeWS.instances.length).toBe(1);
 
     // Once the backoff has elapsed the alarm is the thing that revives it,
     // since setTimeout does not survive service-worker sleep.
     await vi.advanceTimersByTimeAsync(1100);
-    chromeMock.alarms._fire("atwebpilot-coordinator-heartbeat");
+    chromeMock.alarms._fire("aipagego-coordinator-heartbeat");
     await vi.advanceTimersByTimeAsync(0);
     expect(FakeWS.instances.length).toBeGreaterThanOrEqual(2);
   });
@@ -410,7 +410,7 @@ describe("CoordinatorClient.connect", () => {
     expect(client.status).toBe("disconnected");
 
     const chromeMock = (globalThis as unknown as { chrome: { alarms: { _fire: (name: string) => void } } }).chrome;
-    chromeMock.alarms._fire("atwebpilot-coordinator-heartbeat");
+    chromeMock.alarms._fire("aipagego-coordinator-heartbeat");
     await vi.advanceTimersByTimeAsync(0);
 
     expect(FakeWS.instances.length).toBe(1);
@@ -455,7 +455,7 @@ describe("Plan 33 — reconnection has a terminating condition", () => {
     const chromeMock = (globalThis as unknown as {
       chrome: { alarms: { _fire: (n: string) => void } };
     }).chrome;
-    chromeMock.alarms._fire("atwebpilot-coordinator-heartbeat");
+    chromeMock.alarms._fire("aipagego-coordinator-heartbeat");
     await vi.advanceTimersByTimeAsync(0);
     expect(FakeWS.instances.length).toBe(1);
   });

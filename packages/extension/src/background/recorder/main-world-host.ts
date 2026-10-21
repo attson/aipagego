@@ -18,7 +18,7 @@ import {
   type PageRecorder,
   type RecorderConfig,
   type RecorderConfigPatch
-} from "@atwebpilot/shared/recorder";
+} from "@aipagego/shared/recorder";
 
 /** Shape returned by the `read` op in `content/recorder/drain.ts`. */
 type DrainRead = {

@@ -7,7 +7,7 @@ import type {
   TextPart,
   ToolResultPart,
   ToolUsePart
-} from "@atwebpilot/shared/types";
+} from "@aipagego/shared/types";
 import type { LlmClient, LlmTool } from "@/sidepanel/llm/types";
 import { truncateContent } from "@/sidepanel/llm/truncate";
 import type { ToolRunner } from "./tool-runner";

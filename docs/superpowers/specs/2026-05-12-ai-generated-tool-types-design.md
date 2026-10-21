@@ -17,7 +17,7 @@
 非目标：
 
 - 不兼容旧工具数据或旧导出 bundle；读取时旧工具按无效记录处理，列表/匹配过滤掉，按 id 获取返回空。
-- 不改 `DB_NAME = "atwebpilot"`。
+- 不改 `DB_NAME = "aipagego"`。
 - 不统计提示词工具运行次数到 `Tool.stats`；第一版只让聊天日志标注来源。
 - 不做 Chrome Web Store 发布流程变化。
 - 不做自动迁移、自动修复旧工具。
@@ -137,7 +137,7 @@ AI 已生成提示词工具
 描述：在商品页采集主图、详情图、评论摘要并输出结构化 JSON。
 
 ▾ 提示词
-你是 AtWebPilot，请基于当前页面完成以下任务：...
+你是 AIPageGo，请基于当前页面完成以下任务：...
 
 [重新生成] [保存]
 ```
@@ -207,7 +207,7 @@ System prompt 要求：
 
 - 输出 JSON：`{ "name": string, "description": string, "prompt": string }`。
 - `prompt` 面向未来运行，不引用“上面这段对话”。
-- `prompt` 要告诉 AI 基于当前页面执行，必要时使用 AtWebPilot 工具读取/操作页面。
+- `prompt` 要告诉 AI 基于当前页面执行，必要时使用 AIPageGo 工具读取/操作页面。
 - `prompt` 要包含期望输出结构和完成标准。
 - 不包含 API key、账号密码、cookie 或其他敏感值。
 
@@ -292,7 +292,7 @@ System prompt 要求：
 - 推荐 banner 中：
   - `steps` 工具的“运行”进入详情并 autoRun。
   - `prompt` 工具的“运行”跳聊天 autoSend。
-- 导出 bundle schema 升级为 `atwebpilot.tools/v2`；导入只接受 v2。
+- 导出 bundle schema 升级为 `aipagego.tools/v2`；导入只接受 v2。
 - 导入只接受新 schema 和新 `Tool` discriminated union。
 
 ## 8. 错误处理
@@ -320,7 +320,7 @@ System prompt 要求：
 - `generateStepsToolDraft` 解析合法 JSON；拒绝非法 step；对 runJS 触发 static scan。
 - `saveDraft` 分别保存两类工具，并写入对应 version。
 - `matchingTools` 对两类工具都匹配。
-- export/import 只接受 `atwebpilot.tools/v2`。
+- export/import 只接受 `aipagego.tools/v2`。
 
 UI 测试：
 

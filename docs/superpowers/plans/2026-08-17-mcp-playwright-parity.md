@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make AtWebPilot's MCP bridge a functional replacement for `@playwright/mcp --extension` by adding a page-event recorder subsystem, 11 new built-in tools, and full built-in exposure over MCP.
+**Goal:** Make AIPageGo's MCP bridge a functional replacement for `@playwright/mcp --extension` by adding a page-event recorder subsystem, 11 new built-in tools, and full built-in exposure over MCP.
 
 **Architecture:** A new `page-recorder` subsystem records console, network, and dialog events with two interchangeable backends — a MAIN-world content script (default, installed via dynamic `chrome.scripting.registerContentScripts`) and an opt-in `chrome.debugger` CDP backend that auto-degrades to MAIN-world on attach failure. Separately, sidepanel-only meta tools are lowered into the background service worker so the coordinator/MCP `EXEC` path can reach them, and `tool-gen` flips from a 19-name allow-list to a 3-name block-list.
 
@@ -21,7 +21,7 @@
 - Every recorder read result carries `backend: "main-world" | "cdp"` and, when degraded, `degradedReason: string`.
 - Recorder reads never throw for backend reasons. Disabled recorder returns an empty result plus a reason.
 - MCP block-list is exactly `askUser`, `attachTab`, `detachTab`.
-- `ATWEBPILOT_MCP_TOOLS` defaults to `full`; the only other accepted value is `parity`.
+- `AIPAGEGO_MCP_TOOLS` defaults to `full`; the only other accepted value is `parity`.
 - The MCP session permission posture does not change: `handleOpenSession` still grants the full capability scope by default.
 - `packages/shared` must stay free of `chrome.*` and DOM globals — pure types and functions only.
 - Never write non-MCP output to stdout in `packages/mcp-server`; logs go to stderr.
@@ -167,7 +167,7 @@ describe("serializeArg", () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `pnpm -F @atwebpilot/shared test -- recorder`
+Run: `pnpm -F @aipagego/shared test -- recorder`
 Expected: FAIL — cannot resolve `../../src/recorder/ring`.
 
 - [ ] **Step 3: Write `types.ts`**
@@ -347,7 +347,7 @@ In `packages/shared/package.json`, add `"./recorder": "./src/recorder/index.ts"`
 
 - [ ] **Step 8: Run the tests to verify they pass**
 
-Run: `pnpm -F @atwebpilot/shared test -- recorder`
+Run: `pnpm -F @aipagego/shared test -- recorder`
 Expected: PASS, 8 tests.
 
 - [ ] **Step 9: Commit**
@@ -431,7 +431,7 @@ describe("filterNetwork", () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm -F @atwebpilot/shared test -- recorder/filter`
+Run: `pnpm -F @aipagego/shared test -- recorder/filter`
 Expected: FAIL — cannot resolve `../../src/recorder/filter`.
 
 - [ ] **Step 3: Write `filter.ts`**
@@ -483,7 +483,7 @@ Add `export * from "./filter";` to `packages/shared/src/recorder/index.ts`.
 
 - [ ] **Step 5: Run the test to verify it passes**
 
-Run: `pnpm -F @atwebpilot/shared test -- recorder`
+Run: `pnpm -F @aipagego/shared test -- recorder`
 Expected: PASS, 16 tests.
 
 - [ ] **Step 6: Commit**
@@ -548,7 +548,7 @@ describe("parity tools", () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm -F @atwebpilot/shared test -- tool-mapping`
+Run: `pnpm -F @aipagego/shared test -- tool-mapping`
 Expected: FAIL — TypeScript rejects `"consoleMessages"` as a `BuiltinTool`.
 
 - [ ] **Step 3: Extend the `BuiltinTool` union**
@@ -604,7 +604,7 @@ Widen the `opts` parameter to `{ httpCookied?: boolean; runJsUnsafe?: boolean; d
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `pnpm -F @atwebpilot/shared test && pnpm -F @atwebpilot/shared typecheck`
+Run: `pnpm -F @aipagego/shared test && pnpm -F @aipagego/shared typecheck`
 Expected: PASS. The exhaustive `default` arm compiles, proving no tool was missed.
 
 - [ ] **Step 7: Commit**
@@ -660,7 +660,7 @@ describe("parity tool defs", () => {
 
 - [ ] **Step 2: Run the test to verify it fails**
 
-Run: `pnpm -F @atwebpilot/shared test -- builtin-tool-defs`
+Run: `pnpm -F @aipagego/shared test -- builtin-tool-defs`
 Expected: FAIL — `consoleMessages` is not defined.
 
 - [ ] **Step 3: Add the 11 new definitions**
@@ -874,7 +874,7 @@ Add to `waitFor.input_schema.properties`:
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `pnpm -F @atwebpilot/shared test && pnpm -F @atwebpilot/shared typecheck`
+Run: `pnpm -F @aipagego/shared test && pnpm -F @aipagego/shared typecheck`
 Expected: PASS.
 
 - [ ] **Step 6: Commit**
@@ -894,8 +894,8 @@ git commit -m "feat(tools): define 11 parity tools and extend four existing sche
 - Test: `packages/extension/tests/manifest.test.ts`
 
 **Interfaces:**
-- Consumes: `Ring`, `serializeArg`, `RING_SIZES`, `DEFAULT_RECORDER_CONFIG` from `@atwebpilot/shared/recorder`.
-- Produces: a global `window.__ATWEBPILOT_REC__` implementing `{ version: 1; config: RecorderConfig; console: Ring<ConsoleEntry>; network: Ring<NetworkEntry>; dialog: Ring<DialogEntry>; details: Map<number, NetworkDetail>; configure(patch): RecorderConfig; uninstall(): void }`. Later tasks add capture logic; this task only stands up the shell, the global, and the build path.
+- Consumes: `Ring`, `serializeArg`, `RING_SIZES`, `DEFAULT_RECORDER_CONFIG` from `@aipagego/shared/recorder`.
+- Produces: a global `window.__AIPAGEGO_REC__` implementing `{ version: 1; config: RecorderConfig; console: Ring<ConsoleEntry>; network: Ring<NetworkEntry>; dialog: Ring<DialogEntry>; details: Map<number, NetworkDetail>; configure(patch): RecorderConfig; uninstall(): void }`. Later tasks add capture logic; this task only stands up the shell, the global, and the build path.
 
 **Build-path decision — resolve this first, it gates the file layout.**
 
@@ -907,7 +907,7 @@ Add `"src/content/recorder/main-world.ts"` to `web_accessible_resources[0].resou
 pnpm build && find packages/extension/dist -name "main-world*" -o -name "*main-world*" | head
 ```
 
-If a JS asset is emitted, keep dynamic registration: the host will call `chrome.scripting.registerContentScripts({ id: "atwebpilot-recorder", world: "MAIN", runAt: "document_start", matches: ["<all_urls>"], allFrames: false, js: [<emitted path>], persistAcrossSessions: false })`, and the settings master switch calls `unregisterContentScripts({ ids: ["atwebpilot-recorder"] })`. Record the emitted path in a comment at the top of `main-world.ts`.
+If a JS asset is emitted, keep dynamic registration: the host will call `chrome.scripting.registerContentScripts({ id: "aipagego-recorder", world: "MAIN", runAt: "document_start", matches: ["<all_urls>"], allFrames: false, js: [<emitted path>], persistAcrossSessions: false })`, and the settings master switch calls `unregisterContentScripts({ ids: ["aipagego-recorder"] })`. Record the emitted path in a comment at the top of `main-world.ts`.
 
 If nothing is emitted, fall back: declare a second `content_scripts` entry in the manifest with `world: "MAIN"`, `run_at: "document_start"`, `matches: ["<all_urls>"]`, `js: ["src/content/recorder/main-world.ts"]`. The master switch then means "the host pushes `uninstall()` to every tab and never drains" rather than "the script never loads". If you take this branch, note the `document_start` race in the settings-page copy and update the spec's Backend 1 section to match — do not leave the spec claiming something the build cannot do.
 
@@ -932,7 +932,7 @@ it("exposes the MAIN-world recorder to the build", () => {
 
 - [ ] **Step 3: Run it to verify it fails**
 
-Run: `pnpm -F @atwebpilot/extension test -- manifest`
+Run: `pnpm -F @aipagego/extension test -- manifest`
 Expected: FAIL — `optional_permissions` is undefined.
 
 - [ ] **Step 4: Add `optional_permissions` to the manifest**
@@ -948,7 +948,7 @@ Expected: FAIL — `optional_permissions` is undefined.
 import {
   DEFAULT_RECORDER_CONFIG, RING_SIZES, Ring,
   type ConsoleEntry, type DialogEntry, type NetworkDetail, type NetworkEntry, type RecorderConfig
-} from "@atwebpilot/shared/recorder";
+} from "@aipagego/shared/recorder";
 
 export type RecorderGlobal = {
   version: 1;
@@ -963,7 +963,7 @@ export type RecorderGlobal = {
 };
 
 declare global {
-  interface Window { __ATWEBPILOT_REC__?: RecorderGlobal }
+  interface Window { __AIPAGEGO_REC__?: RecorderGlobal }
 }
 
 function install(): RecorderGlobal {
@@ -993,21 +993,21 @@ function install(): RecorderGlobal {
       rec.network.clear();
       rec.dialog.clear();
       rec.details.clear();
-      delete window.__ATWEBPILOT_REC__;
+      delete window.__AIPAGEGO_REC__;
     }
   };
   // Task 6 pushes console + network restorers here; Task 7 pushes the dialog restorer.
-  window.__ATWEBPILOT_REC__ = rec;
+  window.__AIPAGEGO_REC__ = rec;
   return rec;
 }
 
-if (!window.__ATWEBPILOT_REC__) install();
+if (!window.__AIPAGEGO_REC__) install();
 export { install };
 ```
 
 - [ ] **Step 6: Run the manifest test and the build**
 
-Run: `pnpm -F @atwebpilot/extension test -- manifest && pnpm build`
+Run: `pnpm -F @aipagego/extension test -- manifest && pnpm build`
 Expected: PASS, and `dist/` contains the recorder asset.
 
 - [ ] **Step 7: Commit**
@@ -1037,7 +1037,7 @@ import { install } from "@/content/recorder/main-world";
 describe("main-world recorder", () => {
   let rec: ReturnType<typeof install>;
   beforeEach(() => {
-    delete (window as { __ATWEBPILOT_REC__?: unknown }).__ATWEBPILOT_REC__;
+    delete (window as { __AIPAGEGO_REC__?: unknown }).__AIPAGEGO_REC__;
     rec = install();
   });
 
@@ -1097,14 +1097,14 @@ describe("main-world recorder", () => {
     const patched = console.log;
     rec.uninstall();
     expect(console.log).not.toBe(patched);
-    expect(window.__ATWEBPILOT_REC__).toBeUndefined();
+    expect(window.__AIPAGEGO_REC__).toBeUndefined();
   });
 });
 ```
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm -F @atwebpilot/extension test -- main-world`
+Run: `pnpm -F @aipagego/extension test -- main-world`
 Expected: FAIL — nothing is captured; `rec.console.toArray()` is empty.
 
 - [ ] **Step 3: Implement console capture**
@@ -1236,7 +1236,7 @@ Add the observer, guarded because happy-dom lacks it:
 
 - [ ] **Step 5: Run the tests to verify they pass**
 
-Run: `pnpm -F @atwebpilot/extension test -- main-world`
+Run: `pnpm -F @aipagego/extension test -- main-world`
 Expected: PASS, 7 tests.
 
 - [ ] **Step 6: Commit**
@@ -1268,7 +1268,7 @@ describe("dialog interception", () => {
   let nativeConfirm: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    delete (window as { __ATWEBPILOT_REC__?: unknown }).__ATWEBPILOT_REC__;
+    delete (window as { __AIPAGEGO_REC__?: unknown }).__AIPAGEGO_REC__;
     nativeConfirm = vi.fn(() => true);
     window.confirm = nativeConfirm as unknown as typeof window.confirm;
     window.prompt = vi.fn(() => "native") as unknown as typeof window.prompt;
@@ -1312,7 +1312,7 @@ describe("dialog interception", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm -F @atwebpilot/extension test -- dialog`
+Run: `pnpm -F @aipagego/extension test -- dialog`
 Expected: FAIL — `rec.setDialogPolicy is not a function`.
 
 - [ ] **Step 3: Implement the dialog patches**
@@ -1368,7 +1368,7 @@ Extend `RecorderGlobal` with `dialogPolicy` and `setDialogPolicy`, then inside `
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `pnpm -F @atwebpilot/extension test -- recorder`
+Run: `pnpm -F @aipagego/extension test -- recorder`
 Expected: PASS, 11 tests across both recorder files.
 
 - [ ] **Step 5: Commit**
@@ -1395,7 +1395,7 @@ The drain expression runs in the MAIN world and returns plain JSON:
 ```ts
 // packages/extension/src/content/recorder/drain.ts
 export const DRAIN_SOURCE = `
-  const rec = window.__ATWEBPILOT_REC__;
+  const rec = window.__AIPAGEGO_REC__;
   if (!rec) return { missing: true };
   const op = ctx.op;
   if (op === "configure") return { config: rec.configure(ctx.patch) };
@@ -1467,7 +1467,7 @@ describe("MainWorldRecorder", () => {
 
 - [ ] **Step 2: Run it to verify it fails**
 
-Run: `pnpm -F @atwebpilot/extension test -- recorder-host`
+Run: `pnpm -F @aipagego/extension test -- recorder-host`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement `MainWorldRecorder`**
@@ -1490,7 +1490,7 @@ Until Phase 5 lands, `getAttachedCdpRecorder` is a stub returning `null`.
 In `packages/extension/src/background/index.ts`, on startup call the registration chosen in Task 5 Step 1, guarded so a duplicate id is not an error:
 
 ```ts
-await chrome.scripting.unregisterContentScripts({ ids: ["atwebpilot-recorder"] }).catch(() => {});
+await chrome.scripting.unregisterContentScripts({ ids: ["aipagego-recorder"] }).catch(() => {});
 if (await recorderEnabled()) await chrome.scripting.registerContentScripts([RECORDER_SCRIPT]);
 ```
 
@@ -1498,7 +1498,7 @@ if (await recorderEnabled()) await chrome.scripting.registerContentScripts([RECO
 
 - [ ] **Step 6: Run the tests to verify they pass**
 
-Run: `pnpm -F @atwebpilot/extension test -- recorder`
+Run: `pnpm -F @aipagego/extension test -- recorder`
 Expected: PASS.
 
 - [ ] **Step 7: Commit**
@@ -1564,11 +1564,11 @@ describe("findElements", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- find-elements`. Expected: FAIL, module not found.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- find-elements`. Expected: FAIL, module not found.
 - [ ] **Step 3: Extract `element-meta.ts`** from `take-snapshot.ts` (`INTERACTIVE_SELECTOR`, `elText`, `elRole`, `elName`, `bounds`) and re-import them there. Run the existing snapshot tests to confirm no regression.
 - [ ] **Step 4: Implement `find-elements.ts`** using `document.querySelectorAll(INTERACTIVE_SELECTOR)`, matching `elName(el)` and `elText(el)`; on regex-parse failure throw `findElements: invalid regex`.
 - [ ] **Step 5: Register in `TOOLS`** in `content/tools/index.ts`.
-- [ ] **Step 6: Run the tests.** Run: `pnpm -F @atwebpilot/extension test -- "find-elements|take-snapshot"`. Expected: PASS.
+- [ ] **Step 6: Run the tests.** Run: `pnpm -F @aipagego/extension test -- "find-elements|take-snapshot"`. Expected: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
@@ -1593,7 +1593,7 @@ git commit -m "feat(tools): add findElements and share element metadata with tak
 `drop` builds `File` objects from base64 via `Uint8Array.from(atob(b64), (c) => c.charCodeAt(0))`, attaches them to a `DataTransfer`, and dispatches `dragenter`/`dragover`/`drop`. When `files` is present the caller must have held `upload:file`, which the coordinator already enforced by the time the content script runs.
 
 - [ ] **Step 1: Write the failing test** — a `#src`/`#dst` pair where `dst` calls `preventDefault()` on `dragover`; assert `consumed.html5` is true, assert the drop handler saw the payload set by `drag`, assert a target-less call rejects with "target not found", and assert `drop` with one base64 file surfaces `fileCount: 1` and a readable `dataTransfer.files[0].name` in the page's own `drop` listener.
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- drag-drop`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- drag-drop`. Expected: FAIL.
 - [ ] **Step 3: Add `resolveTarget` to `element-meta.ts`.**
 - [ ] **Step 4: Implement `drag.ts`.**
 - [ ] **Step 5: Implement `drop.ts`.**
@@ -1672,7 +1672,7 @@ describe("meta tool router", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- meta-tool-router`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- meta-tool-router`. Expected: FAIL.
 - [ ] **Step 3: Move `xlsx.ts`** to `background/bg-tools/xlsx.ts`; re-export from the old sidepanel path so existing imports and tests keep working.
 - [ ] **Step 4: Write `tabs.ts`, `capture.ts`, `downloads.ts`, `search.ts`**, porting the bodies from `sidepanel/lib/meta-tools.ts` and `run-session.ts` and swapping blob URLs for `data:` URLs.
 - [ ] **Step 5: Write `meta-tool-router.ts`** assembling `META_TOOLS`.
@@ -1688,7 +1688,7 @@ describe("meta tool router", () => {
 ```
 
 - [ ] **Step 7: Point the side panel at the router** — `sidepanel/lib/meta-tools.ts` becomes a thin wrapper that sends `runs.runOneStep`, and the `screenshot` / `listTabs` / `openTab` branches in `run-session.ts` keep their result-shaping (the image `tool_result` block, `onCrossTabResult`) but source the data from the router. `attachTab`/`detachTab` stay side-panel-only — they are in the MCP block-list.
-- [ ] **Step 8: Run the full extension suite.** Run: `pnpm -F @atwebpilot/extension test`. Expected: PASS with no regressions in the existing `run-session` tests.
+- [ ] **Step 8: Run the full extension suite.** Run: `pnpm -F @aipagego/extension test`. Expected: PASS with no regressions in the existing `run-session` tests.
 - [ ] **Step 9: Commit**
 
 ```bash
@@ -1724,7 +1724,7 @@ await chrome.windows.update(tab.windowId, {
 ```
 
 - [ ] **Step 1: Write the failing tests** — `navigateBack` returns `{ok:false, reason}` when `chrome.tabs.goBack` rejects with "Cannot find a next page in history"; `resize` compensates for a 16px horizontal and 90px vertical chrome; `consoleMessages` forwards `level`/`limit` to the recorder and passes `backend` through; `handleDialog` with `{accept:true, scope:"all"}` calls `setDialogPolicy` and returns the recorded dialogs; `recorderConfig({bodies:true})` reaches `configure`.
-- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @atwebpilot/extension test -- "nav-tools|recorder-tools"`. Expected: FAIL.
+- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @aipagego/extension test -- "nav-tools|recorder-tools"`. Expected: FAIL.
 - [ ] **Step 3: Implement `nav.ts`** — `goBack`/`goForward` wrapped in try/catch that converts the "no history" rejection into `{ok:false, reason}` rather than an error; `resize` as above.
 - [ ] **Step 4: Implement `recorder-tools.ts`** — each tool is a thin adapter from tool args to a `getRecorder(tabId)` call. `handleDialog` calls `setDialogPolicy` then `readDialogs`, returning both the policy that was set and the log.
 - [ ] **Step 5: Register all eight in `META_TOOLS`.**
@@ -1753,7 +1753,7 @@ git commit -m "feat(tools): navigation, resize and recorder tools in the backgro
 - Produces: no signature changes; the tools read new optional args. `click` with `doubleClick` dispatches `dblclick` after the click pair; `button: "right"` dispatches `contextmenu`; `modifiers` set `altKey`/`ctrlKey`/`metaKey`/`shiftKey` on every dispatched mouse event. `fillInput` with `slowly` dispatches `keydown`/`keypress`/`input`/`keyup` per character and sets the value incrementally; with `submit` it dispatches an `Enter` `keydown`/`keyup` pair after filling. `waitFor` with `text` polls `document.body.innerText` on the same interval as the existing selector poll; `textGone` inverts the predicate. `text` and `textGone` respect the existing `timeoutMs` default of 5000 and throw the same timeout error shape.
 
 - [ ] **Step 1: Write the failing tests** — one per new option, asserting the dispatched event sequence via listeners rather than internals.
-- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @atwebpilot/extension test -- "click|fill-input|wait-for"`. Expected: FAIL.
+- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @aipagego/extension test -- "click|fill-input|wait-for"`. Expected: FAIL.
 - [ ] **Step 3: Implement the three tools.**
 - [ ] **Step 4: Run the tests.** Expected: PASS.
 - [ ] **Step 5: Commit**
@@ -1777,7 +1777,7 @@ git commit -m "feat(tools): click modifiers, slow typing, submit, and text waits
 `chrome.tabs.captureVisibleTab` is rate-limited (`MAX_CAPTURE_VISIBLE_TAB_CALLS_PER_SECOND`); the loop must await at least 100 ms between bands or it will start throwing quota errors partway through a long page.
 
 - [ ] **Step 1: Write the failing test** — a fake `chrome` where the page reports a 3-band height; assert three `captureVisibleTab` calls, three scroll positions, restoration of the initial scroll offset, and `truncated: true` at 21 bands.
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- capture`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- capture`. Expected: FAIL.
 - [ ] **Step 3: Implement `page-metrics.ts`** (a content tool returning scroll metrics and performing a scroll-to) **and the band loop with the 100 ms delay and the 20-band cap.**
 - [ ] **Step 4: Implement stitching and `format`/`scale`** in the content script.
 - [ ] **Step 5: Run the tests.** Expected: PASS.
@@ -1801,9 +1801,9 @@ git commit -m "feat(tools): full-page screenshot with banded capture and stitchi
 - Produces: `requestDebuggerPermission(): Promise<boolean>` wrapping `chrome.permissions.request({permissions:["debugger"]})`, `hasDebuggerPermission(): Promise<boolean>`, and a persisted `cdpRecorderEnabled` setting. The toggle is disabled in the UI until the permission is granted; revoking the permission flips the setting off.
 
 - [ ] **Step 1: Write the failing test** — granting flips the setting; a denied request leaves it false and surfaces a reason; `hasDebuggerPermission` false forces `cdpRecorderEnabled` to read as false regardless of what is stored.
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- cdp-permission`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- cdp-permission`. Expected: FAIL.
 - [ ] **Step 3: Implement `cdp-permission.ts`.**
-- [ ] **Step 4: Add the settings row** under Coordinator, with copy that states the trade-off plainly: full-fidelity capture, a permanent "AtWebPilot is debugging this browser" bar, and mutual exclusion with DevTools and other debugger clients.
+- [ ] **Step 4: Add the settings row** under Coordinator, with copy that states the trade-off plainly: full-fidelity capture, a permanent "AIPageGo is debugging this browser" bar, and mutual exclusion with DevTools and other debugger clients.
 - [ ] **Step 5: Run the tests.** Expected: PASS.
 - [ ] **Step 6: Commit**
 
@@ -1833,7 +1833,7 @@ Behaviour:
 - `chrome.tabs.onRemoved` detaches and clears state so buffers cannot leak across tab lifetimes.
 
 - [ ] **Step 1: Write the failing test** — with a fake `chrome.debugger`: attach failure returns `null` and stores the reason; a successful attach routes `Runtime.consoleAPICalled` into the console ring with `backend: "cdp"`; `onDetach` makes `getRecorder` fall back to MAIN-world with a populated `degradedReason`; a pending dialog is answered synchronously by `handleDialog`.
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- cdp-recorder`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- cdp-recorder`. Expected: FAIL.
 - [ ] **Step 3: Implement `cdp.ts`.**
 - [ ] **Step 4: Un-stub `getAttachedCdpRecorder` in `host.ts`.**
 - [ ] **Step 5: Route `resize` through `Emulation.setDeviceMetricsOverride`** when a CDP recorder is attached, leaving the window-arithmetic path for the MAIN-world case.
@@ -1858,7 +1858,7 @@ git commit -m "feat(recorder): CDP backend with automatic degradation to MAIN-wo
 
 **Interfaces:**
 - Consumes: `TOOL_DEFS` (57 entries after Task 4), `capabilityForTool` (Task 3).
-- Produces: `generateBrowserTools(mode: "full" | "parity" = "full"): GeneratedTool[]`; `GeneratedTool` gains `resultKind: "json" | "image"` and `stepKind: "tool" | "js"`. `BLOCKED_TOOLS = new Set(["askUser", "attachTab", "detachTab"])`. `PARITY_TOOLS` is the explicit 24-name list covering playwright-ext's surface. `readToolMode(env): "full" | "parity"` reads `ATWEBPILOT_MCP_TOOLS`, defaulting to `full` and falling back to `full` with a stderr warning on an unrecognised value.
+- Produces: `generateBrowserTools(mode: "full" | "parity" = "full"): GeneratedTool[]`; `GeneratedTool` gains `resultKind: "json" | "image"` and `stepKind: "tool" | "js"`. `BLOCKED_TOOLS = new Set(["askUser", "attachTab", "detachTab"])`. `PARITY_TOOLS` is the explicit 24-name list covering playwright-ext's surface. `readToolMode(env): "full" | "parity"` reads `AIPAGEGO_MCP_TOOLS`, defaulting to `full` and falling back to `full` with a stderr warning on an unrecognised value.
 
 `runJS` needs a step-kind special case: `handleBrowserTool` currently always emits `{kind:"tool", ...}`, but `runJS` is a `{kind:"js", source}` step. Branch on `gen.stepKind`. Its capability comes from `capabilityForRunJs`, not `capabilityForTool`, and the `unsafe` flag comes from the static-scan verdict the extension applies — the MCP server passes `unsafe: true` conservatively, since it cannot run the scan itself.
 
@@ -1893,8 +1893,8 @@ it("marks screenshot as an image result", () => {
 
 it("defaults to full and warns on garbage", () => {
   expect(readToolMode({})).toBe("full");
-  expect(readToolMode({ ATWEBPILOT_MCP_TOOLS: "parity" })).toBe("parity");
-  expect(readToolMode({ ATWEBPILOT_MCP_TOOLS: "nonsense" })).toBe("full");
+  expect(readToolMode({ AIPAGEGO_MCP_TOOLS: "parity" })).toBe("parity");
+  expect(readToolMode({ AIPAGEGO_MCP_TOOLS: "nonsense" })).toBe("full");
 });
 ```
 
@@ -1907,7 +1907,7 @@ it("returns screenshots as an image content block", async () => {
 });
 ```
 
-- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @attson/atwebpilot-mcp test`. Expected: FAIL.
+- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @attson/aipagego-mcp test`. Expected: FAIL.
 - [ ] **Step 3: Rewrite `tool-gen.ts`** with the block-list, `PARITY_TOOLS`, `resultKind`, `stepKind`, and `readToolMode`.
 - [ ] **Step 4: Widen `CallResult`** to `{ content: Array<{type:"text"; text:string} | {type:"image"; data:string; mimeType:string}>; isError?: boolean }` and branch in `ok()` on `resultKind`.
 - [ ] **Step 5: Branch `handleBrowserTool`** on `stepKind` and pass the new capability opts.
@@ -1954,7 +1954,7 @@ git commit -m "feat(protocol): negotiate the tool surface with supported_tools"
 - Modify: `AGENTS.md`
 
 - [ ] **Step 1: Update `skill/SKILL.md`** with the recorder arming model, the backend fidelity distinction, the `handleDialog` pre-set-policy semantics, and a worked debugging flow (`recorderConfig({bodies:true})` → reproduce → `networkRequests` → `networkRequestDetail`).
-- [ ] **Step 2: Update `packages/mcp-server/README.md`** — replace "19 个 `browser_*`" with the new count, document `ATWEBPILOT_MCP_TOOLS`, and add a short "replacing playwright-ext" section listing the tool correspondence.
+- [ ] **Step 2: Update `packages/mcp-server/README.md`** — replace "19 个 `browser_*`" with the new count, document `AIPAGEGO_MCP_TOOLS`, and add a short "replacing playwright-ext" section listing the tool correspondence.
 - [ ] **Step 3: Update `README.md`** — the recorder, the privacy posture, the CDP opt-in, and the new tools in the capability tier lists.
 - [ ] **Step 4: Update `AGENTS.md`** with the new directories.
 - [ ] **Step 5: Run the whole suite and the build.**

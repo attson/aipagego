@@ -4,7 +4,7 @@
 
 **Goal:** Replace the 9 emoji / text-glyph icons in the sidepanel UI with lucide-react SVG icons for a consistent, professional look.
 
-**Architecture:** Add `lucide-react` as a runtime dependency of `@atwebpilot/extension`. In three view files (header / input-toolbar / mention-picker), swap the emoji/glyph strings for lucide React components at a fixed pixel size (14 in header/toolbar, 12 in the compact mention-picker row). No new components, no wrapper abstraction, no behavior change. Existing tests are unaffected because they all assert on `aria-label` / `data-testid`, never on emoji text.
+**Architecture:** Add `lucide-react` as a runtime dependency of `@aipagego/extension`. In three view files (header / input-toolbar / mention-picker), swap the emoji/glyph strings for lucide React components at a fixed pixel size (14 in header/toolbar, 12 in the compact mention-picker row). No new components, no wrapper abstraction, no behavior change. Existing tests are unaffected because they all assert on `aria-label` / `data-testid`, never on emoji text.
 
 **Tech Stack:** React 18.3, lucide-react ^0.460, vitest 2 + happy-dom (existing pattern).
 
@@ -50,7 +50,7 @@ Final fragment should read:
 
 ```json
   "dependencies": {
-    "@atwebpilot/shared": "workspace:*",
+    "@aipagego/shared": "workspace:*",
     "idb": "^8.0.0",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",
@@ -61,7 +61,7 @@ Final fragment should read:
 
 - [ ] **Step 2: Install**
 
-Run from `/Users/attson/code/atwebpilot2`:
+Run from `/Users/attson/code/aipagego2`:
 
 ```bash
 pnpm install
@@ -83,14 +83,14 @@ Expected output: `function function`
 
 - [ ] **Step 4: Typecheck**
 
-Run from `/Users/attson/code/atwebpilot2`: `pnpm -r typecheck`
+Run from `/Users/attson/code/aipagego2`: `pnpm -r typecheck`
 
 Expected: PASS (adding a dep without using it shouldn't break anything).
 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/extension/package.json /Users/attson/code/atwebpilot2/pnpm-lock.yaml
+git add packages/extension/package.json /Users/attson/code/aipagego2/pnpm-lock.yaml
 git commit -m "chore(deps): add lucide-react ^0.460.0 to extension"
 ```
 
@@ -141,7 +141,7 @@ Replace with:
 
 - [ ] **Step 3: Typecheck + run header tests**
 
-Run from `/Users/attson/code/atwebpilot2`:
+Run from `/Users/attson/code/aipagego2`:
 
 ```bash
 pnpm -r typecheck && cd packages/extension && pnpm test -- header
@@ -218,7 +218,7 @@ Change line 120 from `              🎯` to:
 
 - [ ] **Step 4: Typecheck + run input-toolbar tests**
 
-Run from `/Users/attson/code/atwebpilot2`:
+Run from `/Users/attson/code/aipagego2`:
 
 ```bash
 pnpm -r typecheck && cd packages/extension && pnpm test -- input-toolbar
@@ -266,7 +266,7 @@ Change to:
 
 - [ ] **Step 3: Typecheck + run mention-picker tests**
 
-Run from `/Users/attson/code/atwebpilot2`:
+Run from `/Users/attson/code/aipagego2`:
 
 ```bash
 pnpm -r typecheck && cd packages/extension && pnpm test -- mention-picker
@@ -289,7 +289,7 @@ git commit -m "feat(sidepanel): swap mention-picker emoji for lucide icons (Spar
 
 - [ ] **Step 1: Full repo typecheck**
 
-Run from `/Users/attson/code/atwebpilot2`: `pnpm -r typecheck`
+Run from `/Users/attson/code/aipagego2`: `pnpm -r typecheck`
 
 Expected: 4 packages PASS.
 
@@ -301,7 +301,7 @@ Expected: 87 files / 473 tests PASS (same baseline as quick-actions ship; this P
 
 - [ ] **Step 3: Production build**
 
-Run from `/Users/attson/code/atwebpilot2`: `pnpm build`
+Run from `/Users/attson/code/aipagego2`: `pnpm build`
 
 Expected: PASS, no warnings.
 

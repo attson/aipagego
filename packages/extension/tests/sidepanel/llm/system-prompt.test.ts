@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AttachedTab } from "@atwebpilot/shared/types";
+import type { AttachedTab } from "@aipagego/shared/types";
 import { buildSystemPrompt } from "@/sidepanel/llm/system-prompt";
 
 function tab(tabId: number, url: string, source: AttachedTab["source"] = "mention"): AttachedTab {
@@ -9,14 +9,14 @@ function tab(tabId: number, url: string, source: AttachedTab["source"] = "mentio
 describe("buildSystemPrompt — language detection", () => {
   it("zh by default + Chinese trigger", () => {
     const p = buildSystemPrompt({ url: "https://x", lastUserText: "翻译这页" });
-    expect(p).toMatch(/你是 AtWebPilot/);
+    expect(p).toMatch(/你是 AIPageGo/);
     expect(p).toMatch(/ReAct/);
     expect(p).toMatch(/TODO/);
   });
 
   it("English when user wrote English", () => {
     const p = buildSystemPrompt({ url: "https://x", lastUserText: "Translate this page" });
-    expect(p).toMatch(/You are AtWebPilot/);
+    expect(p).toMatch(/You are AIPageGo/);
     expect(p).toMatch(/THINK → ACT/);
   });
 });

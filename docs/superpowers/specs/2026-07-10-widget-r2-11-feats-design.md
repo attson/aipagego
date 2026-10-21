@@ -40,7 +40,7 @@ v0.0.46 落地 widget(input + messages + caution 审阅 + dangerous 交接);v0.0
 
 ```
 ┌────────────────────────────────────────┐
-│ [←] ⚡AtWebPilot [⌖][+][↗][—][×]      │  ← [←] 仅历史模式;⌖ 新元素圈选;其余同 v0.0.51
+│ [←] ⚡AIPageGo [⌖][+][↗][—][×]      │  ← [←] 仅历史模式;⌖ 新元素圈选;其余同 v0.0.51
 ├────────────────────────────────────────┤
 │ ⚠ 上次运行失败: xxx           [×关闭]  │  ← Error Banner (§7)
 ├────────────────────────────────────────┤
@@ -86,9 +86,9 @@ v0.0.46 落地 widget(input + messages + caution 审阅 + dangerous 交接);v0.0
 
 **元素圈选流程**:
 
-1. 用户点 `⌖` → `chrome.runtime.sendMessage({type: "atwebpilot.startCapture", tabId})`
+1. 用户点 `⌖` → `chrome.runtime.sendMessage({type: "aipagego.startCapture", tabId})`
 2. `content/element-capture.ts` 收到 → 页面进入 hover 高亮 + 单次 click 模式
-3. 用户点选元素 → element-capture 发 `{type: "atwebpilot.captureResult", selector}`
+3. 用户点选元素 → element-capture 发 `{type: "aipagego.captureResult", selector}`
 4. Widget 挂 `chrome.runtime.onMessage` listener 接住 → `setInput((prev) => prev + \`\\n\\n针对元素 ${selector}:\`)` + `inputRef.focus()`
 
 已有基础设施:`packages/extension/src/content/element-capture.ts` 完整实现;widget 只加**触发按钮 + 结果 listener**。
@@ -123,7 +123,7 @@ v0.0.46 落地 widget(input + messages + caution 审阅 + dangerous 交接);v0.0
 **结构**:垂直堆叠两组
 
 - `<EmptySuggestions matchedTools={[]} presets={matchedPresets} onPresetPick={handlePresetPick} onRun={() => {}} onDetail={() => {}} />`
-  - `matchedPresets = matchPresetsByUrl(session.url)`(现有 `@atwebpilot/shared/match-presets`)
+  - `matchedPresets = matchPresetsByUrl(session.url)`(现有 `@aipagego/shared/match-presets`)
 - `<QuickActions currentUrl={session.url} onPick={(text) => setInput(text)} />`
 
 **handlePresetPick 分类处理**:
@@ -248,7 +248,7 @@ function onResizeStart(e) {
 ✓ 已执行 N 步  [保存为工具]
 ```
 
-点击:`rpc.widgetOpenSidepanelWithSave({tabId})` → BG 打开 sidepanel + 存 `atwebpilot.pendingSave: {tabId, ts}`;sidepanel `useEffect` 读到 → 调 `showSave(tabId)` → SaveAsToolCard 弹出
+点击:`rpc.widgetOpenSidepanelWithSave({tabId})` → BG 打开 sidepanel + 存 `aipagego.pendingSave: {tabId, ts}`;sidepanel `useEffect` 读到 → 调 `showSave(tabId)` → SaveAsToolCard 弹出
 
 **新增 RPC**:
 
@@ -263,7 +263,7 @@ BG 处理:
 case "widget.openSidepanelWithSave": {
   await chrome.sidePanel.open({ tabId: req.tabId });
   await chrome.storage.session.set({
-    "atwebpilot.pendingSave": { tabId: req.tabId, ts: Date.now() }
+    "aipagego.pendingSave": { tabId: req.tabId, ts: Date.now() }
   });
   return null;
 }
@@ -273,15 +273,15 @@ Sidepanel focus effect(和 pendingApproval 同款,加一段):
 
 ```ts
 useEffect(() => {
-  chrome.storage.session.get(["atwebpilot.pendingSave"]).then((res) => {
-    const p = res["atwebpilot.pendingSave"];
+  chrome.storage.session.get(["aipagego.pendingSave"]).then((res) => {
+    const p = res["aipagego.pendingSave"];
     if (!p) return;
     if (Date.now() - p.ts > 30_000) {
-      chrome.storage.session.remove(["atwebpilot.pendingSave"]);
+      chrome.storage.session.remove(["aipagego.pendingSave"]);
       return;
     }
     showSave(p.tabId);
-    chrome.storage.session.remove(["atwebpilot.pendingSave"]);
+    chrome.storage.session.remove(["aipagego.pendingSave"]);
   });
 }, []);
 ```
@@ -301,7 +301,7 @@ useEffect(() => {
 
 **Storage keys**(chrome.storage.session):
 
-- `atwebpilot.pendingSave: {tabId, ts}` — save 中继
+- `aipagego.pendingSave: {tabId, ts}` — save 中继
 
 ## 15 · 测试策略
 

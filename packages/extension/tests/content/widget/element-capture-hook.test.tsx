@@ -42,8 +42,8 @@ describe("useElementCapture", () => {
       return null;
     }
     await act(async () => root.render(<Test />));
-    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "atwebpilot.startCapture" });
-    listeners[0]({ type: "atwebpilot.captureResult", selector: "button.primary" });
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ type: "aipagego.startCapture" });
+    listeners[0]({ type: "aipagego.captureResult", selector: "button.primary" });
     expect(captured).toBe("button.primary");
   });
 

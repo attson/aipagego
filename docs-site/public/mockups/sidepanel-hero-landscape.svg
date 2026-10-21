@@ -89,7 +89,7 @@
 
   <!-- Sidepanel Header -->
   <rect x="820" y="78" width="380" height="42" fill="#18181b"/>
-  <text x="836" y="105" fill="#e4e4e7" font-size="13" font-weight="700">AtWebPilot</text>
+  <text x="836" y="105" fill="#e4e4e7" font-size="13" font-weight="700">AIPageGo</text>
   <text x="912" y="105" fill="#71717a" font-size="10" font-family="ui-monospace, monospace">v0.0.44</text>
   <g transform="translate(1040, 92)" fill="#3f3f46">
     <rect width="16" height="16" rx="3"/>

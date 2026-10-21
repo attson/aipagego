@@ -1,4 +1,4 @@
-import type { AttachedTab } from "@atwebpilot/shared/types";
+import type { AttachedTab } from "@aipagego/shared/types";
 
 type Props = {
   currentTabUrl: string;

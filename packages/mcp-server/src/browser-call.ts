@@ -1,4 +1,4 @@
-import type { JsonSchema } from "@atwebpilot/shared/types";
+import type { JsonSchema } from "@aipagego/shared/types";
 
 export const BROWSER_CALL_TOOL = {
   name: "browser_call",

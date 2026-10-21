@@ -26,8 +26,8 @@ describe("SectionMcp", () => {
     mount();
 
     expect(container.textContent).toContain("MCP 配置");
-    expect(container.textContent).toContain("claude mcp add atwebpilot");
-    expect(container.textContent).toContain("@attson/atwebpilot-mcp");
+    expect(container.textContent).toContain("claude mcp add aipagego");
+    expect(container.textContent).toContain("@attson/aipagego-mcp");
     expect(container.textContent).toContain("ws://127.0.0.1:8787/worker");
   });
 
@@ -48,7 +48,7 @@ describe("SectionMcp", () => {
     });
 
     expect(writeText).toHaveBeenCalledWith(
-      "claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp"
+      "claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp"
     );
   });
 });

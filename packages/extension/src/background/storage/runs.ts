@@ -1,4 +1,4 @@
-import type { Json, RunRecord, RunSource, RunStepLogEntry, RunStatus } from "@atwebpilot/shared/types";
+import type { Json, RunRecord, RunSource, RunStepLogEntry, RunStatus } from "@aipagego/shared/types";
 import { getDB } from "./db";
 
 export async function createRun(input: {

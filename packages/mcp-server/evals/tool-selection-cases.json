@@ -15,7 +15,7 @@
     "id": "live-console-debugging",
     "category": "use",
     "prompt": "Find the console and failed network errors causing the currently open page to stay blank.",
-    "expected": "Use browser_start, then the AtWebPilot console and network inspection tools."
+    "expected": "Use browser_start, then the AIPageGo console and network inspection tools."
   },
   {
     "id": "current-page-form",
@@ -33,7 +33,7 @@
     "id": "pure-react-refactor",
     "category": "do_not_use",
     "prompt": "Refactor this React component to remove duplicated state without running the application.",
-    "expected": "Edit and test the source code without starting AtWebPilot because no live page is needed."
+    "expected": "Edit and test the source code without starting AIPageGo because no live page is needed."
   },
   {
     "id": "static-dom-explanation",
@@ -45,7 +45,7 @@
     "id": "write-playwright-test",
     "category": "do_not_use",
     "prompt": "Write a Playwright test file for the checkout flow, but do not execute any browser.",
-    "expected": "Create the requested test source without invoking AtWebPilot or another browser."
+    "expected": "Create the requested test source without invoking AIPageGo or another browser."
   },
   {
     "id": "unspecified-page-check",
@@ -62,7 +62,7 @@
   {
     "id": "pairing-denied",
     "category": "fallback",
-    "prompt": "Inspect the current page, but the AtWebPilot pairing request is denied.",
+    "prompt": "Inspect the current page, but the AIPageGo pairing request is denied.",
     "expected": "Report the concrete pairing failure and request direction before launching a different browser path."
   },
   {

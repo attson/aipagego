@@ -6,11 +6,11 @@ const extensionKey =
 
 export default defineManifest({
   manifest_version: 3,
-  name: "AtWebPilot — AI 网页助手",
+  name: "AIPageGo — AI 网页助手",
   description: "让 AI 帮你浏览、总结、操作网页，并把成功的对话固化为可复用工具",
   version: pkg.version,
   key: extensionKey,
-  action: { default_title: "AtWebPilot" },
+  action: { default_title: "AIPageGo" },
   side_panel: { default_path: "src/sidepanel/index.html" },
   background: { service_worker: "src/background/index.ts", type: "module" },
   optional_permissions: ["debugger"],
@@ -29,7 +29,7 @@ export default defineManifest({
     {
       // Keeps the recorder as a CRX/Vite build entry without loading it on
       // ordinary pages. Diagnostic policy injects this generated file via BG.
-      matches: ["http://127.0.0.1/__atwebpilot_recorder__/*"],
+      matches: ["http://127.0.0.1/__aipagego_recorder__/*"],
       js: ["src/content/recorder/main-world.ts"],
       world: "MAIN",
       run_at: "document_start"

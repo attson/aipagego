@@ -57,7 +57,7 @@ describe("FAB", () => {
     await act(async () => {
       root.render(<FAB onToggle={() => {}} active={false} />);
     });
-    const btn = container.querySelector("[aria-label='AtWebPilot 助手']");
+    const btn = container.querySelector("[aria-label='AIPageGo 助手']");
     expect(btn).toBeTruthy();
   });
 
@@ -65,7 +65,7 @@ describe("FAB", () => {
     await act(async () => {
       root.render(<FAB onToggle={() => {}} active={true} />);
     });
-    const btn = container.querySelector("[aria-label='AtWebPilot 助手']");
+    const btn = container.querySelector("[aria-label='AIPageGo 助手']");
     expect(btn?.className).toContain("bg-emerald-600");
   });
 
@@ -73,7 +73,7 @@ describe("FAB", () => {
     await act(async () => {
       root.render(<FAB onToggle={() => {}} active={false} />);
     });
-    const btn = container.querySelector("[aria-label='AtWebPilot 助手']");
+    const btn = container.querySelector("[aria-label='AIPageGo 助手']");
     expect(btn?.className).toContain("bg-zinc-800");
   });
 });

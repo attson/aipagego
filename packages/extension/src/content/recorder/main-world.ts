@@ -3,7 +3,7 @@
  *
  * Runs in the page's own realm so it can observe `console`, `fetch`,
  * `XMLHttpRequest`, and `window.alert` — none of which are reachable from an
- * isolated content script. State lives on `window.__ATWEBPILOT_REC__`; the
+ * isolated content script. State lives on `window.__AIPAGEGO_REC__`; the
  * background host drains it through the existing one-shot `injectMainWorld`
  * channel, which executes in this same realm.
  *
@@ -30,7 +30,7 @@ import {
   type NetworkEntry,
   type RecorderConfig,
   type RecorderConfigPatch
-} from "@atwebpilot/shared/recorder";
+} from "@aipagego/shared/recorder";
 
 export type RecorderGlobal = {
   version: 1;
@@ -48,7 +48,7 @@ export type RecorderGlobal = {
 
 declare global {
   interface Window {
-    __ATWEBPILOT_REC__?: RecorderGlobal;
+    __AIPAGEGO_REC__?: RecorderGlobal;
   }
 }
 
@@ -90,7 +90,7 @@ export function install(): RecorderGlobal {
       rec.dialog.clear();
       rec.details.clear();
       rec.dialogPolicy = null;
-      delete window.__ATWEBPILOT_REC__;
+      delete window.__AIPAGEGO_REC__;
     }
   };
 
@@ -98,7 +98,7 @@ export function install(): RecorderGlobal {
   installNetwork(rec, restorers);
   installDialog(rec, restorers);
 
-  window.__ATWEBPILOT_REC__ = rec;
+  window.__AIPAGEGO_REC__ = rec;
   return rec;
 }
 
@@ -243,7 +243,7 @@ function installNetwork(rec: RecorderGlobal, restorers: Array<() => void>): void
 }
 
 type TrackedXhr = XMLHttpRequest & {
-  __atwebpilot?: { id: number; method: string; url: string; started: number; body?: string };
+  __aipagego?: { id: number; method: string; url: string; started: number; body?: string };
 };
 
 function installXhr(rec: RecorderGlobal, restorers: Array<() => void>): void {
@@ -258,7 +258,7 @@ function installXhr(rec: RecorderGlobal, restorers: Array<() => void>): void {
     url: string | URL,
     ...rest: unknown[]
   ) {
-    this.__atwebpilot = {
+    this.__aipagego = {
       id: rec.nextId(),
       method: String(method).toUpperCase(),
       url: typeof url === "string" ? url : url.href,
@@ -273,7 +273,7 @@ function installXhr(rec: RecorderGlobal, restorers: Array<() => void>): void {
   } as typeof XHR.prototype.open;
 
   XHR.prototype.send = function patchedSend(this: TrackedXhr, body?: unknown) {
-    const meta = this.__atwebpilot;
+    const meta = this.__aipagego;
     if (meta && rec.config.network) {
       meta.started = Date.now();
       if (rec.config.bodies && typeof body === "string") meta.body = cap(body);
@@ -417,4 +417,4 @@ function installDialog(rec: RecorderGlobal, restorers: Array<() => void>): void 
   });
 }
 
-if (typeof window !== "undefined" && !window.__ATWEBPILOT_REC__) install();
+if (typeof window !== "undefined" && !window.__AIPAGEGO_REC__) install();

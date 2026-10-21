@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@atwebpilot/coordinator";
+import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@aipagego/coordinator";
 import { buildToolList } from "../src/mcp-server";
 import { staticDeps } from "../src/handlers";
 import { helloToWorker } from "../src/wire";
-import type { Hello } from "@atwebpilot/shared/protocol";
+import type { Hello } from "@aipagego/shared/protocol";
 
 function worker(supported?: string[]): Worker {
   return {
@@ -60,7 +60,7 @@ describe("supported_tools negotiation", () => {
   it("keeps the control plane and skill tool regardless", () => {
     const names = buildToolList(depsWith(worker(["click"]))).map((t) => t.name);
     for (const n of [
-      "atwebpilot_skill_read",
+      "aipagego_skill_read",
       "browser_start",
       "pairing_status",
       "list_tabs",

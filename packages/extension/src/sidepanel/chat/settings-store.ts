@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { LlmSettings } from "@aipagego/shared/types";
 
-const KEY = "atwebpilot.llm";
-const MIGRATION_KEY = "atwebpilot.llm._migrated_v1";
+const KEY = "aipagego.llm";
+const MIGRATION_KEY = "aipagego.llm._migrated_v1";
 const MIN_MAX_TOKENS = 256;
 const MAX_MAX_TOKENS = 200_000;
 const MIN_CONTEXT_SOFT_CHAR_BUDGET = 8_000;
@@ -156,7 +156,7 @@ export const OPENAI_MODELS = ["gpt-4o-mini", "gpt-4o"];
 
 /**
  * Sync LlmSettings across contexts (sidepanel + widget) by watching
- * chrome.storage for changes to the `atwebpilot.llm` key. Each context has
+ * chrome.storage for changes to the `aipagego.llm` key. Each context has
  * its own zustand instance; when one calls `save()`, the other's copy
  * is stale until this listener triggers a fresh `load()`.
  *

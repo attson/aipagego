@@ -1,9 +1,9 @@
 {
-  "name": "@atwebpilot/extension",
+  "name": "@aipagego/extension",
   "version": "0.0.11",
   "private": true,
   "type": "module",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）",
+  "description": "AIPageGo — AI 网页助手（侧边面板）",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -14,7 +14,7 @@
     "build:demo": "vite build --config vite.demo.config.ts"
   },
   "dependencies": {
-    "@atwebpilot/shared": "workspace:*",
+    "@aipagego/shared": "workspace:*",
     "idb": "^8.0.0",
     "lucide-react": "^0.460.0",
     "react": "^18.3.1",

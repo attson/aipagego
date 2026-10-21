@@ -34,7 +34,7 @@ postMessage 出去；扩展的 content script 收到后交给 service worker 判
 
 ## 信任
 
-信任是**安装级**的，存在 `~/.atwebpilot/identity.json`（权限 0600）：
+信任是**安装级**的，存在 `~/.aipagego/identity.json`（权限 0600）：
 
 ```jsonc
 { "installId": "inst_…", "secret": "…", "lastPort": 51234 }
@@ -57,7 +57,7 @@ cwd 是任意值。它真正带来的是 git worktree 和目录改名会被当�
 端口复用是「静默」成立的前提，身份校验是端口复用**安全**的前提 —— 光记端口会连到抢占该端口
 的陌生进程上，靠 secret 不符把它挡掉。
 
-**防得住**：本地进程静默夺取浏览器控制权。**防不住**：能读 `~/.atwebpilot/` 的进程 —— 但这样的
+**防得住**：本地进程静默夺取浏览器控制权。**防不住**：能读 `~/.aipagego/` 的进程 —— 但这样的
 进程能干的坏事远不止这个。
 
 ## 设置页
@@ -66,7 +66,7 @@ cwd 是任意值。它真正带来的是 git worktree 和目录改名会被当�
 
 ```
 已接入的会话
-  ~/code/atwebpilot2   pid 1234  :51234  ● connected   [断开]
+  ~/code/aipagego   pid 1234  :51234  ● connected   [断开]
   ~/code/wanxin   pid 5678  :51299  ○ dormant     [重连]
 
 已信任

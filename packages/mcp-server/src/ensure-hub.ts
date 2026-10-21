@@ -1,5 +1,5 @@
-import { Coordinator, type Clock, type IdGen } from "@atwebpilot/coordinator";
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import { Coordinator, type Clock, type IdGen } from "@aipagego/coordinator";
+import type { PairPayload } from "@aipagego/shared/pairing";
 import { readFile } from "node:fs/promises";
 import { LoopbackWSHub } from "./loopback-ws-hub";
 import { installWire } from "./wire";
@@ -17,7 +17,7 @@ import { MCP_VERSION } from "./version";
 export type EnsureDeps = {
   clock: Clock;
   idGen: IdGen;
-  /** Explicit ATWEBPILOT_WS_PORT override; undefined means "choose one". */
+  /** Explicit AIPAGEGO_WS_PORT override; undefined means "choose one". */
   explicitPort?: number;
   token?: string;
   identityDir?: string;
@@ -157,7 +157,7 @@ export function createHubEnsurer(d: EnsureDeps): Deps & { bound(): boolean } {
       .then(() => { opened = true; })
       .catch((error) => {
         console.error(
-          `[atwebpilot-mcp] failed to open pairing page ${url}:`,
+          `[aipagego-mcp] failed to open pairing page ${url}:`,
           error instanceof Error ? error.message : String(error)
         );
       })

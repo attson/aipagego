@@ -11,7 +11,7 @@ import path from "node:path";
  */
 export default defineConfig({
   root: path.resolve(__dirname, "demo"),
-  base: "/atwebpilot/demo/",
+  base: "/aipagego/demo/",
   resolve: {
     alias: [
       {

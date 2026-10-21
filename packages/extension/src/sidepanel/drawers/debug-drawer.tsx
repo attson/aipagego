@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { ChatMessage, LlmExchange } from "@atwebpilot/shared/types";
+import type { ChatMessage, LlmExchange } from "@aipagego/shared/types";
 import { useSession, type LogEntry } from "@/sidepanel/chat/session-store";
 import { useUi } from "@/sidepanel/chat/ui-store";
 import { Drawer } from "@/sidepanel/shell/drawer";
@@ -30,7 +30,7 @@ export function DebugDrawer() {
   function exportBundle() {
     const bundle = {
       exportedAt: new Date().toISOString(),
-      schema: "atwebpilot.session-bundle.v1",
+      schema: "aipagego.session-bundle.v1",
       session: {
         tabId: session.tabId,
         url: session.url,
@@ -52,7 +52,7 @@ export function DebugDrawer() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `atwebpilot-session-${Date.now()}.json`;
+    a.download = `aipagego-session-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }

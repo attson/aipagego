@@ -110,9 +110,9 @@ git commit -m "feat(settings): add optimizerModel field for prompt-optimize butt
 
 **Interfaces:**
 - Consumes:
-  - `LlmSettings` from `@atwebpilot/shared/types` (Task 1)
+  - `LlmSettings` from `@aipagego/shared/types` (Task 1)
   - `pickClient` from `@/sidepanel/llm/client`
-  - `TOOL_DEFS` from `@atwebpilot/shared/llm` (re-exports `builtin-tool-defs.ts`)
+  - `TOOL_DEFS` from `@aipagego/shared/llm` (re-exports `builtin-tool-defs.ts`)
 - Produces:
   - `optimizePrompt(ctx): Promise<string>` — 传入 `{draft, tabId, settings, signal}`，返回优化后的字符串
   - 内部通过 `chrome.tabs.get(tabId)` 拿 `title` / `url`
@@ -125,8 +125,8 @@ Create `packages/extension/tests/sidepanel/lib/optimize-prompt.test.ts`：
 
 ```ts
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LlmClient, LlmStreamEvent } from "@atwebpilot/shared/llm";
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { LlmClient, LlmStreamEvent } from "@aipagego/shared/llm";
+import type { LlmSettings } from "@aipagego/shared/types";
 
 // Mock pickClient BEFORE importing the module under test
 const streamSpy = vi.fn();
@@ -280,7 +280,7 @@ describe("optimizePrompt", () => {
 - [ ] **Step 2: 跑测试确认失败**
 
 ```bash
-pnpm --filter @atwebpilot/extension test optimize-prompt.test.ts 2>&1 | tail -20
+pnpm --filter @aipagego/extension test optimize-prompt.test.ts 2>&1 | tail -20
 ```
 
 Expected: 8 tests failed with "Cannot find module '@/sidepanel/lib/optimize-prompt'"。
@@ -290,8 +290,8 @@ Expected: 8 tests failed with "Cannot find module '@/sidepanel/lib/optimize-prom
 Create `packages/extension/src/sidepanel/lib/optimize-prompt.ts`：
 
 ```ts
-import type { LlmSettings } from "@atwebpilot/shared/types";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import type { LlmSettings } from "@aipagego/shared/types";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 import { pickClient } from "@/sidepanel/llm/client";
 
 const SYSTEM_PROMPT =
@@ -351,7 +351,7 @@ export async function optimizePrompt(ctx: Ctx): Promise<string> {
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-pnpm --filter @atwebpilot/extension test optimize-prompt.test.ts 2>&1 | tail -20
+pnpm --filter @aipagego/extension test optimize-prompt.test.ts 2>&1 | tail -20
 ```
 
 Expected: 8 tests passed。
@@ -550,7 +550,7 @@ describe("PromptOptimizePreview", () => {
 - [ ] **Step 2: 跑测试确认失败**
 
 ```bash
-pnpm --filter @atwebpilot/extension test prompt-optimize-preview.test.tsx 2>&1 | tail -20
+pnpm --filter @aipagego/extension test prompt-optimize-preview.test.tsx 2>&1 | tail -20
 ```
 
 Expected: 6 tests failed with "Cannot find module '@/sidepanel/input/prompt-optimize-preview'"。
@@ -677,7 +677,7 @@ export function PromptOptimizePreview({
 - [ ] **Step 4: 跑测试确认通过**
 
 ```bash
-pnpm --filter @atwebpilot/extension test prompt-optimize-preview.test.tsx 2>&1 | tail -20
+pnpm --filter @aipagego/extension test prompt-optimize-preview.test.tsx 2>&1 | tail -20
 ```
 
 Expected: 6 tests passed。
@@ -782,7 +782,7 @@ Expected: 全绿。
 - [ ] **Step 3: 全量测试确认无回归**
 
 ```bash
-pnpm --filter @atwebpilot/extension test 2>&1 | tail -15
+pnpm --filter @aipagego/extension test 2>&1 | tail -15
 ```
 
 Expected: 全绿（InputBox 无既有单测，Task 3 加的 preview 测通过）。
@@ -862,7 +862,7 @@ Modify `packages/extension/src/sidepanel/input/input-toolbar.tsx`。
 
 ```ts
 import { useEffect, useRef, useState } from "react";
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { LlmSettings } from "@aipagego/shared/types";
 import { optimizePrompt } from "@/sidepanel/lib/optimize-prompt";
 import { PromptOptimizeButton } from "./prompt-optimize-button";
 import { PromptOptimizePreview } from "./prompt-optimize-preview";
@@ -1008,7 +1008,7 @@ Expected: 全绿。
 - [ ] **Step 5: 全量测试**
 
 ```bash
-pnpm --filter @atwebpilot/extension test 2>&1 | tail -10
+pnpm --filter @aipagego/extension test 2>&1 | tail -10
 ```
 
 Expected: 全绿；`optimize-prompt.test.ts` (8) + `prompt-optimize-preview.test.tsx` (6) 都过。

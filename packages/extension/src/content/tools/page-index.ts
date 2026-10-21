@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { extractFields, searchIndex } from "./page-index/search";
 import { findBlock, getPageIndex } from "./page-index/store";
 import {

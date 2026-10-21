@@ -2,7 +2,7 @@ import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
 import { _resetDBForTests } from "@/background/storage/db";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
-import type { PersistedSession, PersistedSessionData } from "@atwebpilot/shared/types";
+import type { PersistedSession, PersistedSessionData } from "@aipagego/shared/types";
 
 const URL = "https://example.com/path";
 const EMPTY_DATA: PersistedSessionData = {

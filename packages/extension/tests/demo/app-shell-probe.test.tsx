@@ -49,8 +49,8 @@ describe("AppShell under the demo shim", () => {
     const text = container.textContent ?? "";
     // Not just "rendered something": the panel's own chrome has to be there,
     // otherwise the demo would be showing an empty shell.
-    expect(text).toContain("AtWebPilot");
-    expect(text).toContain("demo.atwebpilot.local");
+    expect(text).toContain("AIPageGo");
+    expect(text).toContain("demo.aipagego.local");
     expect(text).toContain("告诉 AI 你要做什么");
     expect(container.querySelectorAll("button").length).toBeGreaterThan(3);
   });

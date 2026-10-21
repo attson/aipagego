@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Put a working AtWebPilot on the docs homepage — the real side panel driving a real DOM through the real content tools, with no install and no API key.
+**Goal:** Put a working AIPageGo on the docs homepage — the real side panel driving a real DOM through the real content tools, with no install and no API key.
 
 **Architecture:** A standalone Vite app under `packages/extension/demo/`, built into `docs-site/public/demo/` and embedded by the homepage in an iframe. The demo document holds a mock product page; the side panel runs in a nested iframe so the content tools' `document` queries see only the page. A harness in the demo document plays the service worker, resolving tool calls with the product's own `callTool`.
 
@@ -29,7 +29,7 @@
 - Test: `packages/extension/tests/demo/scenario.test.ts`
 
 **Interfaces:**
-- Consumes: `LlmStreamEvent` from `@atwebpilot/shared/llm`, `TOOL_DEFS`.
+- Consumes: `LlmStreamEvent` from `@aipagego/shared/llm`, `TOOL_DEFS`.
 - Produces: `DEMO_ROUNDS: LlmStreamEvent[][]` — the round list `MockLlmClient` replays; `DEMO_PROMPT: string`; `DEMO_TOOL_NAMES: string[]` derived from the rounds; `ROUND_DELAY_MS = 900`.
 
 The guard matters more than the content: if a tool is renamed the demo must fail to build, not fail in front of a visitor.
@@ -40,7 +40,7 @@ The guard matters more than the content: if a tool is renamed the demo must fail
 // packages/extension/tests/demo/scenario.test.ts
 import { describe, expect, it } from "vitest";
 import { DEMO_PROMPT, DEMO_ROUNDS, DEMO_TOOL_NAMES } from "@/../demo/scenario";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 
 describe("demo scenario", () => {
   it("names only tools that exist", () => {
@@ -68,7 +68,7 @@ describe("demo scenario", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- demo/scenario`. Expected: FAIL, module not found.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- demo/scenario`. Expected: FAIL, module not found.
 - [ ] **Step 3: Write `scenario.ts`** — the round list from the spec: `createPageIndex` → `extractPageFields` → `takeSnapshot` → `click` (caution, triggers approval) → `extractText` → summary `message_end`. Derive `DEMO_TOOL_NAMES` from the rounds rather than hand-listing it, so it cannot drift from the script.
 - [ ] **Step 4: Run the tests.** Expected: PASS.
 - [ ] **Step 5: Commit** — `git commit -m "feat(demo): scripted scenario with drift guards"`
@@ -80,7 +80,7 @@ describe("demo scenario", () => {
 - Test: `packages/extension/tests/demo/chrome-shim.test.ts`
 
 **Interfaces:**
-- Consumes: `RpcRequest` from `@atwebpilot/shared/messages`.
+- Consumes: `RpcRequest` from `@aipagego/shared/messages`.
 - Produces: `installChromeShim(opts: { onPageStep?: (step: unknown) => Promise<unknown>; seed?: Record<string, unknown> }): void`, assigning `globalThis.chrome`. `storage.local` is a Map seeded so the panel starts configured. `runtime.sendMessage` parses `RpcRequest` and answers locally; `runs.runOneStep` and `scripting.injectMain` delegate to `onPageStep`. `tabs.query` returns one fake tab. Unknown request types resolve `{ok:false,error}` — never hang, because the panel's RPC retries four times on a missing receiver and would stall the demo for seconds.
 
 - [ ] **Step 1: Write the failing test** — storage round-trips and reports seeded settings; `tabs.query` returns exactly one tab with an id and url; a `runs.runOneStep` request reaches `onPageStep` and its result comes back as `{ok:true,data}`; an unrecognised type answers `{ok:false}` rather than hanging; `storage.onChanged` listeners fire on `set`.
@@ -170,13 +170,13 @@ The page must be real DOM the tools can work on — the selectors the scenario u
 - Modify: `packages/extension/package.json`, `docs-site/index.md`, `docs-site/.vitepress/theme/` (a component if the homepage needs one)
 - Modify: `.github/workflows/deploy-docs.yml`
 
-- [ ] **Step 1: Write the demo Vite config** — two entries (`index.html`, `panel.html`), no `@crxjs`, `base: "/atwebpilot/demo/"`, `outDir: ../../docs-site/public/demo`, `emptyOutDir: true`.
+- [ ] **Step 1: Write the demo Vite config** — two entries (`index.html`, `panel.html`), no `@crxjs`, `base: "/aipagego/demo/"`, `outDir: ../../docs-site/public/demo`, `emptyOutDir: true`.
 - [ ] **Step 2: Add `build:demo`** to the extension package scripts.
 - [ ] **Step 3: Run it and confirm** `docs-site/public/demo/index.html` and its assets exist, then open the built demo over a static server and watch the scenario play.
 - [ ] **Step 4: Embed it on the homepage** above the feature sections, with the note and a `<noscript>` fallback. If the iframe fails to load, swap in a still image — a broken demo must not leave a blank rectangle.
 - [ ] **Step 5: Add the demo build to the docs workflow** before the VitePress build.
 - [ ] **Step 6: Add `docs-site/public/demo/` to `.gitignore`** — it is a build artifact.
-- [ ] **Step 7: Full gate.** Run: `pnpm typecheck && pnpm test && pnpm build && pnpm -F @atwebpilot/extension build:demo`.
+- [ ] **Step 7: Full gate.** Run: `pnpm typecheck && pnpm test && pnpm build && pnpm -F @aipagego/extension build:demo`.
 - [ ] **Step 8: Commit** — `git commit -m "feat(demo): build the demo into the site and embed it on the homepage"`
 
 ---

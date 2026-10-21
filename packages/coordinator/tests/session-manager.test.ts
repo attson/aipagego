@@ -4,7 +4,7 @@ import { FakeClock, FakeIdGen } from "../src/clock";
 import {
   SESSION_IDLE_TIMEOUT_MS,
   ORPHAN_RECOVERY_MS
-} from "@atwebpilot/shared/protocol";
+} from "@aipagego/shared/protocol";
 
 function newMgr() {
   const clock = new FakeClock(1000);

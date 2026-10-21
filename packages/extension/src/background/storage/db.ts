@@ -1,7 +1,7 @@
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
-import type { PersistedSession, RunRecord, Tool } from "@atwebpilot/shared/types";
+import type { PersistedSession, RunRecord, Tool } from "@aipagego/shared/types";
 
-export interface AtWebPilotDB extends DBSchema {
+export interface AIPageGoDB extends DBSchema {
   tools: {
     key: string;
     value: Tool;
@@ -23,14 +23,14 @@ export interface AtWebPilotDB extends DBSchema {
   };
 }
 
-const DB_NAME = "atwebpilot";
+const DB_NAME = "aipagego";
 const DB_VERSION = 2;
 
-let dbPromise: Promise<IDBPDatabase<AtWebPilotDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<AIPageGoDB>> | null = null;
 
-export function getDB(): Promise<IDBPDatabase<AtWebPilotDB>> {
+export function getDB(): Promise<IDBPDatabase<AIPageGoDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<AtWebPilotDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<AIPageGoDB>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           const tools = db.createObjectStore("tools", { keyPath: "id" });

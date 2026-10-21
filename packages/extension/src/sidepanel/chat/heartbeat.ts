@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useStore } from "./session-store";
 
-const KEY = "atwebpilot.heartbeat";
+const KEY = "aipagego.heartbeat";
 const INTERVAL_MS = 2_000;
 
 type Heartbeat = { ts: number; activeTabIds: number[] };
@@ -32,7 +32,7 @@ async function write(active: number[]): Promise<void> {
 
 /**
  * Sidepanel-side heartbeat writer. Every 2s while any session is non-idle,
- * write `{ts, activeTabIds}` to `chrome.storage.local: atwebpilot.heartbeat`.
+ * write `{ts, activeTabIds}` to `chrome.storage.local: aipagego.heartbeat`.
  * Content scripts in tabs listed in `activeTabIds` show a breathing border.
  *
  * The hook also clears the key on unmount / when nothing's active.

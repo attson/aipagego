@@ -8,7 +8,7 @@ import {
   GRACEFUL_CLOSE_CODE,
   GRACEFUL_CLOSE_REASON,
   type PairPayload
-} from "@atwebpilot/shared/pairing";
+} from "@aipagego/shared/pairing";
 import type { IncomingMessage } from "node:http";
 import type { AddressInfo } from "node:net";
 import {
@@ -19,8 +19,8 @@ import {
   type ServerToClient,
   type Result,
   type Exec,
-} from "@atwebpilot/shared/protocol";
-import type { WSHub, Clock, IdGen } from "@atwebpilot/coordinator";
+} from "@aipagego/shared/protocol";
+import type { WSHub, Clock, IdGen } from "@aipagego/coordinator";
 import { renderPairPage } from "./pair-page";
 
 const HEARTBEAT_INTERVAL_MS = 20000;
@@ -87,8 +87,8 @@ export class LoopbackWSHub implements WSHub {
         reject(
           err.code === "EADDRINUSE"
             ? new Error(
-                `port ${opts.port} is already in use — another atwebpilot-mcp may be running; ` +
-                  `set ATWEBPILOT_WS_PORT to choose another port`
+                `port ${opts.port} is already in use — another aipagego-mcp may be running; ` +
+                  `set AIPAGEGO_WS_PORT to choose another port`
               )
             : err
         );

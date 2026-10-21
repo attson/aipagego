@@ -68,7 +68,7 @@ describe("page index tool schemas", () => {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/shared test -- tests/messages.test.ts
+pnpm --filter @aipagego/shared test -- tests/messages.test.ts
 ```
 
 Expected: FAIL because `StepSchema` does not accept the new tool names.
@@ -106,7 +106,7 @@ In `packages/shared/src/messages.ts`, extend the `tool: z.enum([...])` list afte
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/shared test -- tests/messages.test.ts
+pnpm --filter @aipagego/shared test -- tests/messages.test.ts
 ```
 
 Expected: PASS.
@@ -171,7 +171,7 @@ describe("page-index text helpers", () => {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-text.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-text.test.ts
 ```
 
 Expected: FAIL because the module does not exist.
@@ -181,7 +181,7 @@ Expected: FAIL because the module does not exist.
 Create `packages/extension/src/content/tools/page-index/types.ts`:
 
 ```ts
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 export type PageBlockKind = "heading" | "kv" | "table" | "list" | "form" | "text" | "media";
 
@@ -304,7 +304,7 @@ export function makePreview(
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-text.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-text.test.ts
 ```
 
 Expected: PASS.
@@ -378,7 +378,7 @@ describe("buildPageIndex", () => {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-build.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-build.test.ts
 ```
 
 Expected: FAIL because `build.ts` does not exist.
@@ -393,7 +393,7 @@ import { normalizeText, visibleText } from "./text";
 
 type BuildArgs = { maxBlocks?: number };
 
-const SKIP_SELECTOR = "script,style,noscript,svg,canvas,iframe,nav,footer,[hidden],[aria-hidden='true'],atwebpilot-widget";
+const SKIP_SELECTOR = "script,style,noscript,svg,canvas,iframe,nav,footer,[hidden],[aria-hidden='true'],aipagego-widget";
 
 function makeId(n: number): string {
   return `b${n}`;
@@ -527,7 +527,7 @@ export function buildPageIndex(args: BuildArgs = {}): PageIndex {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-build.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-build.test.ts
 ```
 
 Expected: PASS.
@@ -602,7 +602,7 @@ describe("page-index search", () => {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-search.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-search.test.ts
 ```
 
 Expected: FAIL because `search.ts` does not exist.
@@ -761,7 +761,7 @@ export function extractFields(index: PageIndex, args: ExtractArgs) {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-search.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-search.test.ts
 ```
 
 Expected: PASS.
@@ -827,7 +827,7 @@ describe("page-index content tools", () => {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index.test.ts
 ```
 
 Expected: FAIL because handlers are not registered.
@@ -837,7 +837,7 @@ Expected: FAIL because handlers are not registered.
 Create `packages/extension/src/content/tools/page-index.ts`:
 
 ```ts
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { getPageIndex, findBlock } from "./page-index/store";
 import { extractFields, searchIndex } from "./page-index/search";
 import { DEFAULT_MATCH_LIMIT, DEFAULT_READ_CHARS, DEFAULT_SUMMARY_LIMIT, MAX_READ_CHARS } from "./page-index/types";
@@ -953,7 +953,7 @@ Add to `TOOLS` after `writeStorage`:
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index.test.ts
 ```
 
 Expected: PASS.
@@ -1012,7 +1012,7 @@ describe("page index LLM guidance", () => {
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/llm/page-index-tools.test.ts
+pnpm --filter @aipagego/extension test -- tests/sidepanel/llm/page-index-tools.test.ts
 ```
 
 Expected: FAIL because tools and prompt guidance are missing.
@@ -1111,7 +1111,7 @@ Include `${PAGE_INDEX_GUIDANCE}` in the returned system prompt.
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/llm/page-index-tools.test.ts
+pnpm --filter @aipagego/extension test -- tests/sidepanel/llm/page-index-tools.test.ts
 ```
 
 Expected: PASS.
@@ -1200,7 +1200,7 @@ it("can complete multi-field page extraction through page-index tools without br
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/run-session.test.ts
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/run-session.test.ts
 ```
 
 Expected: PASS after Tasks 1-6; if it fails, fix only the mismatch exposed by the test.
@@ -1224,8 +1224,8 @@ git commit -m "test(chat): cover page index extraction path"
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/shared test -- tests/messages.test.ts
-pnpm --filter @atwebpilot/extension test -- tests/content/tools/page-index-text.test.ts tests/content/tools/page-index-build.test.ts tests/content/tools/page-index-search.test.ts tests/content/tools/page-index.test.ts tests/sidepanel/llm/page-index-tools.test.ts tests/sidepanel/chat/run-session.test.ts
+pnpm --filter @aipagego/shared test -- tests/messages.test.ts
+pnpm --filter @aipagego/extension test -- tests/content/tools/page-index-text.test.ts tests/content/tools/page-index-build.test.ts tests/content/tools/page-index-search.test.ts tests/content/tools/page-index.test.ts tests/sidepanel/llm/page-index-tools.test.ts tests/sidepanel/chat/run-session.test.ts
 ```
 
 Expected: all tests PASS.

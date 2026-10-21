@@ -1,6 +1,6 @@
-import type { RpcRequest } from "@atwebpilot/shared/messages";
-import type { ExportBundle, Json, RunRecord, Step, Tool } from "@atwebpilot/shared/types";
-import type { Preset } from "@atwebpilot/shared/preset";
+import type { RpcRequest } from "@aipagego/shared/messages";
+import type { ExportBundle, Json, RunRecord, Step, Tool } from "@aipagego/shared/types";
+import type { Preset } from "@aipagego/shared/preset";
 
 function isReceiverMissing(msg: string): boolean {
   return (

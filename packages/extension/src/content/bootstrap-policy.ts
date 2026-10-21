@@ -1,4 +1,4 @@
-import type { ResolvedInjectionPolicy } from "@atwebpilot/shared";
+import type { ResolvedInjectionPolicy } from "@aipagego/shared";
 
 export type BootstrapActivation = {
   runner: boolean;

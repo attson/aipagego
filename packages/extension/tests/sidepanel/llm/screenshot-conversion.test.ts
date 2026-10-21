@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChatMessage, ImagePart, ToolResultPart } from "@atwebpilot/shared/types";
+import type { ChatMessage, ImagePart, ToolResultPart } from "@aipagego/shared/types";
 import { toAnthropicMessage } from "@/sidepanel/llm/anthropic";
 
 const screenshotPng: ImagePart = { type: "image", media_type: "image/png", data: "AAAA" };

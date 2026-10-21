@@ -5,7 +5,7 @@
 
   <!-- Header -->
   <rect x="0" y="0" width="380" height="44" fill="#18181b"/>
-  <text x="12" y="27" fill="#e4e4e7" font-size="13" font-weight="700">AtWebPilot</text>
+  <text x="12" y="27" fill="#e4e4e7" font-size="13" font-weight="700">AIPageGo</text>
   <text x="86" y="27" fill="#71717a" font-size="10" font-family="ui-monospace, monospace">v0.0.43</text>
   <!-- Header icons -->
   <g fill="#71717a" transform="translate(220, 15)">

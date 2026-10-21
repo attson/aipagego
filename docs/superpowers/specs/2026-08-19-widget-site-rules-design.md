@@ -25,8 +25,8 @@ invalid wildcard placement are rejected by the settings UI.
 
 ## Storage and compatibility
 
-Use `atwebpilot.llm` for settings, `atwebpilot.widget.hiddenHosts` for the
-blocklist, and `atwebpilot.widget.allowedHosts` for the allowlist. All legacy
+Use `aipagego.llm` for settings, `aipagego.widget.hiddenHosts` for the
+blocklist, and `aipagego.widget.allowedHosts` for the allowlist. All legacy
 storage keys, the IndexedDB name, and exported schema identifiers are replaced
 without migration or backward-compatibility handling.
 

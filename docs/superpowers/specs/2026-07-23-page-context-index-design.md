@@ -9,7 +9,7 @@ small references or generated artifacts across the model boundary.
 
 ## Problem
 
-AtWebPilot currently lets the model inspect pages through generic tools such as
+AIPageGo currently lets the model inspect pages through generic tools such as
 `extractText`, `querySelectorAll`, and `snapshotDOM`. On large dynamic pages this
 leads to two bad patterns:
 

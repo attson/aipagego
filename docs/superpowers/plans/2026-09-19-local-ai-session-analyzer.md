@@ -1,7 +1,7 @@
 # Local AI Session Analyzer Implementation Plan
 
 **Goal:** Analyze local Claude Code and Codex histories for avoidable
-AtWebPilot tool rounds without collecting or exposing conversation content.
+AIPageGo tool rounds without collecting or exposing conversation content.
 
 **Spec:** `docs/superpowers/specs/2026-09-19-local-ai-session-analyzer-design.md`
 

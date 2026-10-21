@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CoordinatorPool, endpointFor } from "@/background/coordinator-pool";
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import type { PairPayload } from "@aipagego/shared/pairing";
 
 class FakeWS {
   static instances: FakeWS[] = [];
@@ -40,7 +40,7 @@ const payload = (over: Partial<PairPayload> = {}): PairPayload => ({
   installId: "inst_abc",
   secret: "s",
   sessionId: "sess_1",
-  label: "~/code/atwebpilot2",
+  label: "~/code/aipagego",
   pid: 1,
   port: 51234,
   mcpVersion: "0.0.75",
@@ -98,7 +98,7 @@ describe("CoordinatorPool", () => {
     const pool = makePool();
     await pool.addFromPairing(payload());
     expect(pool.list()[0]).toMatchObject({
-      label: "~/code/atwebpilot2",
+      label: "~/code/aipagego",
       pid: 1,
       port: 51234,
       installId: "inst_abc",

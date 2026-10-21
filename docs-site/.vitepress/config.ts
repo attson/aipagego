@@ -1,18 +1,18 @@
 import { defineConfig } from 'vitepress';
 
 export default defineConfig({
-  base: '/atwebpilot/',
-  title: 'AtWebPilot',
+  base: '/aipagego/',
+  title: 'AIPageGo',
   description: 'AI 网页助手 · 在当前 tab 上读写采',
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/atwebpilot/favicon.svg' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/aipagego/favicon.svg' }],
   ],
   cleanUrls: true,
   lastUpdated: false,
   ignoreDeadLinks: false,
   themeConfig: {
     logo: '/logo.svg',
-    socialLinks: [{ icon: 'github', link: 'https://github.com/attson/atwebpilot' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/attson/aipagego' }],
   },
   locales: {
     root: {
@@ -50,7 +50,7 @@ export default defineConfig({
               { text: '页面事件录制', link: '/advanced/recorder' },
             ],
           },
-          { text: 'GitHub', link: 'https://github.com/attson/atwebpilot' },
+          { text: 'GitHub', link: 'https://github.com/attson/aipagego' },
         ],
         sidebar: {
           '/guide/': [
@@ -127,7 +127,7 @@ export default defineConfig({
               { text: 'MCP Bridge', link: '/en/advanced/mcp-bridge' },
             ],
           },
-          { text: 'GitHub', link: 'https://github.com/attson/atwebpilot' },
+          { text: 'GitHub', link: 'https://github.com/attson/aipagego' },
         ],
         sidebar: {
           '/en/guide/': [

@@ -1,5 +1,5 @@
-import type { LlmStreamEvent } from "@atwebpilot/shared/llm";
-import type { Json } from "@atwebpilot/shared/types";
+import type { LlmStreamEvent } from "@aipagego/shared/llm";
+import type { Json } from "@aipagego/shared/types";
 
 /**
  * The scripted run the homepage demo replays through MockLlmClient.

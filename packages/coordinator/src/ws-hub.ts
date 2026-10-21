@@ -1,4 +1,4 @@
-import type { ClientToServer, ServerToClient } from "@atwebpilot/shared/protocol";
+import type { ClientToServer, ServerToClient } from "@aipagego/shared/protocol";
 
 /**
  * Transport abstraction. Implementations:

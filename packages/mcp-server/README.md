@@ -1,21 +1,21 @@
-# @attson/atwebpilot-mcp
+# @attson/aipagego-mcp
 
-让 Codex 或 Claude Code 经一个本地 ws 中继驱动 atwebpilot 浏览器扩展操作网页（读 / 写 / 采）。
+让 Codex 或 Claude Code 经一个本地 ws 中继驱动 AIPageGo 浏览器扩展操作网页（读 / 写 / 采）。
 
 ## 给用户：安装
 
 Codex：
 
-    npx -y @attson/atwebpilot-mcp --install-codex-skill
-    codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
+    npx -y @attson/aipagego-mcp --install-codex-skill
+    codex mcp add aipagego -- npx -y @attson/aipagego-mcp
 
-第一条命令把正式 Skill 安装到用户级 `~/.agents/skills/atwebpilot-browser/`，让 Codex 在真实网页验收、截图、调试、读取或交互任务中主动发现 AtWebPilot；它不会修改任何项目的 `AGENTS.md`。内容相同时重复执行是幂等的；若目标被手工修改会拒绝覆盖，确认替换时显式加 `--force`。安装后新开 Codex 会话。
+第一条命令把正式 Skill 安装到用户级 `~/.agents/skills/aipagego-browser/`，让 Codex 在真实网页验收、截图、调试、读取或交互任务中主动发现 AIPageGo；它不会修改任何项目的 `AGENTS.md`。内容相同时重复执行是幂等的；若目标被手工修改会拒绝覆盖，确认替换时显式加 `--force`。安装后新开 Codex 会话。
 
 Claude Code：
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
-然后[下载 release zip](https://github.com/attson/atwebpilot/releases/latest) 加载已解压扩展。
+然后[下载 release zip](https://github.com/attson/aipagego/releases/latest) 加载已解压扩展。
 
 **不需要手填端口。** 从 Plan 33 起是配对流程：
 
@@ -31,13 +31,13 @@ Coordinator 查看已接入的会话、单独断开，或撤销信任。
 
 可选环境变量：
 
-- `ATWEBPILOT_WS_PORT`：固定端口（默认是自动选一个空闲端口并复用上次的）
-- `ATWEBPILOT_WS_TOKEN`：要求扩展带 `bearer.<token>` 子协议
-- `ATWEBPILOT_CODEX_SKILLS_DIR`：覆盖 Codex Skill 安装根目录（默认 `~/.agents/skills`）
+- `AIPAGEGO_WS_PORT`：固定端口（默认是自动选一个空闲端口并复用上次的）
+- `AIPAGEGO_WS_TOKEN`：要求扩展带 `bearer.<token>` 子协议
+- `AIPAGEGO_CODEX_SKILLS_DIR`：覆盖 Codex Skill 安装根目录（默认 `~/.agents/skills`）
 
 ## 给开发者：本地 monorepo
 
-    pnpm -F @attson/atwebpilot-mcp start
+    pnpm -F @attson/aipagego-mcp start
 
 环境变量同上，路径用 `tsx src/index.ts` 直跑（包内 `start` script 已封）。
 
@@ -67,7 +67,7 @@ MCP 层的描述是精简英文（≈2.5k tokens for core），侧边栏内置 L
 hover / uploadFile / scroll / waitFor`）；`browser_storage` 也不会列出，因为旧版没有
 `writeStorage`。请升级扩展。
 
-### 环境变量 `ATWEBPILOT_MCP_TOOLS`
+### 环境变量 `AIPAGEGO_MCP_TOOLS`
 
 | 值 | 效果 |
 |---|---|
@@ -87,7 +87,7 @@ pnpm analyze:sessions -- --since 24h --clients codex --latest-session
 ```
 
 分析器只读扫描 `~/.claude/projects` 与 `~/.codex/sessions` 中最近 30 天的
-JSONL，识别真实 AtWebPilot 工具调用及重复验证、固定等待、重复截图、可批量填表、配对超时与无状态重试等
+JSONL，识别真实 AIPageGo 工具调用及重复验证、固定等待、重复截图、可批量填表、配对超时与无状态重试等
 模式。输出只包含聚合计数、参数字段名与不可逆指纹；不会输出或保存 prompt、参数值、
 工具结果正文、凭证或绝对会话路径。Codex 嵌套调用会关联 wait cell 的耗时、错误以及
 cached/uncached token；使用 `--latest-session` 只看最近一条真实使用记录。
@@ -99,14 +99,14 @@ cached/uncached token；使用 `--latest-session` 只看最近一条真实使用
 | `browser_navigateBack` / `browser_navigateForward` | `browser_navigate({ action: "back" \| "forward" })` |
 | `browser_highlightElement` / `browser_highlightText` | `browser_highlight({ selector \| uid \| text })` |
 | `browser_readStorage` / `browser_writeStorage` | `browser_storage({ op: "get" \| "set", store, key, value? })` |
-| `ATWEBPILOT_MCP_TOOLS=parity` | 已移除；默认即 `core` |
-| 默认列出全部工具 | 默认只列 core；其余通过 `browser_discoverTools` 获取，或设 `ATWEBPILOT_MCP_TOOLS=full` |
+| `AIPAGEGO_MCP_TOOLS=parity` | 已移除；默认即 `core` |
+| 默认列出全部工具 | 默认只列 core；其余通过 `browser_discoverTools` 获取，或设 `AIPAGEGO_MCP_TOOLS=full` |
 
 ## 替代 playwright-ext
 
-`@playwright/mcp --extension` 的每个工具在这里都有对应项（名字是 AtWebPilot 的，不是 playwright 的）：
+`@playwright/mcp --extension` 的每个工具在这里都有对应项（名字是 AIPageGo 的，不是 playwright 的）：
 
-| playwright-ext | AtWebPilot |
+| playwright-ext | AIPageGo |
 |---|---|
 | `browser_snapshot` | `browser_takeSnapshot`（uid 可直接喂给 `clickByUid` / `fillByUid`） |
 | `browser_find` | `browser_findElements` |
@@ -134,7 +134,7 @@ cached/uncached token；使用 `--latest-session` 只看最近一条真实使用
 - **`networkRequestDetail` 的 body 默认不记。** 先 `recorderConfig({bodies:true})` 再复现请求。
   不开时返回元数据加一条 `bodyUnavailable` 说明怎么开。
 
-AtWebPilot 额外有 playwright-ext 没有的：page-index 四件套、`extractImages`、`httpRequest`、
+AIPageGo 额外有 playwright-ext 没有的：page-index 四件套、`extractImages`、`httpRequest`、
 `downloadSpreadsheet`（真 `.xlsx`）、书签/历史搜索。
 
 详细协议与设计见 [`../../docs/superpowers/specs/2026-06-06-mcp-bridge-design.md`](../../docs/superpowers/specs/2026-06-06-mcp-bridge-design.md)。

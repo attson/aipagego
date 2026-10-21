@@ -1,6 +1,6 @@
 import { setTeardown, unmountWidget } from "./lifecycle";
 
-const HOST_TAG = "atwebpilot-widget";
+const HOST_TAG = "aipagego-widget";
 
 // unmountWidget() is exported from ./lifecycle so components can trigger
 // teardown without importing this module (which has auto-mount side effects).

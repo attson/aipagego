@@ -15,7 +15,7 @@
 - Modify `src/shared/types.ts`: define `StepsTool`, `PromptTool`, typed versions, draft types, and v2 export bundle.
 - Modify `src/shared/messages.ts`: expose zod schemas for `StepSchema`, `StepsToolDraftSchema`, `PromptToolDraftSchema`, `ToolDraftSchema`, and `ToolSchema`.
 - Modify `src/background/storage/tools.ts`: save/list/get/match only valid v2 tools; save both tool kinds; run stats only for steps tools.
-- Modify `src/background/storage/export-import.ts`: export/import only `atwebpilot.tools/v2` and validated tools.
+- Modify `src/background/storage/export-import.ts`: export/import only `aipagego.tools/v2` and validated tools.
 - Modify `src/background/rpc-handlers.ts`: route `tools.save` union drafts and reject `runs.start` for prompt tools.
 - Create `src/sidepanel/llm/tool-draft-generator.ts`: generate and validate AI JSON for prompt/steps tool candidates.
 - Modify `src/sidepanel/components/save-as-tool-dialog.tsx`: replace summary-step flow with type selection + AI candidate generation.
@@ -203,7 +203,7 @@ export type PromptToolDraft = {
 export type ToolDraft = StepsToolDraft | PromptToolDraft;
 
 export type ExportBundle = {
-  schema: "atwebpilot.tools/v2";
+  schema: "aipagego.tools/v2";
   exportedAt: number;
   tools: Tool[];
 };
@@ -388,7 +388,7 @@ Import `getDB` from `@/background/storage/db` for the invalid old tool test.
 In `tests/background/storage/export-import.test.ts`, change all draft saves to include `kind: "steps"`. Change schema expectations to v2:
 
 ```typescript
-expect(bundle.schema).toBe("atwebpilot.tools/v2");
+expect(bundle.schema).toBe("aipagego.tools/v2");
 ```
 
 Add prompt export test:
@@ -403,7 +403,7 @@ it("exports prompt tools in v2 bundles", async () => {
     prompt: "请总结当前页面"
   });
   const bundle = await exportAll();
-  expect(bundle.schema).toBe("atwebpilot.tools/v2");
+  expect(bundle.schema).toBe("aipagego.tools/v2");
   expect(bundle.tools[0]).toMatchObject({ id: t.id, kind: "prompt", prompt: "请总结当前页面" });
 });
 ```
@@ -412,7 +412,7 @@ Change invalid schema test to assert v1 rejection:
 
 ```typescript
 await expect(
-  importBundle({ schema: "atwebpilot.tools/v1", exportedAt: Date.now(), tools: [] } as never, {
+  importBundle({ schema: "aipagego.tools/v1", exportedAt: Date.now(), tools: [] } as never, {
     onConflict: "skip"
   })
 ).rejects.toThrow("schema mismatch");
@@ -561,14 +561,14 @@ function parseTool(raw: unknown): Tool | undefined {
 export async function exportAll(): Promise<ExportBundle> {
   const db = await getDB();
   const tools = (await db.getAll("tools")).map(parseTool).filter((t): t is Tool => !!t);
-  return { schema: "atwebpilot.tools/v2", exportedAt: Date.now(), tools };
+  return { schema: "aipagego.tools/v2", exportedAt: Date.now(), tools };
 }
 
 export async function importBundle(
   raw: ExportBundle,
   opts: { onConflict: ConflictPolicy }
 ): Promise<ImportResult> {
-  if (!raw || raw.schema !== "atwebpilot.tools/v2" || !Array.isArray(raw.tools)) {
+  if (!raw || raw.schema !== "aipagego.tools/v2" || !Array.isArray(raw.tools)) {
     throw new Error("invalid bundle: schema mismatch");
   }
   const db = await getDB();
@@ -956,7 +956,7 @@ export async function generatePromptToolDraft(input: ToolDraftGenerationInput): 
   const raw = await callJson(
     input,
     [
-      "你是 AtWebPilot 的提示词工具生成器。",
+      "你是 AIPageGo 的提示词工具生成器。",
       "输出 JSON: {\"name\": string, \"description\": string, \"prompt\": string}。",
       "prompt 面向未来运行，要求 AI 基于当前页面执行任务，不引用旧对话。",
       "不要包含 API key、cookie、账号密码或 token。"
@@ -978,7 +978,7 @@ export async function generateStepsToolDraft(input: ToolDraftGenerationInput): P
   const raw = await callJson(
     input,
     [
-      "你是 AtWebPilot 的纯函数/固定步骤工具生成器。",
+      "你是 AIPageGo 的纯函数/固定步骤工具生成器。",
       "输出 JSON: {\"name\": string, \"description\": string, \"steps\": Step[]}。",
       "优先生成单个 runJS 函数体；需要滚动、等待、点击时可以生成多 step。",
       "runJS 不调用 LLM、扩展 API，不输出敏感凭证。"
@@ -1841,7 +1841,7 @@ Run:
 node -e "const m=require('./dist/manifest.json'); console.log(m.name, m.version)"
 ```
 
-Expected: prints AtWebPilot extension name and current package version.
+Expected: prints AIPageGo extension name and current package version.
 
 - [ ] **Step 5: Manual browser verification**
 

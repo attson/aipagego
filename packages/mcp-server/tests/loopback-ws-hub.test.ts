@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 import { WebSocket } from "ws";
-import { PROTOCOL_VERSION, type Hello, type ClientToServer } from "@atwebpilot/shared/protocol";
-import { DefaultClock, DefaultIdGen } from "@atwebpilot/coordinator";
+import { PROTOCOL_VERSION, type Hello, type ClientToServer } from "@aipagego/shared/protocol";
+import { DefaultClock, DefaultIdGen } from "@aipagego/coordinator";
 import { LoopbackWSHub } from "../src/loopback-ws-hub";
 
 let hub: LoopbackWSHub | null = null;
@@ -266,7 +266,7 @@ describe("Plan 33 — pairing page and lifecycle", () => {
     installId: "inst_abc",
     secret: "s",
     sessionId: "sess_1",
-    label: "~/code/atwebpilot2",
+    label: "~/code/aipagego",
     pid: 1,
     port: 0
   };
@@ -316,6 +316,6 @@ describe("Plan 33 — pairing page and lifecycle", () => {
     hub = new LoopbackWSHub({ port: 0, clock: new DefaultClock(), idGen: new DefaultIdGen() });
     const port = await hub.ready();
     extra = new LoopbackWSHub({ port, clock: new DefaultClock(), idGen: new DefaultIdGen() });
-    await expect(extra.ready()).rejects.toThrow(/already in use[\s\S]*ATWEBPILOT_WS_PORT/);
+    await expect(extra.ready()).rejects.toThrow(/already in use[\s\S]*AIPAGEGO_WS_PORT/);
   });
 });
