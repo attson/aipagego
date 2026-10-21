@@ -5,7 +5,7 @@ import { EmptyState } from "@/content/widget/empty-state";
 import type { SessionData } from "@/sidepanel/chat/session-store";
 
 const mockMatch = vi.fn();
-vi.mock("@atwebpilot/shared/match-presets", () => ({
+vi.mock("@aipagego/shared/match-presets", () => ({
   matchPresetsByUrl: (url: string) => mockMatch(url),
 }));
 

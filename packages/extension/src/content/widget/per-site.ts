@@ -1,9 +1,9 @@
-const FAB_KEY = "atwebpilot.widget.fabPos";
-const SIZE_KEY = "atwebpilot.widget.panelSize";
+const FAB_KEY = "aipagego.widget.fabPos";
+const SIZE_KEY = "aipagego.widget.panelSize";
 const DEFAULT_SIZE = { w: 320, h: 480 };
 
 export async function hideHost(host: string): Promise<void> {
-  const key = "atwebpilot.llm";
+  const key = "aipagego.llm";
   const raw = (await chrome.storage.local.get([key]))[key] as Record<string, unknown> | undefined;
   const rules = Array.isArray(raw?.siteInjectionRules) ? [...raw.siteInjectionRules] : [];
   rules.push({

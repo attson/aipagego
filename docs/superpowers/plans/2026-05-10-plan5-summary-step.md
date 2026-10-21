@@ -157,7 +157,7 @@ import type { ChatMessage, Json, LlmSettings, Step } from "@/shared/types";
 import type { LlmClient } from "./types";
 
 export const SUMMARY_SYSTEM_PROMPT = [
-  "你是 AtWebPilot 的「汇总 step 生成器」。",
+  "你是 AIPageGo 的「汇总 step 生成器」。",
   "",
   "任务：基于刚刚一段成功的对话与已执行的 step 序列，写一段 runJS 代码作为",
   "该工具的「汇总最后一步」。重放该工具时，这段代码会作为最后 step 在",
@@ -596,7 +596,7 @@ git commit -m "refactor(save-dialog): introduce localSteps + accept messages/llm
       {session.showSaveDialog && (
         <SaveAsToolDialog
           initialName={
-            recommendations[0]?.name ?? `AtWebPilot 任务 ${new Date().toISOString().slice(0, 10)}`
+            recommendations[0]?.name ?? `AIPageGo 任务 ${new Date().toISOString().slice(0, 10)}`
           }
           initialDescription={
             (session.messages.find(

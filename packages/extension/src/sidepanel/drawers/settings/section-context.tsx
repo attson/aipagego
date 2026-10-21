@@ -1,4 +1,4 @@
-import type { ContextPolicy } from "@atwebpilot/shared/types";
+import type { ContextPolicy } from "@aipagego/shared/types";
 import { useSettings } from "@/sidepanel/chat/settings-store";
 import { resolveContextBuildOptions } from "@/sidepanel/chat/context-manager";
 

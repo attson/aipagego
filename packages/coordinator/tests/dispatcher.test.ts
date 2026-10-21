@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { Dispatcher } from "../src/dispatcher";
 import { SessionManager } from "../src/session-manager";
 import { FakeClock, FakeIdGen } from "../src/clock";
-import { SESSION_IDLE_TIMEOUT_MS } from "@atwebpilot/shared/protocol";
-import type { Capability } from "@atwebpilot/shared/capability";
+import { SESSION_IDLE_TIMEOUT_MS } from "@aipagego/shared/protocol";
+import type { Capability } from "@aipagego/shared/capability";
 
 function setup(scope: Capability[]) {
   const clock = new FakeClock(1000);

@@ -17,7 +17,7 @@ import {
   setCdpRecorderEnabled
 } from "@/background/recorder/cdp-permission";
 import { listTrusted, revokeTrust } from "@/background/pairing-host";
-import { comparePairingVersions, type TrustRecord } from "@atwebpilot/shared/pairing";
+import { comparePairingVersions, type TrustRecord } from "@aipagego/shared/pairing";
 import type { PoolEntry } from "@/background/coordinator-pool";
 
 const DEFAULT_WS_URL = "ws://localhost:8787/worker";
@@ -289,7 +289,7 @@ export function CoordinatorSettingsPage() {
           <span className="text-xs text-gray-500">
             开启后 console / network / 弹窗的记录更完整：能拿到响应 body、脚本注入之前的日志、CORS 与
             CSP 报错，弹窗也能真正挂起等待应答；严格 CSP 页面阻止 unsafe-eval 时，runJS 也会按需通过
-            CDP 执行。代价：浏览器顶部会常驻「AtWebPilot 正在调试此浏览器」提示条，且与 DevTools、
+            CDP 执行。代价：浏览器顶部会常驻「AIPageGo 正在调试此浏览器」提示条，且与 DevTools、
             其它调试类扩展互斥——被抢占时会自动退回默认录制并在结果里标出 degradedReason。需要单独
             授予 debugger 权限。
           </span>
@@ -303,7 +303,7 @@ export function CoordinatorSettingsPage() {
             type="button"
             className="text-xs text-gray-600 underline disabled:opacity-50"
             disabled={cleaningGroups}
-            title="恢复或取消 AtWebPilot 创建的 MCP 标签分组，不会关闭标签页"
+            title="恢复或取消 AIPageGo 创建的 MCP 标签分组，不会关闭标签页"
             onClick={() => {
               setCleaningGroups(true);
               void chrome.runtime

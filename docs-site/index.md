@@ -1,19 +1,19 @@
 ---
 layout: home
 hero:
-  name: AtWebPilot
+  name: AIPageGo
   text: AI 网页助手
   tagline: 在当前 tab 上读、写、采 —— 像常规 chatbot 一样对话，AI 自动调工具
   actions:
     - theme: brand
       text: 下载最新版本
-      link: https://github.com/attson/atwebpilot/releases/latest
+      link: https://github.com/attson/aipagego/releases/latest
     - theme: alt
       text: 快速上手 →
       link: /guide/install
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/attson/atwebpilot
+      link: https://github.com/attson/aipagego
 features:
   - icon: 📖
     title: 读
@@ -84,7 +84,7 @@ import { withBase } from 'vitepress';
   <div class="step-card">
     <div class="step-num">1</div>
     <h3>下载 zip</h3>
-    <p>从 <a href="https://github.com/attson/atwebpilot/releases/latest">GitHub Releases</a> 拿最新 <code>atwebpilot-vX.Y.Z.zip</code>，解压。</p>
+    <p>从 <a href="https://github.com/attson/aipagego/releases/latest">GitHub Releases</a> 拿最新 <code>aipagego-vX.Y.Z.zip</code>，解压。</p>
   </div>
   <div class="step-card">
     <div class="step-num">2</div>

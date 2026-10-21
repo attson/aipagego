@@ -7,7 +7,7 @@
  * `currentTabInfo()` call `chrome.tabs.query(...)`, which throws in a content
  * script context.
  *
- * Instead, we reuse the existing `atwebpilot.getTabId` side-channel (already
+ * Instead, we reuse the existing `aipagego.getTabId` side-channel (already
  * consumed by breathing-border content script) — BG's `runtime.onMessage`
  * listener extracts `sender.tab?.id` and returns it.
  *
@@ -17,7 +17,7 @@
 export async function getWidgetTabInfo(): Promise<{ tabId: number; url: string }> {
   return new Promise((resolve, reject) => {
     try {
-      chrome.runtime.sendMessage({ type: "atwebpilot.getTabId" }, (res) => {
+      chrome.runtime.sendMessage({ type: "aipagego.getTabId" }, (res) => {
         const err = chrome.runtime.lastError;
         if (err) {
           reject(new Error(err.message ?? "runtime error"));

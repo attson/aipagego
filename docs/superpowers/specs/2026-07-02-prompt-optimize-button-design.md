@@ -109,9 +109,9 @@ packages/extension/src/sidepanel/drawers/settings/section-llm.tsx (加一行 inp
 ### 4.3 `optimize-prompt.ts`（纯逻辑）
 
 ```ts
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { LlmSettings } from "@aipagego/shared/types";
 import { pickClient } from "@/sidepanel/llm/client";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm/builtin-tool-defs";
+import { TOOL_DEFS } from "@aipagego/shared/llm/builtin-tool-defs";
 
 const SYSTEM_PROMPT = `你是「浏览器自动化 agent 的提示词教练」。用户会给你一段自然语言草稿，你要改写成更具体、可执行的指令，让下游的 browser-agent 一次就能选对工具、找对信息源。
 

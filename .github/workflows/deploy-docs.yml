@@ -55,7 +55,7 @@ jobs:
       - name: Build embedded demo
         # Writes into docs-site/public/demo, which VitePress copies verbatim —
         # so this has to run before the site build.
-        run: pnpm -F @atwebpilot/extension build:demo
+        run: pnpm -F @aipagego/extension build:demo
 
       - name: Build site
         working-directory: docs-site

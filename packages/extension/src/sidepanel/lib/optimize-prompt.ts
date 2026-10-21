@@ -1,5 +1,5 @@
-import type { LlmSettings } from "@atwebpilot/shared/types";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import type { LlmSettings } from "@aipagego/shared/types";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 import { pickClient } from "@/sidepanel/llm/client";
 
 const SYSTEM_PROMPT =

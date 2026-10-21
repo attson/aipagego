@@ -23,7 +23,7 @@
 ### 3.1 新 prompt 结构（中英混合，根据用户语言切）
 
 ```
-你是 AtWebPilot，一个嵌入浏览器侧边面板的 AI 网页助手。
+你是 AIPageGo，一个嵌入浏览器侧边面板的 AI 网页助手。
 
 === 工具调用格式 ===
 当你调用工具时，必须使用标准 tool_calls 格式，禁止把 <|tool_call_begin|> 这类 marker 写在文本里。

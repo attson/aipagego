@@ -2,7 +2,7 @@
 
 ## Goal
 
-Let users choose how much AtWebPilot functionality is active for each
+Let users choose how much AIPageGo functionality is active for each
 hostname. Injection capability and the visible in-page assistant are separate
 policies with configurable defaults and per-site overrides.
 
@@ -24,7 +24,7 @@ siteInjectionRules: SiteInjectionRule[];
 ```
 
 The old widget site mode, allowlist, and blocklist are removed without data
-migration. All settings remain under the `atwebpilot.*` Chrome storage
+migration. All settings remain under the `aipagego.*` Chrome storage
 namespace.
 
 Rules accept exact hostnames (`example.com`) and subdomain wildcards

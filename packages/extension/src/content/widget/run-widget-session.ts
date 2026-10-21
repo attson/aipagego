@@ -34,7 +34,7 @@ import { buildSystemPrompt } from "@/sidepanel/llm/system-prompt";
 import { classifyTool } from "@/sidepanel/chat/severity";
 import { handOffToSidepanel } from "./handoff";
 import type { Decision } from "@/sidepanel/chat/approval";
-import type { ChatMessage, ImagePart, Json, Step, ReplayableTool } from "@atwebpilot/shared/types";
+import type { ChatMessage, ImagePart, Json, Step, ReplayableTool } from "@aipagego/shared/types";
 import {
   buildCurrentUserContent,
   buildInitialMessagesForNextTurn,

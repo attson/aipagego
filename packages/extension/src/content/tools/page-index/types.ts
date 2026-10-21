@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 export type PageBlockKind = "heading" | "kv" | "table" | "list" | "form" | "text" | "media";
 

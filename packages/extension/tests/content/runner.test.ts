@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runSteps } from "@/content/runner";
-import type { Step } from "@atwebpilot/shared/types";
+import type { Step } from "@aipagego/shared/types";
 
 describe("Step Runner", () => {
   it("runs tool steps in order and binds results", async () => {

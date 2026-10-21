@@ -1,4 +1,4 @@
-import type { ChatMessage } from "@atwebpilot/shared/types";
+import type { ChatMessage } from "@aipagego/shared/types";
 import { Copy } from "lucide-react";
 
 function CopyMessageButton({ text }: { text: string }) {

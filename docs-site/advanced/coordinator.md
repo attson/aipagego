@@ -29,7 +29,7 @@ Coordinator ↔ 扩展间是自定义 WS 消息，定义在 `packages/shared/src
 node docs/superpowers/scripts/mini-coordinator.mjs
 ```
 
-启动一个本地 WS server。注意 `@attson/atwebpilot-mcp` 走的是[配对流程](/advanced/pairing)，端口惰性分配、不再固定 8787；这里说的是自建 coordinator 的场景。
+启动一个本地 WS server。注意 `@attson/aipagego-mcp` 走的是[配对流程](/advanced/pairing)，端口惰性分配、不再固定 8787；这里说的是自建 coordinator 的场景。
 
 扩展设置里 Coordinator 页填该 URL + 任意 token → 连接。连接成功后 Coordinator 里可以 REPL 派发 EXEC 命令。
 

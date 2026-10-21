@@ -40,8 +40,8 @@ export const GRACEFUL_CLOSE_CODE = 4000;
 export const GRACEFUL_CLOSE_REASON = "server-shutting-down";
 
 /** Runtime-message types between the content-script relay and the worker. */
-export const PAIR_PAGE_SOURCE = "atwebpilot-pair";
-export const PAIR_RESULT_SOURCE = "atwebpilot-pair-result";
+export const PAIR_PAGE_SOURCE = "aipagego-pair";
+export const PAIR_RESULT_SOURCE = "aipagego-pair-result";
 /**
  * Broadcast by the relay as soon as it installs.
  *
@@ -50,6 +50,6 @@ export const PAIR_RESULT_SOURCE = "atwebpilot-pair-result";
  * announces itself once is talking to nobody. The relay says hello instead,
  * and the page answers.
  */
-export const PAIR_READY_SOURCE = "atwebpilot-pair-ready";
+export const PAIR_READY_SOURCE = "aipagego-pair-ready";
 
 export type PairingDecision = "trusted" | "ask";

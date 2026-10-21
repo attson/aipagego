@@ -1,14 +1,14 @@
 /**
  * The drain expression is evaluated in the MAIN world by `injectMainWorld`,
  * which wraps it in `async (ctx) => { ... }`. It therefore shares the realm
- * with `main-world.ts` and can reach `window.__ATWEBPILOT_REC__` directly —
+ * with `main-world.ts` and can reach `window.__AIPAGEGO_REC__` directly —
  * no extra message channel is needed.
  *
  * Everything it returns must be plain JSON. Filtering happens on the
  * background side so the query logic stays pure and unit-tested in one place.
  */
 export const DRAIN_SOURCE = `
-  const rec = window.__ATWEBPILOT_REC__;
+  const rec = window.__AIPAGEGO_REC__;
   if (!rec) return { missing: true };
   const op = ctx && ctx.op;
   if (op === "configure") return { config: rec.configure(ctx.patch || {}) };

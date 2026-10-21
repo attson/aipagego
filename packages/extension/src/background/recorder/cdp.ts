@@ -21,8 +21,8 @@ import {
   type PageRecorder,
   type RecorderConfig,
   type RecorderConfigPatch
-} from "@atwebpilot/shared/recorder";
-import type { Json } from "@atwebpilot/shared/types";
+} from "@aipagego/shared/recorder";
+import type { Json } from "@aipagego/shared/types";
 import { cdpRecorderEnabled } from "./cdp-permission";
 import { registerCdpLookup, registerCdpResizer, setDegradedReason } from "./host";
 

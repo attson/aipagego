@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { nextUid, recordUid, resetUidCache } from "./uid-cache";
 import { INTERACTIVE_SELECTOR, bounds, elName, elRole, elText } from "./element-meta";
 

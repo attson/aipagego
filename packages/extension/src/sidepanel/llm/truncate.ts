@@ -4,7 +4,7 @@ import type {
   TextPart,
   ToolResultPart,
   ToolUsePart,
-} from "@atwebpilot/shared/types";
+} from "@aipagego/shared/types";
 
 export function truncateContent(s: string, cap: number): string {
   if (s.length <= cap) return s;

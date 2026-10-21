@@ -51,7 +51,7 @@ tool_calls（行 66 附近）：
 
 - [ ] **Step 2: 运行确认变红**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/llm/anthropic-stream.test.ts tests/sidepanel/llm/openai-stream.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/llm/anthropic-stream.test.ts tests/sidepanel/llm/openai-stream.test.ts`
 Expected: FAIL —— message_end 缺 `stop_reason`，`toEqual` 不匹配。
 
 - [ ] **Step 3: types.ts 加字段**
@@ -100,7 +100,7 @@ Expected: FAIL —— message_end 缺 `stop_reason`，`toEqual` 不匹配。
 
 - [ ] **Step 6: 运行确认变绿**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/llm/anthropic-stream.test.ts tests/sidepanel/llm/openai-stream.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/llm/anthropic-stream.test.ts tests/sidepanel/llm/openai-stream.test.ts`
 Expected: PASS（4 个相关用例都过）。
 
 - [ ] **Step 7: Commit**
@@ -160,7 +160,7 @@ export type LlmExchange = {
 
 - [ ] **Step 3: typecheck（会报 auto-persist/session-store 缺字段，预期，后续任务补齐）**
 
-Run: `pnpm --filter @atwebpilot/shared typecheck`
+Run: `pnpm --filter @aipagego/shared typecheck`
 Expected: shared 包 0 error（类型本身自洽）。extension 包此刻还不 typecheck（留到后续任务）。
 
 - [ ] **Step 4: Commit**
@@ -184,7 +184,7 @@ git commit -m "feat(shared): LlmExchange types + PersistedSessionData.llmExchang
 ```ts
 import { describe, expect, it } from "vitest";
 import { truncateContent, truncateMessages } from "@/sidepanel/llm/truncate";
-import type { ChatMessage } from "@atwebpilot/shared/types";
+import type { ChatMessage } from "@aipagego/shared/types";
 
 describe("truncateContent", () => {
   it("returns as-is when within cap", () => {
@@ -235,14 +235,14 @@ describe("truncateMessages", () => {
 
 - [ ] **Step 2: 确认变红**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/llm/truncate.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/llm/truncate.test.ts`
 Expected: FAIL —— 模块不存在。
 
 - [ ] **Step 3: 实现**
 
 `packages/extension/src/sidepanel/llm/truncate.ts`：
 ```ts
-import type { ChatMessage, TextPart, ToolResultPart, ToolUsePart } from "@atwebpilot/shared/types";
+import type { ChatMessage, TextPart, ToolResultPart, ToolUsePart } from "@aipagego/shared/types";
 
 export function truncateContent(s: string, cap: number): string {
   if (s.length <= cap) return s;
@@ -276,7 +276,7 @@ export function truncateMessages(messages: ChatMessage[], cap: number): ChatMess
 
 - [ ] **Step 4: 确认变绿**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/llm/truncate.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/llm/truncate.test.ts`
 Expected: PASS（7 个用例）。
 
 - [ ] **Step 5: Commit**
@@ -301,7 +301,7 @@ git commit -m "feat(llm): truncate helpers for raw-log content caps"
 import { describe, expect, it } from "vitest";
 import { createRecordingClient } from "@/sidepanel/llm/recording-client";
 import type { LlmClient, LlmStreamEvent } from "@/sidepanel/llm/types";
-import type { LlmExchange } from "@atwebpilot/shared/types";
+import type { LlmExchange } from "@aipagego/shared/types";
 
 function fakeClient(events: LlmStreamEvent[]): LlmClient {
   return {
@@ -415,14 +415,14 @@ describe("createRecordingClient", () => {
 
 - [ ] **Step 2: 确认变红**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/llm/recording-client.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/llm/recording-client.test.ts`
 Expected: FAIL —— 模块不存在。
 
 - [ ] **Step 3: 实现**
 
 `packages/extension/src/sidepanel/llm/recording-client.ts`：
 ```ts
-import type { Json, LlmExchange, LlmExchangeResponse, LlmProvider } from "@atwebpilot/shared/types";
+import type { Json, LlmExchange, LlmExchangeResponse, LlmProvider } from "@aipagego/shared/types";
 import type { LlmClient } from "./types";
 import { truncateMessages } from "./truncate";
 
@@ -519,7 +519,7 @@ export function createRecordingClient(
 
 - [ ] **Step 4: 确认变绿**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/llm/recording-client.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/llm/recording-client.test.ts`
 Expected: PASS（6 个用例）。
 
 - [ ] **Step 5: Commit**
@@ -548,7 +548,7 @@ import {
   rehydrateFromPersisted,
   MAX_EXCHANGES
 } from "@/sidepanel/chat/session-store";
-import type { LlmExchange } from "@atwebpilot/shared/types";
+import type { LlmExchange } from "@aipagego/shared/types";
 
 function makeExchange(round: number): LlmExchange {
   return {
@@ -601,7 +601,7 @@ describe("llmExchanges", () => {
 
 - [ ] **Step 2: 确认变红**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/chat/session-store.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/chat/session-store.test.ts`
 Expected: FAIL —— `addLlmExchange` / `MAX_EXCHANGES` 未导出、`llmExchanges` 字段不存在。
 
 - [ ] **Step 3: 实现 session-store 改动**
@@ -610,7 +610,7 @@ Expected: FAIL —— `addLlmExchange` / `MAX_EXCHANGES` 未导出、`llmExchang
 
 (a) import 加 `LlmExchange`：
 ```ts
-import type { AttachedTab, ChatMessage, Json, LlmExchange, PersistedSessionData, Step, ToolUsePart } from "@atwebpilot/shared/types";
+import type { AttachedTab, ChatMessage, Json, LlmExchange, PersistedSessionData, Step, ToolUsePart } from "@aipagego/shared/types";
 ```
 
 (b) 文件顶部（import 后）加常量：
@@ -655,7 +655,7 @@ export function addLlmExchange(tabId: number, ex: LlmExchange): void {
 
 - [ ] **Step 4: 确认变绿**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/chat/session-store.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/chat/session-store.test.ts`
 Expected: PASS（含新增 3 个用例）。
 
 - [ ] **Step 5: Commit**
@@ -681,7 +681,7 @@ git commit -m "feat(chat): session-store llmExchanges + addLlmExchange (FIFO cap
 ```ts
 import { toPersistedData } from "@/sidepanel/chat/persistence/auto-persist";
 import { makeEmptySession } from "@/sidepanel/chat/session-store";
-import type { LlmExchange } from "@atwebpilot/shared/types";
+import type { LlmExchange } from "@aipagego/shared/types";
 
 describe("toPersistedData", () => {
   it("includes llmExchanges", () => {
@@ -698,7 +698,7 @@ describe("toPersistedData", () => {
 
 - [ ] **Step 2: 确认变红**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/chat/persistence/auto-persist.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/chat/persistence/auto-persist.test.ts`
 Expected: FAIL —— `toPersistedData` 未导出 / 结果缺 `llmExchanges`。
 
 - [ ] **Step 3: 实现**
@@ -723,7 +723,7 @@ export function toPersistedData(s: SessionData): PersistedSessionData {
 
 - [ ] **Step 4: 确认变绿**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/chat/persistence/auto-persist.test.ts`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/chat/persistence/auto-persist.test.ts`
 Expected: PASS。
 
 - [ ] **Step 5: Commit**
@@ -748,7 +748,7 @@ git commit -m "feat(persist): persist llmExchanges with session data"
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { LlmExchangePanel } from "@/sidepanel/components/llm-exchange-panel";
-import type { LlmExchange } from "@atwebpilot/shared/types";
+import type { LlmExchange } from "@aipagego/shared/types";
 
 function ex(round: number, text: string): LlmExchange {
   return {
@@ -799,7 +799,7 @@ describe("LlmExchangePanel", () => {
 
 - [ ] **Step 2: 确认变红**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/components/llm-exchange-panel.test.tsx`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/components/llm-exchange-panel.test.tsx`
 Expected: FAIL —— 模块不存在。
 
 - [ ] **Step 3: 实现**
@@ -807,7 +807,7 @@ Expected: FAIL —— 模块不存在。
 `packages/extension/src/sidepanel/components/llm-exchange-panel.tsx`：
 ```tsx
 import { useState } from "react";
-import type { ChatMessage, LlmExchange } from "@atwebpilot/shared/types";
+import type { ChatMessage, LlmExchange } from "@aipagego/shared/types";
 
 type Props = {
   open: boolean;
@@ -940,7 +940,7 @@ function MessageList({ messages }: { messages: ChatMessage[] }) {
 
 - [ ] **Step 4: 确认变绿**
 
-Run: `pnpm --filter @atwebpilot/extension test run tests/sidepanel/components/llm-exchange-panel.test.tsx`
+Run: `pnpm --filter @aipagego/extension test run tests/sidepanel/components/llm-exchange-panel.test.tsx`
 Expected: PASS（5 个用例）。
 
 - [ ] **Step 5: Commit**
@@ -1032,8 +1032,8 @@ import {
 - [ ] **Step 6: typecheck + 既有 chat-page 测试**
 
 ```bash
-pnpm --filter @atwebpilot/extension typecheck
-pnpm --filter @atwebpilot/extension test run tests/sidepanel/pages
+pnpm --filter @aipagego/extension typecheck
+pnpm --filter @aipagego/extension test run tests/sidepanel/pages
 ```
 Expected: typecheck 0 error；chat-page 相关测试不回归。
 

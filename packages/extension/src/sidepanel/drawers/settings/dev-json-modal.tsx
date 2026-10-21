@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { RunRecord } from "@atwebpilot/shared/types";
+import type { RunRecord } from "@aipagego/shared/types";
 import { JsonEditor } from "@/sidepanel/components/json-editor";
 import { ResultView } from "@/sidepanel/components/result-view";
 import { currentTabId, rpc } from "@/sidepanel/rpc";

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import type { ReplayableTool } from "@atwebpilot/shared/types";
+import type { ReplayableTool } from "@aipagego/shared/types";
 import { BackgroundToolRunner } from "@/background/bg-tool-runner";
 import * as rpc from "@/background/rpc-handlers";
 

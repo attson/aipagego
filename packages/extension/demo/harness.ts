@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { callTool } from "@/content/tools";
 import { serveBridge } from "./bridge";
 

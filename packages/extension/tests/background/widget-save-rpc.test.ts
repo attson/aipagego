@@ -29,7 +29,7 @@ describe("widget.openSidepanelWithSave", () => {
     expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });
     expect(chrome.storage.session.set).toHaveBeenCalledWith(
       expect.objectContaining({
-        "atwebpilot.pendingSave": expect.objectContaining({ tabId: 42 })
+        "aipagego.pendingSave": expect.objectContaining({ tabId: 42 })
       })
     );
   });

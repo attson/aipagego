@@ -1,7 +1,7 @@
 import { EmptySuggestions } from "@/sidepanel/chat/empty-suggestions";
 import { QuickActions } from "@/sidepanel/chat/quick-actions";
-import { matchPresetsByUrl } from "@atwebpilot/shared/match-presets";
-import type { Preset } from "@atwebpilot/shared/preset";
+import { matchPresetsByUrl } from "@aipagego/shared/match-presets";
+import type { Preset } from "@aipagego/shared/preset";
 import type { SessionData } from "@/sidepanel/chat/session-store";
 
 type Props = {

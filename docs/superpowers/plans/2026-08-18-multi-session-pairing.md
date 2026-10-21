@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Identity file `~/.atwebpilot/identity.json`, mode `0600`, holding `{ installId, secret }` only. `sessionId`, cwd `label`, and `pid` are per-process and never persisted.
+- Identity file `~/.aipagego/identity.json`, mode `0600`, holding `{ installId, secret }` only. `sessionId`, cwd `label`, and `pid` are per-process and never persisted.
 - Trust is install-level. `sessionId` and `label` are display and management only; they take no part in the trust decision.
 - The `/pair` page is a carrier. Approval is rendered by the extension as a shadow-DOM overlay; a served page must never be able to authorise itself.
 - No port scanning and no port range. The pairing page is the only discovery channel.
@@ -22,7 +22,7 @@
 - Tab ownership is advisory. `busy` is reported; nothing is ever blocked.
 - `packages/shared` stays free of `chrome.*` and DOM globals.
 - `packages/mcp-server` must never write non-MCP output to stdout; logs go to stderr.
-- `ATWEBPILOT_WS_PORT` remains supported as a fixed-port override.
+- `AIPAGEGO_WS_PORT` remains supported as a fixed-port override.
 
 ## File Structure
 
@@ -30,7 +30,7 @@
 
 | Path | Responsibility |
 |---|---|
-| `packages/mcp-server/src/identity.ts` | Read/create `~/.atwebpilot/identity.json`; per-process `sessionId`/`label`/`pid` |
+| `packages/mcp-server/src/identity.ts` | Read/create `~/.aipagego/identity.json`; per-process `sessionId`/`label`/`pid` |
 | `packages/mcp-server/src/pair-page.ts` | The `/pair` HTML and its postMessage payload |
 | `packages/mcp-server/src/ensure-hub.ts` | Lazy hub creation, port preference, one-shot page opening |
 | `packages/shared/src/pairing/types.ts` | `PairPayload`, `TrustRecord`, `PoolEntryState` — shared by server and extension |
@@ -132,7 +132,7 @@ describe("nextReconnect", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/shared test -- pairing`. Expected: FAIL, module not found.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/shared test -- pairing`. Expected: FAIL, module not found.
 - [ ] **Step 3: Write `types.ts`**
 
 ```ts
@@ -198,7 +198,7 @@ export function wake(_state: ReconnectState): ReconnectState {
 
 - [ ] **Step 5: Write `index.ts`** — `export * from "./types"; export * from "./reconnect";`
 - [ ] **Step 6: Add `"./pairing": "./src/pairing/index.ts"` to `packages/shared/package.json` exports.**
-- [ ] **Step 7: Run the tests.** Run: `pnpm -F @atwebpilot/shared test -- pairing`. Expected: PASS, 8 tests.
+- [ ] **Step 7: Run the tests.** Run: `pnpm -F @aipagego/shared test -- pairing`. Expected: PASS, 8 tests.
 - [ ] **Step 8: Commit**
 
 ```bash
@@ -298,7 +298,7 @@ export function deriveTabView(
 }
 ```
 
-- [ ] **Step 4: Export from the barrel and run the tests.** Run: `pnpm -F @atwebpilot/shared test -- pairing`. Expected: PASS, 13 tests.
+- [ ] **Step 4: Export from the barrel and run the tests.** Run: `pnpm -F @aipagego/shared test -- pairing`. Expected: PASS, 13 tests.
 - [ ] **Step 5: Commit**
 
 ```bash
@@ -358,7 +358,7 @@ describe("Plan 33 — multi-session messages", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/shared test -- messages`. Expected: FAIL, `SessionOpenedSchema` is not exported.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/shared test -- messages`. Expected: FAIL, `SessionOpenedSchema` is not exported.
 - [ ] **Step 3: Add the schemas**
 
 ```ts
@@ -411,7 +411,7 @@ git commit -m "feat(protocol): SESSION_OPENED, TABS_UPDATE and derived tab field
 
 **Interfaces:**
 - Consumes: `PairPayload` from Task 1.
-- Produces: `loadOrCreateIdentity(dir?: string): { installId: string; secret: string }` writing `<dir>/identity.json` (default `~/.atwebpilot`) with mode `0600` and the directory `0700`; `processInfo(): { sessionId: string; label: string; pid: number }` where `label` is `process.cwd()` with `$HOME` collapsed to `~`; `loadLastPort(dir?) / saveLastPort(port, dir?)` persisting to the same file under `lastPort`.
+- Produces: `loadOrCreateIdentity(dir?: string): { installId: string; secret: string }` writing `<dir>/identity.json` (default `~/.aipagego`) with mode `0600` and the directory `0700`; `processInfo(): { sessionId: string; label: string; pid: number }` where `label` is `process.cwd()` with `$HOME` collapsed to `~`; `loadLastPort(dir?) / saveLastPort(port, dir?)` persisting to the same file under `lastPort`.
 
 - [ ] **Step 1: Write the failing test** — cover: a fresh directory produces a file with mode 0600; a second call returns the identical `installId` and `secret`; a corrupt file is replaced rather than throwing; `label` collapses the home prefix to `~`; `sessionId` differs between calls; `saveLastPort` round-trips and leaves the identity untouched.
 
@@ -427,7 +427,7 @@ import {
 
 const dirs: string[] = [];
 const tmp = () => {
-  const d = mkdtempSync(join(tmpdir(), "atwebpilot-id-"));
+  const d = mkdtempSync(join(tmpdir(), "aipagego-id-"));
   dirs.push(d);
   return d;
 };
@@ -483,7 +483,7 @@ describe("processInfo", () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @attson/atwebpilot-mcp test -- identity`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @attson/aipagego-mcp test -- identity`. Expected: FAIL.
 - [ ] **Step 3: Implement `identity.ts`** using `node:crypto` `randomUUID`/`randomBytes(24).toString("base64url")`, `mkdirSync(dir, { recursive: true, mode: 0o700 })` and `writeFileSync(path, json, { mode: 0o600 })`.
 - [ ] **Step 4: Run the tests.** Expected: PASS.
 - [ ] **Step 5: Commit**
@@ -505,24 +505,24 @@ git commit -m "feat(mcp): install identity and last-port persistence"
 - Consumes: `PairPayload`, `GRACEFUL_CLOSE_CODE`, `GRACEFUL_CLOSE_REASON` from Task 1.
 - Produces: `renderPairPage(payload: PairPayload): string`; `LoopbackWSHubOpts` gains `pairPayload?: () => PairPayload`; `LoopbackWSHub` gains `shutdown(): Promise<void>` which closes every socket with code 4000 before closing the server. The hub now builds its own `http.createServer()` and passes it to `WebSocketServer` as `server`, serving `GET /pair` from it. An `EADDRINUSE` on listen rejects `ready()` with an actionable message instead of crashing the process.
 
-- [ ] **Step 1: Write the failing tests** — `renderPairPage` embeds the payload as JSON and posts it with `window.postMessage`, and HTML-escapes the label so a directory named `<script>` cannot inject; `GET /pair` returns 200 `text/html`; an unknown path returns 404; `shutdown()` closes clients with code 4000; a second hub on a taken explicit port rejects `ready()` with a message naming `ATWEBPILOT_WS_PORT` rather than throwing unhandled.
-- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @attson/atwebpilot-mcp test -- "pair-page|loopback"`. Expected: FAIL.
+- [ ] **Step 1: Write the failing tests** — `renderPairPage` embeds the payload as JSON and posts it with `window.postMessage`, and HTML-escapes the label so a directory named `<script>` cannot inject; `GET /pair` returns 200 `text/html`; an unknown path returns 404; `shutdown()` closes clients with code 4000; a second hub on a taken explicit port rejects `ready()` with a message naming `AIPAGEGO_WS_PORT` rather than throwing unhandled.
+- [ ] **Step 2: Run them to verify they fail.** Run: `pnpm -F @attson/aipagego-mcp test -- "pair-page|loopback"`. Expected: FAIL.
 - [ ] **Step 3: Write `pair-page.ts`.** The page shows the label, pid and port, and posts the payload on load:
 
 ```ts
 export function renderPairPage(payload: PairPayload): string {
   const json = JSON.stringify(payload).replace(/</g, "\\u003c");
-  return `<!doctype html><meta charset="utf-8"><title>AtWebPilot 配对</title>
+  return `<!doctype html><meta charset="utf-8"><title>AIPageGo 配对</title>
 <body style="font:14px system-ui;padding:2rem;max-width:32rem;margin:auto">
-<h1 style="font-size:1.1rem">AtWebPilot 配对</h1>
+<h1 style="font-size:1.1rem">AIPageGo 配对</h1>
 <p id="s">正在联系扩展…</p>
 <p style="color:#666">会话：${escapeHtml(payload.label)} · pid ${payload.pid} · 端口 ${payload.port}</p>
-<p style="color:#666">没有反应？请确认已安装并启用 AtWebPilot 扩展。</p>
+<p style="color:#666">没有反应？请确认已安装并启用 AIPageGo 扩展。</p>
 <script>
 const p = ${json};
-window.postMessage({ source: "atwebpilot-pair", payload: p }, "*");
+window.postMessage({ source: "aipagego-pair", payload: p }, "*");
 window.addEventListener("message", (e) => {
-  if (e.data && e.data.source === "atwebpilot-pair-result") {
+  if (e.data && e.data.source === "aipagego-pair-result") {
     document.getElementById("s").textContent =
       e.data.ok ? (e.data.trusted ? "已信任，连接中…" : "已连接") : "已拒绝";
     if (e.data.ok) setTimeout(() => window.close(), 1200);
@@ -534,7 +534,7 @@ window.addEventListener("message", (e) => {
 
 `escapeHtml` replaces `&<>"'`. The label is attacker-influenced only insofar as a user can name a directory, but escaping it costs one function and removes the question.
 
-- [ ] **Step 4: Rework the hub constructor** to build `http.createServer((req,res) => …)`, mount `WebSocketServer({ server, path: "/worker", handleProtocols })`, and `server.on("error", …)` so `ready()` rejects with `port <n> already in use — another atwebpilot-mcp may be running; set ATWEBPILOT_WS_PORT to choose another`.
+- [ ] **Step 4: Rework the hub constructor** to build `http.createServer((req,res) => …)`, mount `WebSocketServer({ server, path: "/worker", handleProtocols })`, and `server.on("error", …)` so `ready()` rejects with `port <n> already in use — another aipagego-mcp may be running; set AIPAGEGO_WS_PORT to choose another`.
 - [ ] **Step 5: Implement `shutdown()`** iterating `wss.clients` with `socket.close(GRACEFUL_CLOSE_CODE, GRACEFUL_CLOSE_REASON)` before closing.
 - [ ] **Step 6: Run the tests.** Expected: PASS.
 - [ ] **Step 7: Commit**
@@ -591,7 +591,7 @@ it("prefers the remembered port and records the one it got", async () => { /* �
 - [ ] **Step 3: Implement `ensure-hub.ts`** — a module-level promise so concurrent calls share one bind.
 - [ ] **Step 4: Rewire `index.ts`** so `main()` only builds the stdio server, and register a `process.on("SIGTERM")` / stdin-close handler that calls `hub.shutdown()` when a hub exists.
 - [ ] **Step 5: Await `ensureHub()`** in `handleListTabs`, `handleOpenSession`, `handleBrowserTool`, and make the no-worker message carry the pair URL.
-- [ ] **Step 6: Run the tests.** Run: `pnpm -F @attson/atwebpilot-mcp test`. Expected: PASS.
+- [ ] **Step 6: Run the tests.** Run: `pnpm -F @attson/aipagego-mcp test`. Expected: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
@@ -613,10 +613,10 @@ git commit -m "feat(mcp): bind the ws port lazily, on first browser use"
 
 **Interfaces:**
 - Consumes: `PairPayload` from Task 1.
-- Produces: `installPairingRelay()` listening for `window.postMessage` with `source: "atwebpilot-pair"`, forwarding to the worker as `{ type: "pairing.request", payload }`, and posting back `{ source: "atwebpilot-pair-result", ok, trusted }`. When the worker answers `{ decision: "ask" }` the relay renders a shadow-DOM overlay with Allow and Deny and sends the outcome as `{ type: "pairing.decision", sessionId, approved }`.
+- Produces: `installPairingRelay()` listening for `window.postMessage` with `source: "aipagego-pair"`, forwarding to the worker as `{ type: "pairing.request", payload }`, and posting back `{ source: "aipagego-pair-result", ok, trusted }`. When the worker answers `{ decision: "ask" }` the relay renders a shadow-DOM overlay with Allow and Deny and sends the outcome as `{ type: "pairing.decision", sessionId, approved }`.
 
 - [ ] **Step 1: Write the failing test** — a `postMessage` from the page reaches `chrome.runtime.sendMessage` with the payload intact; a message from a different `source` is ignored; a payload failing shape validation is ignored; `decision: "trusted"` posts a result without rendering an overlay; `decision: "ask"` renders an overlay whose Allow button sends `approved: true`.
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- pairing-relay`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- pairing-relay`. Expected: FAIL.
 - [ ] **Step 3: Implement the relay** — validate the payload shape defensively before forwarding, since any page can post anything.
 - [ ] **Step 4: Implement the overlay** in a closed shadow root so page CSS cannot restyle it into something misleading.
 - [ ] **Step 5: Register it** in `content/index.ts` and add the file to the existing content-script `js` array in the manifest.
@@ -636,7 +636,7 @@ git commit -m "feat(pairing): content-script relay and extension-rendered approv
 
 **Interfaces:**
 - Consumes: `PairPayload`, `TrustRecord` (Task 1).
-- Produces: `decidePairing(payload): Promise<"trusted" | "ask">`; `approve(payload): Promise<void>` writing the `TrustRecord`; `listTrusted(): Promise<TrustRecord[]>`; `revokeTrust(installId): Promise<void>`. Storage key `atwebpilot.pairing.trusted` in `chrome.storage.local`.
+- Produces: `decidePairing(payload): Promise<"trusted" | "ask">`; `approve(payload): Promise<void>` writing the `TrustRecord`; `listTrusted(): Promise<TrustRecord[]>`; `revokeTrust(installId): Promise<void>`. Storage key `aipagego.pairing.trusted` in `chrome.storage.local`.
 
 - [ ] **Step 1: Write the failing test** — an unknown `installId` decides `ask`; after `approve` the same install decides `trusted`; a matching `installId` with the wrong `secret` decides `ask` and warns; `revokeTrust` returns the install to `ask`; `listTrusted` reports the approval timestamp.
 - [ ] **Step 2: Run it to verify it fails.** Expected: FAIL.
@@ -660,7 +660,7 @@ git commit -m "feat(pairing): install trust store and pairing decisions"
 - Produces: `CoordinatorClient` gains `readonly reconnectState: ReconnectState` and `wakeUp(): void`. `handleClose(event)` now reads the close code: code 4000 goes straight to dormant and schedules nothing. The heartbeat alarm skips reconnecting while dormant and while a backoff is still pending, instead of reconnecting any CLOSED socket.
 
 - [ ] **Step 1: Write the failing test** — a close with code 4000 leaves the client dormant with no pending reconnect; ten ordinary failures reach dormant; the alarm does not reconnect a dormant client; the alarm still reconnects an active client whose backoff has elapsed; `wakeUp()` restores retrying; a successful connection resets the state.
-- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @atwebpilot/extension test -- coordinator-client`. Expected: FAIL.
+- [ ] **Step 2: Run it to verify it fails.** Run: `pnpm -F @aipagego/extension test -- coordinator-client`. Expected: FAIL.
 - [ ] **Step 3: Implement.** Track `nextAttemptAt` so the alarm can tell "waiting out a backoff" from "nobody is going to retry this".
 - [ ] **Step 4: Run the tests.** Expected: PASS.
 - [ ] **Step 5: Commit**
@@ -686,7 +686,7 @@ git commit -m "fix(coordinator): give reconnection a terminating condition"
 - [ ] **Step 3: Implement the pool.**
 - [ ] **Step 4: Replace `startCoordinatorClient`/`stopCoordinatorClient`** with pool equivalents, keeping the `chrome.storage.onChanged` restart hook working against the pool.
 - [ ] **Step 5: Wire `pairing.request` / `pairing.decision`** runtime messages to `decidePairing` and `pool.addFromPairing`.
-- [ ] **Step 6: Run the full extension suite.** Run: `pnpm -F @atwebpilot/extension test`. Expected: PASS, no regressions.
+- [ ] **Step 6: Run the full extension suite.** Run: `pnpm -F @aipagego/extension test`. Expected: PASS, no regressions.
 - [ ] **Step 7: Commit**
 
 ```bash
@@ -739,7 +739,7 @@ git commit -m "feat(tabs): advisory ownership and live tab updates"
 - [ ] **Step 1: Write the failing test** — the connected list renders one row per pool entry with its label and status; disconnect calls `pool.remove`; a dormant row offers reconnect and calls `pool.wake`; revoke calls `revokeTrust` and empties the trusted list.
 - [ ] **Step 2: Run it to verify it fails.** Expected: FAIL.
 - [ ] **Step 3: Implement the two sections**, keeping the existing manual `ws_url` field under an "advanced" disclosure so existing setups remain reachable.
-- [ ] **Step 4: Update the docs** — `README.md` gets the pairing flow and the trust model; `packages/mcp-server/README.md` replaces the "fill in ws://127.0.0.1:8787/worker" instruction with the pairing flow and documents that `ATWEBPILOT_WS_PORT` is now an override rather than the default path; `AGENTS.md` gains the pool and pairing modules; `skill/SKILL.md` explains `busy` in `list_tabs` and that an agent should open its own tab rather than contend.
+- [ ] **Step 4: Update the docs** — `README.md` gets the pairing flow and the trust model; `packages/mcp-server/README.md` replaces the "fill in ws://127.0.0.1:8787/worker" instruction with the pairing flow and documents that `AIPAGEGO_WS_PORT` is now an override rather than the default path; `AGENTS.md` gains the pool and pairing modules; `skill/SKILL.md` explains `busy` in `list_tabs` and that an agent should open its own tab rather than contend.
 - [ ] **Step 5: Run everything.** Run: `pnpm typecheck && pnpm test && pnpm build`. Expected: PASS.
 - [ ] **Step 6: Commit**
 

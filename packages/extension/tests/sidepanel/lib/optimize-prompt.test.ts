@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { LlmClient, LlmStreamEvent } from "@atwebpilot/shared/llm";
-import type { LlmSettings } from "@atwebpilot/shared/types";
+import type { LlmClient, LlmStreamEvent } from "@aipagego/shared/llm";
+import type { LlmSettings } from "@aipagego/shared/types";
 
 // Mock pickClient BEFORE importing the module under test
 const streamSpy = vi.fn();

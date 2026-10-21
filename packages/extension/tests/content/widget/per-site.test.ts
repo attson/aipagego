@@ -15,9 +15,9 @@ beforeEach(() => {
 
 describe("widget per-site state", () => {
   it("adds an assistant-disabled override for the current host", async () => {
-    storage["atwebpilot.llm"] = { siteInjectionRules: [] };
+    storage["aipagego.llm"] = { siteInjectionRules: [] };
     await hideHost("WWW.Example.com.");
-    expect(storage["atwebpilot.llm"]).toEqual({
+    expect(storage["aipagego.llm"]).toEqual({
       siteInjectionRules: [{ pattern: "www.example.com", injectionMode: "inherit", assistant: "disabled" }]
     });
   });

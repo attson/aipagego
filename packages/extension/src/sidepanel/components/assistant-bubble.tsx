@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Copy } from "lucide-react";
-import type { ToolUsePart } from "@atwebpilot/shared/types";
+import type { ToolUsePart } from "@aipagego/shared/types";
 import { useSession, type StepCardState } from "../chat/session-store";
 import { StepCard } from "./step-card";
 import { StepRow } from "./step-row";

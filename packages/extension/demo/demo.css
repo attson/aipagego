@@ -121,7 +121,7 @@ body {
 .demo-comment-stars { color: #f59e0b; font-size: 13px; }
 .demo-comment-text { margin: 4px 0 0; font-size: 13px; color: #3f3f46; }
 
-/* AtWebPilot's own highlight overlay lands on top of this page — leave room. */
+/* AIPageGo's own highlight overlay lands on top of this page — leave room. */
 @media (max-width: 720px) {
   .demo-body { grid-template-columns: 1fr; height: auto; }
   .demo-page { height: 240px; }

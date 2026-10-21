@@ -73,7 +73,7 @@ describe("screenshot backend selection", () => {
       },
       permissions: { contains: vi.fn(async () => true) },
       storage: {
-        local: { get: vi.fn(async () => ({ "atwebpilot.recorder.cdpEnabled": true })) }
+        local: { get: vi.fn(async () => ({ "aipagego.recorder.cdpEnabled": true })) }
       }
     });
 
@@ -127,7 +127,7 @@ describe("screenshot backend selection", () => {
       },
       permissions: { contains: vi.fn(async () => true) },
       storage: {
-        local: { get: vi.fn(async () => ({ "atwebpilot.recorder.cdpEnabled": true })) }
+        local: { get: vi.fn(async () => ({ "aipagego.recorder.cdpEnabled": true })) }
       }
     });
 

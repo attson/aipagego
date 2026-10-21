@@ -19,9 +19,9 @@ describe("getWidgetTabInfo", () => {
     (chrome.runtime as any).lastError = undefined;
   });
 
-  it("returns tabId from atwebpilot.getTabId side-channel + url from location", async () => {
+  it("returns tabId from aipagego.getTabId side-channel + url from location", async () => {
     (chrome.runtime.sendMessage as any).mockImplementation((msg: any, cb: any) => {
-      expect(msg).toEqual({ type: "atwebpilot.getTabId" });
+      expect(msg).toEqual({ type: "aipagego.getTabId" });
       cb({ tabId: 42 });
     });
     const { getWidgetTabInfo } = await import("@/content/widget/tab-info");

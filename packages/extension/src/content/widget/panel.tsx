@@ -15,7 +15,7 @@ import {
   ensureSession,
   setCurrentTab,
 } from "@/sidepanel/chat/session-store";
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 import {
   getApproverForTab,
   broadcastApprovalDecision,
@@ -52,7 +52,7 @@ export function Panel({ onClose, onMinimize }: Props) {
         ensureSession(info.tabId, info.url);
       })
       .catch((e) => {
-        console.warn("[atwebpilot-widget] tabId lookup failed:", e);
+        console.warn("[aipagego-widget] tabId lookup failed:", e);
       });
   }, []);
 
@@ -84,7 +84,7 @@ export function Panel({ onClose, onMinimize }: Props) {
       const { runFromInput } = await import("./run-widget-session");
       await runFromInput(tabId, text, { images: imagesToSend, historyMessages });
     } catch (e) {
-      console.warn("[atwebpilot-widget] runFromInput failed:", e);
+      console.warn("[aipagego-widget] runFromInput failed:", e);
     }
   }
 
@@ -103,7 +103,7 @@ export function Panel({ onClose, onMinimize }: Props) {
       await newChatForTab(tabId);
       setInput("");
     } catch (e) {
-      console.warn("[atwebpilot-widget] newChat failed:", e);
+      console.warn("[aipagego-widget] newChat failed:", e);
     }
   }
 
@@ -153,7 +153,7 @@ export function Panel({ onClose, onMinimize }: Props) {
             <ArrowLeft size={14} />
           </button>
         )}
-        <b className="flex-1 select-none">⚡ AtWebPilot</b>
+        <b className="flex-1 select-none">⚡ AIPageGo</b>
         <button
           className="p-1 hover:bg-zinc-800 rounded"
           title="圈选页面元素"

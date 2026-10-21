@@ -106,12 +106,12 @@ describe("scripting.injectMain CSP fallback", () => {
       storage: {
         local: {
           get: vi.fn(async () => ({
-            "atwebpilot.llm": {
+            "aipagego.llm": {
               defaultInjectionMode: "operate",
               defaultAssistantEnabled: false,
               siteInjectionRules: []
             },
-            "atwebpilot.recorder.cdpEnabled": options.cdpEnabled !== false
+            "aipagego.recorder.cdpEnabled": options.cdpEnabled !== false
           }))
         }
       },
@@ -406,7 +406,7 @@ describe("runs.runOneStep injection policy gate", () => {
   function policyChrome(mode: string) {
     return {
       storage: { local: { get: vi.fn(async () => ({
-        "atwebpilot.llm": {
+        "aipagego.llm": {
           defaultInjectionMode: mode,
           defaultAssistantEnabled: false,
           siteInjectionRules: []

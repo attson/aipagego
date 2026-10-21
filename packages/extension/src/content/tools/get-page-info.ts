@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 const OG_KEYS = ["title", "type", "image", "url", "site_name", "description"] as const;
 const STR_CAP = 200;

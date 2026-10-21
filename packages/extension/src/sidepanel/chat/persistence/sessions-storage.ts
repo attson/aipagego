@@ -1,4 +1,4 @@
-import type { PersistedSession, PersistedSessionData } from "@atwebpilot/shared/types";
+import type { PersistedSession, PersistedSessionData } from "@aipagego/shared/types";
 import { getDB } from "@/background/storage/db";
 
 export async function putSession(s: PersistedSession): Promise<void> {

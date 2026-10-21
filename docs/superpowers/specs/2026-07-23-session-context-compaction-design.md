@@ -2,7 +2,7 @@
 
 ## Problem
 
-AtWebPilot persisted chat messages in the UI/IDB, but a new user send did not
+AIPageGo persisted chat messages in the UI/IDB, but a new user send did not
 pass prior user/assistant turns back into `runChatSession`. From the model's
 perspective, multiple sends in the same visible conversation were independent
 tasks. This broke follow-up prompts such as “继续刚才的” and made the page-index

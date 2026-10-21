@@ -7,8 +7,8 @@ describe("dialog interception", () => {
   let nativeAlert: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
-    const w = window as unknown as { __ATWEBPILOT_REC__?: unknown };
-    delete w.__ATWEBPILOT_REC__;
+    const w = window as unknown as { __AIPAGEGO_REC__?: unknown };
+    delete w.__AIPAGEGO_REC__;
     nativeConfirm = vi.fn(() => true);
     nativeAlert = vi.fn();
     window.confirm = nativeConfirm as unknown as typeof window.confirm;

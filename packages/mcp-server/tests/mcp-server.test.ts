@@ -5,8 +5,8 @@ import {
   ElicitRequestSchema,
   ToolListChangedNotificationSchema
 } from "@modelcontextprotocol/sdk/types.js";
-import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@atwebpilot/coordinator";
-import type { Result } from "@atwebpilot/shared/protocol";
+import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@aipagego/coordinator";
+import type { Result } from "@aipagego/shared/protocol";
 import { buildToolList, createMcpServer, createToolState, dispatchCall } from "../src/mcp-server";
 import { staticDeps, type Deps } from "../src/handlers";
 import { PairingWaitTimeoutError } from "../src/pairing-errors";
@@ -30,7 +30,7 @@ describe("buildToolList", () => {
   it("lists orchestration tools before pairing", () => {
     const tools = buildToolList();
     const names = tools.map((t) => t.name);
-    expect(names).toContain("atwebpilot_skill_read");
+    expect(names).toContain("aipagego_skill_read");
     expect(names).toContain("browser_start");
     expect(names).toContain("list_tabs");
     expect(names).toContain("open_session");
@@ -77,7 +77,7 @@ describe("buildToolList", () => {
 });
 
 describe("MCP initialization", () => {
-  it("tells hosts when to start AtWebPilot and when not to", async () => {
+  it("tells hosts when to start AIPageGo and when not to", async () => {
     const server = createMcpServer(deps());
     const client = new Client({ name: "instructions-client", version: "1" });
     const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
@@ -219,7 +219,7 @@ describe("pairing surface", () => {
       mode: "url",
       url: "http://127.0.0.1:43443/pair"
     });
-    expect(requests[0].elicitationId).toMatch(/^atwebpilot-pairing-/);
+    expect(requests[0].elicitationId).toMatch(/^aipagego-pairing-/);
     expect(fallbackOpenUrl).not.toHaveBeenCalled();
 
     coordinator.registerWorker(fakeWorker());
@@ -395,8 +395,8 @@ function textOf(r: { content: Array<{ type: string; text?: string }> }): string 
 
 describe("dispatchCall", () => {
   it("returns a concise quickstart by default and full guidance only on request", async () => {
-    const quick = await dispatchCall(deps(), "atwebpilot_skill_read", {});
-    const full = await dispatchCall(deps(), "atwebpilot_skill_read", { topic: "full" });
+    const quick = await dispatchCall(deps(), "aipagego_skill_read", {});
+    const full = await dispatchCall(deps(), "aipagego_skill_read", { topic: "full" });
     expect(textOf(quick)).toContain("browser_start");
     expect(textOf(quick).indexOf("browser_start")).toBeLessThan(textOf(quick).indexOf("list_tabs"));
     expect(textOf(quick)).toContain("pairing_status");

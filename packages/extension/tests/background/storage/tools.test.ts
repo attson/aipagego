@@ -8,7 +8,7 @@ import {
   matchingTools,
   saveDraft
 } from "@/background/storage/tools";
-import type { PromptToolDraft, Step, StepsToolDraft } from "@atwebpilot/shared/types";
+import type { PromptToolDraft, Step, StepsToolDraft } from "@aipagego/shared/types";
 
 const sampleSteps: Step[] = [
   { kind: "tool", tool: "snapshotDOM", args: { maxDepth: 3 } }

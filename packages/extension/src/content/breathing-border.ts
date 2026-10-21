@@ -1,5 +1,5 @@
 /**
- * Breathing border overlay — visual signal that AtWebPilot is actively
+ * Breathing border overlay — visual signal that AIPageGo is actively
  * running in (or driving) this tab. Listens to the BG-written heartbeat
  * in chrome.storage.local and toggles a fixed-position pseudo-element on
  * `document.body` when this tab is in the heartbeat's `activeTabIds` set.
@@ -8,10 +8,10 @@
  * never interferes with page layout / event handling.
  */
 
-const HEARTBEAT_KEY = "atwebpilot.heartbeat";
-const SETTING_KEY = "atwebpilot.llm";
-const CLASS = "atwebpilot-breathing";
-const STYLE_ID = "atwebpilot-breathing-style";
+const HEARTBEAT_KEY = "aipagego.heartbeat";
+const SETTING_KEY = "aipagego.llm";
+const CLASS = "aipagego-breathing";
+const STYLE_ID = "aipagego-breathing-style";
 
 type Heartbeat = { ts: number; activeTabIds: number[] };
 
@@ -30,9 +30,9 @@ function ensureStyle(): void {
       box-shadow:
         inset 0 0 0 3px rgba(16, 185, 129, 0.55),
         inset 0 0 18px 4px rgba(59, 130, 246, 0.30);
-      animation: atwebpilot-breath 1.6s ease-in-out infinite;
+      animation: aipagego-breath 1.6s ease-in-out infinite;
     }
-    @keyframes atwebpilot-breath {
+    @keyframes aipagego-breath {
       0%, 100% { opacity: 0.35; }
       50% { opacity: 0.95; }
     }
@@ -74,7 +74,7 @@ function reconcile(): void {
 
 export async function installBreathingBorder(): Promise<() => void> {
   try {
-    const tabResp = await chrome.runtime.sendMessage({ type: "atwebpilot.getTabId" });
+    const tabResp = await chrome.runtime.sendMessage({ type: "aipagego.getTabId" });
     if (tabResp && typeof tabResp.tabId === "number") currentTabId = tabResp.tabId;
   } catch {
     // ignore

@@ -1,4 +1,4 @@
-import type { Step } from "@atwebpilot/shared/types";
+import type { Step } from "@aipagego/shared/types";
 
 export function StepList(props: { steps: Step[] }) {
   return (

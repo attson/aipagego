@@ -17,7 +17,7 @@ const SKIP_SELECTOR = [
   "footer",
   "[hidden]",
   "[aria-hidden='true']",
-  "atwebpilot-widget"
+  "aipagego-widget"
 ].join(",");
 
 const CANDIDATE_SELECTOR = [

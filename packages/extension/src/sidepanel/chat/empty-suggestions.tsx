@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Preset } from "@atwebpilot/shared/preset";
+import type { Preset } from "@aipagego/shared/preset";
 
 export type SuggestedTool = {
   id: string;

@@ -36,7 +36,11 @@ function stableStringify(value: unknown): string {
 }
 
 function normalizeToolName(name: string): string | null {
-  const prefixes = [/^mcp__atwebpilot__/, /^atwebpilot__/, /^atwebpilot\./];
+  const prefixes = [
+    /^mcp__aipagego__/,
+    /^aipagego__/,
+    /^aipagego\./
+  ];
   for (const prefix of prefixes) {
     if (prefix.test(name)) return name.replace(prefix, "");
   }
@@ -242,7 +246,7 @@ function nestedCodexEvents(input: {
  */
 function executableNestedToolNames(source: string): string[] {
   const names: string[] = [];
-  const prefix = "tools.mcp__atwebpilot__";
+  const prefixes = ["tools.mcp__aipagego__"];
   let quote: "'" | '"' | "`" | null = null;
   let lineComment = false;
   let blockComment = false;
@@ -286,7 +290,7 @@ function executableNestedToolNames(source: string): string[] {
       quote = char;
       continue;
     }
-    if (!source.startsWith(prefix, index)) continue;
+    if (!prefixes.some((prefix) => source.startsWith(prefix, index))) continue;
 
     let end = index + "tools.".length;
     while (end < source.length && /[A-Za-z0-9_]/.test(source[end])) end++;

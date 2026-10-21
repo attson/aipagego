@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { CoordinatorStateBridge } from "@/background/coordinator-state-bridge";
-import type { ServerToClient, ClientToServer } from "@atwebpilot/shared/protocol";
+import type { ServerToClient, ClientToServer } from "@aipagego/shared/protocol";
 
 function makeEnv() { return { nonce: "n", ts: 0, protocol_version: 1 }; }
 

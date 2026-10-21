@@ -4,9 +4,9 @@ import {
   RpcRequest as RpcRequestSchema,
   StepSchema,
   type RpcRequest
-} from "@atwebpilot/shared/messages";
-import { runStaticScan } from "@atwebpilot/shared/static-scan";
-import type { Json, RunRecord, Step, ToolDraft } from "@atwebpilot/shared/types";
+} from "@aipagego/shared/messages";
+import { runStaticScan } from "@aipagego/shared/static-scan";
+import type { Json, RunRecord, Step, ToolDraft } from "@aipagego/shared/types";
 import { fetchAsBase64, httpRequest } from "./http-proxy";
 import { attemptHeal } from "./self-heal";
 import { requestSidepanelLlm } from "./self-heal-bridge";
@@ -27,8 +27,8 @@ import { registerInjectMain } from "./recorder/host";
 import { registerCaptureDeps } from "./bg-tools/capture";
 import { META_TOOLS, isMetaTool } from "./meta-tool-router";
 import { readPolicyForTab } from "@/injection-policy";
-import { injectionModeRank } from "@atwebpilot/shared";
-import type { InjectionMode } from "@atwebpilot/shared/types";
+import { injectionModeRank } from "@aipagego/shared";
+import type { InjectionMode } from "@aipagego/shared/types";
 import { DRAIN_SOURCE } from "@/content/recorder/drain";
 import { evaluateWithCdp } from "./recorder/cdp";
 
@@ -44,7 +44,7 @@ async function readLlmSettings(): Promise<{
   maxSelfHealOutputTokens: number;
   apiKey: string;
 }> {
-  const KEY = "atwebpilot.llm";
+  const KEY = "aipagego.llm";
   const raw = (await chrome.storage.local.get([KEY]))[KEY] ?? {};
   const session = (await chrome.storage.session?.get([KEY]))?.[KEY] ?? {};
   const apiKey = (raw as Record<string, string>).apiKey || (session as Record<string, string>).apiKey || "";
@@ -170,7 +170,7 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
       return null;
     }
     case "presets.list": {
-      const { PRESETS } = await import("@atwebpilot/shared/presets");
+      const { PRESETS } = await import("@aipagego/shared/presets");
       return PRESETS as unknown as Json;
     }
     case "presets.materialize": {
@@ -180,7 +180,7 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
       await chrome.sidePanel.open({ tabId: req.tabId });
       if (req.pendingApprovalId) {
         await chrome.storage.session.set({
-          "atwebpilot.pendingApproval": {
+          "aipagego.pendingApproval": {
             tabId: req.tabId,
             approvalId: req.pendingApprovalId,
             ts: Date.now()
@@ -192,12 +192,12 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
     case "widget.openSidepanelWithSave": {
       await chrome.sidePanel.open({ tabId: req.tabId });
       await chrome.storage.session.set({
-        "atwebpilot.pendingSave": { tabId: req.tabId, ts: Date.now() }
+        "aipagego.pendingSave": { tabId: req.tabId, ts: Date.now() }
       });
       return null;
     }
     case "widget.markHostHidden": {
-      const KEY = "atwebpilot.llm";
+      const KEY = "aipagego.llm";
       const raw = (await chrome.storage.local.get([KEY]))[KEY];
       const settings = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
       const rules = Array.isArray(settings.siteInjectionRules) ? [...settings.siteInjectionRules] : [];
@@ -329,13 +329,13 @@ async function injectContentScript(tabId: number): Promise<boolean> {
     await chrome.scripting.executeScript({ target: { tabId }, files });
     return true;
   } catch (e) {
-    console.warn("[atwebpilot] content script inject failed", e);
+    console.warn("[aipagego] content script inject failed", e);
     return false;
   }
 }
 
 async function startElementCapture(tabId: number): Promise<void> {
-  const msg = { type: "atwebpilot.startCapture" };
+  const msg = { type: "aipagego.startCapture" };
   try {
     await chrome.tabs.sendMessage(tabId, msg);
     return;
@@ -532,7 +532,7 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
         const currentTool = (await getTool(toolId!))!;
         await appendVersion(toolId!, {
           steps,
-          outputSchema: (currentTool.kind === "steps" ? currentTool.outputSchema : {}) as import("@atwebpilot/shared/types").JsonSchema,
+          outputSchema: (currentTool.kind === "steps" ? currentTool.outputSchema : {}) as import("@aipagego/shared/types").JsonSchema,
           note: `自愈修复 step ${i}`
         });
         healApplied = true;

@@ -8,7 +8,7 @@
  * module now only supplies the side panel's notion of which tabs are in scope.
  */
 
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { META_TOOLS } from "@/background/meta-tool-router";
 
 export type MetaHandler = (input: unknown) => Promise<unknown>;

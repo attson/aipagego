@@ -185,14 +185,14 @@ describe("merged tools", () => {
 describe("readToolMode", () => {
   it("defaults to core", () => {
     expect(readToolMode({})).toBe("core");
-    expect(readToolMode({ ATWEBPILOT_MCP_TOOLS: "" })).toBe("core");
+    expect(readToolMode({ AIPAGEGO_MCP_TOOLS: "" })).toBe("core");
   });
   it("accepts full", () => {
-    expect(readToolMode({ ATWEBPILOT_MCP_TOOLS: "full" })).toBe("full");
+    expect(readToolMode({ AIPAGEGO_MCP_TOOLS: "full" })).toBe("full");
   });
   it("falls back to core on an unrecognised value (including the removed parity)", () => {
-    expect(readToolMode({ ATWEBPILOT_MCP_TOOLS: "parity" })).toBe("core");
-    expect(readToolMode({ ATWEBPILOT_MCP_TOOLS: "nonsense" })).toBe("core");
+    expect(readToolMode({ AIPAGEGO_MCP_TOOLS: "parity" })).toBe("core");
+    expect(readToolMode({ AIPAGEGO_MCP_TOOLS: "nonsense" })).toBe("core");
   });
 });
 

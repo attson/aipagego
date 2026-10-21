@@ -4,9 +4,9 @@
 
 **Goal:** 新建 `packages/mcp-server`，让 Claude Code 经一个本地 coordinator（stdio MCP + 真 ws 服务器）逐步驱动浏览器扩展在网页上执行内置工具。
 
-**Architecture:** 单进程同时是 stdio MCP 端点（Claude 连）与 ws 服务器（扩展作为 worker 连）。进程内 new 一个现成 `Coordinator` 门面（复用 session/quota/policy）+ 新写的 `LoopbackWSHub`（实现 `WSHub` 接口 + 负责 `req_id↔RESULT` 配对）。启动时从扩展现成的 `TOOL_DEFS`（上提到 `@atwebpilot/shared`）自动生成 19 个 `browser_*` 工具，外加 4 个控制面工具。
+**Architecture:** 单进程同时是 stdio MCP 端点（Claude 连）与 ws 服务器（扩展作为 worker 连）。进程内 new 一个现成 `Coordinator` 门面（复用 session/quota/policy）+ 新写的 `LoopbackWSHub`（实现 `WSHub` 接口 + 负责 `req_id↔RESULT` 配对）。启动时从扩展现成的 `TOOL_DEFS`（上提到 `@aipagego/shared`）自动生成 19 个 `browser_*` 工具，外加 4 个控制面工具。
 
-**Tech Stack:** TypeScript (ESM, NodeNext), `ws`, `@modelcontextprotocol/sdk`(低层 `Server` API), `zod`, `vitest`；复用 `@atwebpilot/coordinator` 与 `@atwebpilot/shared/protocol|capability|llm`。
+**Tech Stack:** TypeScript (ESM, NodeNext), `ws`, `@modelcontextprotocol/sdk`(低层 `Server` API), `zod`, `vitest`；复用 `@aipagego/coordinator` 与 `@aipagego/shared/protocol|capability|llm`。
 
 **对应 spec:** `../specs/2026-06-06-mcp-bridge-design.md`
 
@@ -14,7 +14,7 @@
 - EXEC 线上契约是 `step: { tool, args }`（**无 `kind`**），见 `packages/extension/tests/background/coordinator-exec.test.ts`。仅对 19 个 `BuiltinTool` 成立。
 - `WSHub` 接口：`packages/coordinator/src/ws-hub.ts`。`Coordinator` 门面动词：`packages/coordinator/src/coordinator.ts`（`registerWorker/unregisterWorker/heartbeatWorker/openSession/closeSession/validateCall/recordCall/quotaFor`，且 `readonly sessions/workers` 公开）。
 - `DispatchInput` 判别值是 `kind:"extension_tool"`（带 `tool`、可选 `httpCookied`）。见 `packages/coordinator/src/dispatcher.ts`。
-- 能力模型：`@atwebpilot/shared/capability` 导出 `CAPABILITIES`、`capabilityForTool`、`isCapability`、`DANGEROUS_CAPABILITIES`。
+- 能力模型：`@aipagego/shared/capability` 导出 `CAPABILITIES`、`capabilityForTool`、`isCapability`、`DANGEROUS_CAPABILITIES`。
 - `WELCOME` 字段：`{...envelope, type, server_time, heartbeat_interval_ms}`，`protocol_version` 必须 = `PROTOCOL_VERSION`（worker 会校验）。
 - `Clock`/`IdGen` + `Default*`/`Fake*`：`packages/coordinator/src/clock.ts`。
 - **⚠ stdio 洁癖**：MCP server 进程**禁止 `console.log`**（stdout 是 MCP 通道）。所有日志走 `console.error`。
@@ -35,9 +35,9 @@
 - `src/index.ts` — bin 入口（env → 装配 → `server.connect(stdio)`）
 - `tests/*.test.ts` — 每模块一组
 
-改动 `@atwebpilot/shared`：`TOOL_DEFS` 从 extension 上提，新增 `src/llm/builtin-tool-defs.ts`，由 `src/llm/index.ts` 导出。
+改动 `@aipagego/shared`：`TOOL_DEFS` 从 extension 上提，新增 `src/llm/builtin-tool-defs.ts`，由 `src/llm/index.ts` 导出。
 改动 `packages/extension`：`src/sidepanel/llm/tool-schema.ts` 改为 re-export（零行为变化）。
-`@atwebpilot/coordinator` **不改**。
+`@aipagego/coordinator` **不改**。
 
 ---
 
@@ -52,11 +52,11 @@
 
 ```json
 {
-  "name": "@atwebpilot/mcp-server",
+  "name": "@aipagego/mcp-server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "bin": { "atwebpilot-mcp": "./src/index.ts" },
+  "bin": { "aipagego-mcp": "./src/index.ts" },
   "exports": { ".": "./src/index.ts" },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -64,8 +64,8 @@
     "start": "node --experimental-strip-types src/index.ts"
   },
   "dependencies": {
-    "@atwebpilot/shared": "workspace:*",
-    "@atwebpilot/coordinator": "workspace:*",
+    "@aipagego/shared": "workspace:*",
+    "@aipagego/coordinator": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "ws": "^8.18.0",
     "zod": "^3.23.8"
@@ -116,7 +116,7 @@ Expected: 新包被 workspace 收录，`@modelcontextprotocol/sdk`、`ws`、`@ty
 
 - [ ] **Step 5: typecheck 通过**
 
-Run: `pnpm -F @atwebpilot/mcp-server typecheck`
+Run: `pnpm -F @aipagego/mcp-server typecheck`
 Expected: 无输出（tsc 成功）。
 
 - [ ] **Step 6: Commit**
@@ -128,7 +128,7 @@ git commit -m "chore(mcp-server): scaffold package + deps"
 
 ---
 
-## Task 2: 上提 `TOOL_DEFS` 到 `@atwebpilot/shared`
+## Task 2: 上提 `TOOL_DEFS` 到 `@aipagego/shared`
 
 **Files:**
 - Create: `packages/shared/src/llm/builtin-tool-defs.ts`
@@ -168,7 +168,7 @@ describe("TOOL_DEFS (hoisted to shared)", () => {
 
 - [ ] **Step 2: 跑测试确认失败**
 
-Run: `pnpm -F @atwebpilot/shared test builtin-tool-defs`
+Run: `pnpm -F @aipagego/shared test builtin-tool-defs`
 Expected: FAIL（`TOOL_DEFS` 尚未从 shared 导出）。
 
 - [ ] **Step 3: 把 `TOOL_DEFS` 搬到 shared**
@@ -197,21 +197,21 @@ export * from "./builtin-tool-defs";
 把 `packages/extension/src/sidepanel/llm/tool-schema.ts` 整个内容替换为：
 
 ```ts
-export { TOOL_DEFS } from "@atwebpilot/shared/llm";
-export type { LlmTool } from "@atwebpilot/shared/llm";
+export { TOOL_DEFS } from "@aipagego/shared/llm";
+export type { LlmTool } from "@aipagego/shared/llm";
 ```
 
 （若该文件原本还导出别的符号，逐一保留 re-export；`grep -n "export" packages/extension/src/sidepanel/llm/tool-schema.ts` 旧版仅导出 `TOOL_DEFS`。）
 
 - [ ] **Step 6: 跑测试 + 扩展回归**
 
-Run: `pnpm -F @atwebpilot/shared test builtin-tool-defs`
+Run: `pnpm -F @aipagego/shared test builtin-tool-defs`
 Expected: PASS
 
-Run: `pnpm -F @atwebpilot/shared typecheck && pnpm -F @atwebpilot/extension typecheck`
+Run: `pnpm -F @aipagego/shared typecheck && pnpm -F @aipagego/extension typecheck`
 Expected: 两个包均无错。
 
-Run: `pnpm -F @atwebpilot/extension test tool-schema`
+Run: `pnpm -F @aipagego/extension test tool-schema`
 Expected: 既有 `tests/sidepanel/llm/tool-schema.test.ts` 仍 PASS（re-export 行为不变）。
 
 - [ ] **Step 7: Commit**
@@ -271,15 +271,15 @@ describe("generateBrowserTools", () => {
 
 - [ ] **Step 2: 跑测试确认失败**
 
-Run: `pnpm -F @atwebpilot/mcp-server test tool-gen`
+Run: `pnpm -F @aipagego/mcp-server test tool-gen`
 Expected: FAIL（`src/tool-gen.ts` 不存在）。
 
 - [ ] **Step 3: 实现 `tool-gen.ts`**
 
 ```ts
 // packages/mcp-server/src/tool-gen.ts
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
-import type { JsonSchema } from "@atwebpilot/shared/types";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
+import type { JsonSchema } from "@aipagego/shared/types";
 
 /** 与 capabilityForTool 的穷尽 switch 一一对应的 19 个 BuiltinTool。 */
 export const EXEC_TOOL_NAMES = [
@@ -318,7 +318,7 @@ export function generateBrowserTools(): GeneratedTool[] {
 
 - [ ] **Step 4: 跑测试确认通过**
 
-Run: `pnpm -F @atwebpilot/mcp-server test tool-gen`
+Run: `pnpm -F @aipagego/mcp-server test tool-gen`
 Expected: PASS（4 个用例）。
 
 - [ ] **Step 5: Commit**
@@ -342,8 +342,8 @@ git commit -m "feat(mcp-server): generate 19 browser_* tools from TOOL_DEFS"
 // packages/mcp-server/tests/loopback-ws-hub.test.ts
 import { describe, it, expect, afterEach } from "vitest";
 import { WebSocket } from "ws";
-import { PROTOCOL_VERSION, type Hello, type ClientToServer } from "@atwebpilot/shared/protocol";
-import { DefaultClock, DefaultIdGen } from "@atwebpilot/coordinator";
+import { PROTOCOL_VERSION, type Hello, type ClientToServer } from "@aipagego/shared/protocol";
+import { DefaultClock, DefaultIdGen } from "@aipagego/coordinator";
 import { LoopbackWSHub } from "../src/loopback-ws-hub";
 
 let hub: LoopbackWSHub | null = null;
@@ -427,7 +427,7 @@ describe("LoopbackWSHub", () => {
 
 - [ ] **Step 2: 跑测试确认失败**
 
-Run: `pnpm -F @atwebpilot/mcp-server test loopback-ws-hub`
+Run: `pnpm -F @aipagego/mcp-server test loopback-ws-hub`
 Expected: FAIL（模块不存在）。
 
 - [ ] **Step 3: 实现 `loopback-ws-hub.ts`**
@@ -440,9 +440,9 @@ import type { AddressInfo } from "node:net";
 import {
   ClientToServerSchema, ServerToClientSchema, PROTOCOL_VERSION,
   type ClientToServer, type ServerToClient, type Result
-} from "@atwebpilot/shared/protocol";
-import type { WSHub } from "@atwebpilot/coordinator";
-import type { Clock, IdGen } from "@atwebpilot/coordinator";
+} from "@aipagego/shared/protocol";
+import type { WSHub } from "@aipagego/coordinator";
+import type { Clock, IdGen } from "@aipagego/coordinator";
 
 export interface LoopbackWSHubOpts {
   port: number;
@@ -583,7 +583,7 @@ export class LoopbackWSHub implements WSHub {
 
 - [ ] **Step 4: 跑测试确认通过**
 
-Run: `pnpm -F @atwebpilot/mcp-server test loopback-ws-hub`
+Run: `pnpm -F @aipagego/mcp-server test loopback-ws-hub`
 Expected: PASS（exec resolve / timeout / disconnect 三条核心路径；WELCOME 用例若 flaky 可加 `await hub.ready()` 后小延时）。
 
 - [ ] **Step 5: Commit**
@@ -607,8 +607,8 @@ git commit -m "feat(mcp-server): LoopbackWSHub with req_id<->RESULT correlation"
 ```ts
 // packages/mcp-server/tests/handlers.test.ts
 import { describe, it, expect } from "vitest";
-import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@atwebpilot/coordinator";
-import type { Result } from "@atwebpilot/shared/protocol";
+import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@aipagego/coordinator";
+import type { Result } from "@aipagego/shared/protocol";
 import {
   handleListTabs, handleOpenSession, handleCloseSession, handleGetQuota, handleBrowserTool, type Deps
 } from "../src/handlers";
@@ -693,14 +693,14 @@ describe("handleBrowserTool", () => {
 
 - [ ] **Step 2: 跑测试确认失败**
 
-Run: `pnpm -F @atwebpilot/mcp-server test handlers`
+Run: `pnpm -F @aipagego/mcp-server test handlers`
 Expected: FAIL（`src/handlers.ts` 不存在）。
 
 - [ ] **Step 3: 实现 `control-tools.ts`**
 
 ```ts
 // packages/mcp-server/src/control-tools.ts
-import type { JsonSchema } from "@atwebpilot/shared/types";
+import type { JsonSchema } from "@aipagego/shared/types";
 
 export type ControlTool = { name: string; description: string; inputSchema: JsonSchema };
 
@@ -741,10 +741,10 @@ export const CONTROL_TOOLS: ControlTool[] = [
 
 ```ts
 // packages/mcp-server/src/handlers.ts
-import type { Coordinator } from "@atwebpilot/coordinator";
-import { CAPABILITIES, isCapability, type Capability } from "@atwebpilot/shared/capability";
-import type { BuiltinTool, Json } from "@atwebpilot/shared/types";
-import type { Result } from "@atwebpilot/shared/protocol";
+import type { Coordinator } from "@aipagego/coordinator";
+import { CAPABILITIES, isCapability, type Capability } from "@aipagego/shared/capability";
+import type { BuiltinTool, Json } from "@aipagego/shared/types";
+import type { Result } from "@aipagego/shared/protocol";
 import type { GeneratedTool } from "./tool-gen";
 
 export interface Hub {
@@ -806,7 +806,7 @@ export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Re
 
 - [ ] **Step 5: 跑测试确认通过**
 
-Run: `pnpm -F @atwebpilot/mcp-server test handlers`
+Run: `pnpm -F @aipagego/mcp-server test handlers`
 Expected: PASS（控制面 3 + browser 4 用例）。
 
 - [ ] **Step 6: Commit**
@@ -831,8 +831,8 @@ git commit -m "feat(mcp-server): control-plane schemas + tool handlers over Coor
 ```ts
 // packages/mcp-server/tests/mcp-server.test.ts
 import { describe, it, expect } from "vitest";
-import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@atwebpilot/coordinator";
-import type { Result } from "@atwebpilot/shared/protocol";
+import { Coordinator, FakeClock, FakeIdGen, type Worker } from "@aipagego/coordinator";
+import type { Result } from "@aipagego/shared/protocol";
 import { buildToolList, dispatchCall } from "../src/mcp-server";
 
 function fakeWorker(): Worker {
@@ -884,7 +884,7 @@ describe("dispatchCall", () => {
 
 - [ ] **Step 2: 跑测试确认失败**
 
-Run: `pnpm -F @atwebpilot/mcp-server test mcp-server`
+Run: `pnpm -F @aipagego/mcp-server test mcp-server`
 Expected: FAIL（模块不存在）。
 
 - [ ] **Step 3: 实现 `mcp-server.ts`**
@@ -893,7 +893,7 @@ Expected: FAIL（模块不存在）。
 // packages/mcp-server/src/mcp-server.ts
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import type { JsonSchema } from "@atwebpilot/shared/types";
+import type { JsonSchema } from "@aipagego/shared/types";
 import { CONTROL_TOOLS } from "./control-tools";
 import { generateBrowserTools, type GeneratedTool } from "./tool-gen";
 import {
@@ -931,7 +931,7 @@ export async function dispatchCall(deps: Deps, name: string, args: Record<string
 }
 
 export function createMcpServer(deps: Deps): Server {
-  const server = new Server({ name: "atwebpilot-mcp", version: "0.1.0" }, { capabilities: { tools: {} } });
+  const server = new Server({ name: "aipagego-mcp", version: "0.1.0" }, { capabilities: { tools: {} } });
   server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: buildToolList() }));
   server.setRequestHandler(CallToolRequestSchema, async (req) => {
     const args = (req.params.arguments ?? {}) as Record<string, unknown>;
@@ -945,9 +945,9 @@ export function createMcpServer(deps: Deps): Server {
 
 ```ts
 // packages/mcp-server/src/wire.ts
-import type { Coordinator, Worker, Clock } from "@atwebpilot/coordinator";
-import { isCapability, type Capability } from "@atwebpilot/shared/capability";
-import type { Hello } from "@atwebpilot/shared/protocol";
+import type { Coordinator, Worker, Clock } from "@aipagego/coordinator";
+import { isCapability, type Capability } from "@aipagego/shared/capability";
+import type { Hello } from "@aipagego/shared/protocol";
 import type { LoopbackWSHub } from "./loopback-ws-hub";
 
 export function helloToWorker(h: Hello, now: number): Worker {
@@ -982,7 +982,7 @@ export function installWire(hub: LoopbackWSHub, coordinator: Coordinator, clock:
 ```ts
 // packages/mcp-server/src/index.ts
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { Coordinator, DefaultClock, DefaultIdGen } from "@atwebpilot/coordinator";
+import { Coordinator, DefaultClock, DefaultIdGen } from "@aipagego/coordinator";
 import { LoopbackWSHub } from "./loopback-ws-hub";
 import { createMcpServer } from "./mcp-server";
 import { installWire } from "./wire";
@@ -1001,18 +1001,18 @@ async function main(): Promise<void> {
 
   const server = createMcpServer({ coordinator, hub });
   await server.connect(new StdioServerTransport());
-  console.error(`[atwebpilot-mcp] ws://127.0.0.1:${port}/worker ready; stdio MCP connected`);
+  console.error(`[aipagego-mcp] ws://127.0.0.1:${port}/worker ready; stdio MCP connected`);
 }
 
-main().catch((e) => { console.error("[atwebpilot-mcp] fatal", e); process.exit(1); });
+main().catch((e) => { console.error("[aipagego-mcp] fatal", e); process.exit(1); });
 ```
 
 - [ ] **Step 6: 跑测试 + typecheck**
 
-Run: `pnpm -F @atwebpilot/mcp-server test mcp-server`
+Run: `pnpm -F @aipagego/mcp-server test mcp-server`
 Expected: PASS
 
-Run: `pnpm -F @atwebpilot/mcp-server typecheck`
+Run: `pnpm -F @aipagego/mcp-server typecheck`
 Expected: 无错。
 
 - [ ] **Step 7: bin 冒烟（手动，可选）**
@@ -1040,9 +1040,9 @@ git commit -m "feat(mcp-server): assemble SDK server + wire + bin entry"
 - [ ] **Step 1: 写 `packages/mcp-server/README.md`**
 
 ```markdown
-# @atwebpilot/mcp-server
+# @aipagego/mcp-server
 
-让 Claude Code 经本地 coordinator 驱动 AtWebPilot 扩展操作浏览器（EXEC 模式）。
+让 Claude Code 经本地 coordinator 驱动 AIPageGo 扩展操作浏览器（EXEC 模式）。
 
 ## 启动
 
@@ -1056,7 +1056,7 @@ git commit -m "feat(mcp-server): assemble SDK server + wire + bin entry"
 
     {
       "mcpServers": {
-        "atwebpilot": {
+        "aipagego": {
           "command": "tsx",
           "args": ["packages/mcp-server/src/index.ts"],
           "env": { "WEBPILOT_WS_PORT": "8787", "WEBPILOT_WS_TOKEN": "dev" }
@@ -1116,7 +1116,7 @@ Expected: shared / coordinator / extension / mcp-server 全部通过。
 Run: `pnpm -r test`
 Expected: 全绿，新增 mcp-server 用例计入（tool-gen 4 + loopback 4 + handlers 7 + mcp-server 4 ≈ 19 条）。
 
-Run: `pnpm -F @atwebpilot/extension build`
+Run: `pnpm -F @aipagego/extension build`
 Expected: 扩展 dist 仍正常产出（确认 TOOL_DEFS 上提没破坏构建）。
 
 - [ ] **Step 6: Commit**

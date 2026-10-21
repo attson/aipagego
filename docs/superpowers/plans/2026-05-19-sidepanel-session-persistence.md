@@ -124,7 +124,7 @@ describe("PersistedSession", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/shared test -- --run types-persisted
+pnpm --filter @aipagego/shared test -- --run types-persisted
 ```
 
 Expected: FAIL — `PersistedSession` / `PersistedSessionData` not exported from `../src/types`.
@@ -197,7 +197,7 @@ grep -n "export.*SessionData" packages/shared/src/types.ts
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/shared test -- --run types-persisted
+pnpm --filter @aipagego/shared test -- --run types-persisted
 ```
 
 Expected: PASS（2 tests）。
@@ -252,7 +252,7 @@ describe("db v2 migration", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run db-v2-migration
+pnpm --filter @aipagego/extension test -- --run db-v2-migration
 ```
 
 Expected: FAIL — `chat_sessions` store does not exist。
@@ -263,9 +263,9 @@ Expected: FAIL — `chat_sessions` store does not exist。
 
 ```ts
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
-import type { PersistedSession, RunRecord, Tool } from "@atwebpilot/shared/types";
+import type { PersistedSession, RunRecord, Tool } from "@aipagego/shared/types";
 
-export interface atwebpilotDB extends DBSchema {
+export interface aipagegoDB extends DBSchema {
   tools: {
     key: string;
     value: Tool;
@@ -287,14 +287,14 @@ export interface atwebpilotDB extends DBSchema {
   };
 }
 
-const DB_NAME = "atwebpilot";
+const DB_NAME = "aipagego";
 const DB_VERSION = 2;
 
-let dbPromise: Promise<IDBPDatabase<atwebpilotDB>> | null = null;
+let dbPromise: Promise<IDBPDatabase<aipagegoDB>> | null = null;
 
-export function getDB(): Promise<IDBPDatabase<atwebpilotDB>> {
+export function getDB(): Promise<IDBPDatabase<aipagegoDB>> {
   if (!dbPromise) {
-    dbPromise = openDB<atwebpilotDB>(DB_NAME, DB_VERSION, {
+    dbPromise = openDB<aipagegoDB>(DB_NAME, DB_VERSION, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
           const tools = db.createObjectStore("tools", { keyPath: "id" });
@@ -323,7 +323,7 @@ export function _resetDBForTests() {
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run db-v2-migration
+pnpm --filter @aipagego/extension test -- --run db-v2-migration
 ```
 
 Expected: PASS（2 tests）。
@@ -331,7 +331,7 @@ Expected: PASS（2 tests）。
 - [ ] **Step 5: 整包跑一遍确认旧 runs/tools 测试没破**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run storage
+pnpm --filter @aipagego/extension test -- --run storage
 ```
 
 Expected: 所有 storage 测试 PASS。
@@ -360,7 +360,7 @@ import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
 import { _resetDBForTests } from "@/background/storage/db";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
-import type { PersistedSession, PersistedSessionData } from "@atwebpilot/shared/types";
+import type { PersistedSession, PersistedSessionData } from "@aipagego/shared/types";
 
 const URL = "https://example.com/path";
 const EMPTY_DATA: PersistedSessionData = {
@@ -511,7 +511,7 @@ describe("sessions-storage", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run sessions-storage
+pnpm --filter @aipagego/extension test -- --run sessions-storage
 ```
 
 Expected: FAIL — module not found。
@@ -520,7 +520,7 @@ Expected: FAIL — module not found。
 
 ```ts
 // packages/extension/src/sidepanel/chat/persistence/sessions-storage.ts
-import type { PersistedSession, PersistedSessionData } from "@atwebpilot/shared/types";
+import type { PersistedSession, PersistedSessionData } from "@aipagego/shared/types";
 import { getDB } from "@/background/storage/db";
 
 export async function putSession(s: PersistedSession): Promise<void> {
@@ -647,7 +647,7 @@ export async function cascadeDeleteRuns(runIds: string[]): Promise<void> {
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run sessions-storage
+pnpm --filter @aipagego/extension test -- --run sessions-storage
 ```
 
 Expected: PASS（11 tests）。
@@ -749,7 +749,7 @@ describe("session-store new persistence-aware methods", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run session-store
+pnpm --filter @aipagego/extension test -- --run session-store
 ```
 
 Expected: FAIL — `startNewSession` / `rehydrateFromPersisted` not exported；同时旧 `closedSessions` 测试也会失败（一会儿一起删）。
@@ -794,7 +794,7 @@ export function startNewSession(tabId: number): SessionData | null {
  */
 export function rehydrateFromPersisted(
   tabId: number,
-  data: import("@atwebpilot/shared/types").PersistedSessionData
+  data: import("@aipagego/shared/types").PersistedSessionData
 ): void {
   useStore.setState((state) => {
     const cur = state.sessionsByTab[tabId];
@@ -832,7 +832,7 @@ export function rehydrateFromPersisted(
 - [ ] **Step 6: 运行新测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run session-store
+pnpm --filter @aipagego/extension test -- --run session-store
 ```
 
 Expected: 新增 3 个测试 PASS；旧 closedSessions 相关测试如果还在请一并删除（grep `closedSessions`, `restoreClosed`, `pruneClosed`, `closeTab`）。
@@ -840,7 +840,7 @@ Expected: 新增 3 个测试 PASS；旧 closedSessions 相关测试如果还在�
 - [ ] **Step 7: typecheck 确认无悬挂引用**
 
 ```
-pnpm --filter @atwebpilot/extension typecheck
+pnpm --filter @aipagego/extension typecheck
 ```
 
 Expected: PASS。如果有引用 `closeTab` / `restoreClosed` / `ClosedSession` 的文件，把它们的引用一并删除（应该只剩 `closed-sessions-pruner.ts` 和 `closed-sessions-banner.tsx`，下一任务删掉）。
@@ -884,8 +884,8 @@ find packages/extension/tests -name "closed-sessions-*.test.*" -delete
 - [ ] **Step 3: typecheck + 全测**
 
 ```
-pnpm --filter @atwebpilot/extension typecheck && \
-pnpm --filter @atwebpilot/extension test
+pnpm --filter @aipagego/extension typecheck && \
+pnpm --filter @aipagego/extension test
 ```
 
 Expected: 全部 PASS。
@@ -1007,7 +1007,7 @@ describe("auto-persist", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run auto-persist
+pnpm --filter @aipagego/extension test -- --run auto-persist
 ```
 
 Expected: FAIL — module not found。
@@ -1016,7 +1016,7 @@ Expected: FAIL — module not found。
 
 ```ts
 // packages/extension/src/sidepanel/chat/persistence/auto-persist.ts
-import type { PersistedSession, PersistedSessionData } from "@atwebpilot/shared/types";
+import type { PersistedSession, PersistedSessionData } from "@aipagego/shared/types";
 import { useStore, type SessionData } from "@/sidepanel/chat/session-store";
 import * as ss from "./sessions-storage";
 
@@ -1140,7 +1140,7 @@ export function _resetAutoPersistForTests(): void {
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run auto-persist
+pnpm --filter @aipagego/extension test -- --run auto-persist
 ```
 
 Expected: PASS（5 tests）。
@@ -1171,7 +1171,7 @@ import { _resetDBForTests } from "@/background/storage/db";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import { ensureSession, useStore } from "@/sidepanel/chat/session-store";
 import { hydrateOnBoot } from "@/sidepanel/chat/persistence/hydrate";
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 
 const URL = "https://example.com";
 const EMPTY_DATA = {
@@ -1268,7 +1268,7 @@ describe("hydrateOnBoot", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run hydrate
+pnpm --filter @aipagego/extension test -- --run hydrate
 ```
 
 Expected: FAIL — module not found。
@@ -1277,7 +1277,7 @@ Expected: FAIL — module not found。
 
 ```ts
 // packages/extension/src/sidepanel/chat/persistence/hydrate.ts
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 import { rehydrateFromPersisted } from "@/sidepanel/chat/session-store";
 import * as ss from "./sessions-storage";
 
@@ -1310,7 +1310,7 @@ export async function hydrateOnBoot(tabId: number, url: string): Promise<Hydrate
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run hydrate
+pnpm --filter @aipagego/extension test -- --run hydrate
 ```
 
 Expected: PASS（4 tests）。
@@ -1463,7 +1463,7 @@ describe("tab-close-archiver", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run tab-close-archiver
+pnpm --filter @aipagego/extension test -- --run tab-close-archiver
 ```
 
 Expected: FAIL — module not found。
@@ -1496,7 +1496,7 @@ export function installTabCloseArchiver(): () => void {
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run tab-close-archiver
+pnpm --filter @aipagego/extension test -- --run tab-close-archiver
 ```
 
 Expected: PASS（3 tests）。
@@ -1516,7 +1516,7 @@ installTabCloseArchiver();
 - [ ] **Step 6: typecheck**
 
 ```
-pnpm --filter @atwebpilot/extension typecheck
+pnpm --filter @aipagego/extension typecheck
 ```
 
 Expected: PASS。
@@ -1549,7 +1549,7 @@ import { _resetDBForTests } from "@/background/storage/db";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import { UrlRecoveryBanner } from "@/sidepanel/components/url-recovery-banner";
 import { useStore } from "@/sidepanel/chat/session-store";
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 
 const URL = "https://example.com";
 const candidate: PersistedSession = {
@@ -1635,7 +1635,7 @@ describe("UrlRecoveryBanner", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run url-recovery-banner
+pnpm --filter @aipagego/extension test -- --run url-recovery-banner
 ```
 
 Expected: FAIL — module not found。
@@ -1645,7 +1645,7 @@ Expected: FAIL — module not found。
 ```tsx
 // packages/extension/src/sidepanel/components/url-recovery-banner.tsx
 import { useState } from "react";
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import { rehydrateFromPersisted, useStore } from "@/sidepanel/chat/session-store";
 
@@ -1716,7 +1716,7 @@ export function UrlRecoveryBanner(props: {
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run url-recovery-banner
+pnpm --filter @aipagego/extension test -- --run url-recovery-banner
 ```
 
 Expected: PASS（6 tests）。
@@ -1850,7 +1850,7 @@ describe("SessionHistoryDrawer", () => {
 - [ ] **Step 2: 运行测试验证失败**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run session-history-drawer
+pnpm --filter @aipagego/extension test -- --run session-history-drawer
 ```
 
 Expected: FAIL — module not found。
@@ -1860,7 +1860,7 @@ Expected: FAIL — module not found。
 ```tsx
 // packages/extension/src/sidepanel/components/session-history-drawer.tsx
 import { useEffect, useState } from "react";
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import { rehydrateFromPersisted, useStore } from "@/sidepanel/chat/session-store";
 
@@ -1966,7 +1966,7 @@ export function SessionHistoryDrawer(props: {
 - [ ] **Step 4: 运行测试验证通过**
 
 ```
-pnpm --filter @atwebpilot/extension test -- --run session-history-drawer
+pnpm --filter @aipagego/extension test -- --run session-history-drawer
 ```
 
 Expected: PASS（4 tests）。
@@ -2258,8 +2258,8 @@ it("➕ 新建会话 archives current active row + resets zustand", async () => 
 - [ ] **Step 5: 运行测试 + typecheck**
 
 ```
-pnpm --filter @atwebpilot/extension typecheck
-pnpm --filter @atwebpilot/extension test
+pnpm --filter @aipagego/extension typecheck
+pnpm --filter @aipagego/extension test
 ```
 
 Expected: 全 PASS。
@@ -2296,7 +2296,7 @@ grep -n "2026-05-15" docs/superpowers/plans/README.md
 - [ ] sidepanel 内多次 reload → 当前会话保留
 - [ ] 浏览器整个关掉重开 → 同 URL banner 出现，恢复后消息齐全
 - [ ] 关 tab 后 reopen 同 URL 新 tab → banner 出现
-- [ ] 单 URL 连续新建 25 个会话 → IDB 中只剩 20 条 archived（最老 5 条被 evict、对应 runs 也删了）。在 DevTools → Application → IndexedDB → atwebpilot 看 chat_sessions 行数确认
+- [ ] 单 URL 连续新建 25 个会话 → IDB 中只剩 20 条 archived（最老 5 条被 evict、对应 runs 也删了）。在 DevTools → Application → IndexedDB → aipagego 看 chat_sessions 行数确认
 - [ ] 流式中途关 sidepanel → 重开后该会话 status 是 aborted、可以重发
 - [ ] 恢复一个 attachedTabs 里 tab 已关的会话 → 系统消息提示 + 列表里那个 tab 消失
 - [ ] history drawer "清空此 URL 历史" → 全清
@@ -2316,6 +2316,6 @@ git commit -m "docs(plan): index 2026-05-19 sidepanel session persistence"
 
 1. `pnpm typecheck` + `pnpm test` 全过；总测试数较改前增加 ≥20（11 sessions-storage + 5 auto-persist + 4 hydrate + 3 tab-close-archiver + 5 url-recovery + 4 drawer + 2 store new methods + 1 boot integration ≈ 35）
 2. 旧 `closed-sessions-pruner.ts` / `closed-sessions-banner.tsx` 文件与对应测试已删除
-3. IDB DevTools 能看到 `atwebpilot` DB v2 + `chat_sessions` store
+3. IDB DevTools 能看到 `aipagego` DB v2 + `chat_sessions` store
 4. 手测清单 7 项全部通过
 5. 关 sidepanel 后再开 sidepanel：当前 tab 的会话原样恢复（仅 status / streamingAssistantText 等瞬时字段重置）

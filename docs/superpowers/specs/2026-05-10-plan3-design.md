@@ -1,19 +1,19 @@
-# Plan 3: AtWebPilot — 网页助手定位与操作工具集
+# Plan 3: AIPageGo — 网页助手定位与操作工具集
 
 - 日期：2026-05-10
 - 状态：草案，待评审
-- 范围：把 Plan 1+2 的"AI 网页采集器"重新定位为"AI 网页助手 (AtWebPilot)"，新增 9 个交互工具（fillInput / setCheckbox / selectOption / submitForm / hover / focus / uploadFile / getValue / extractFormState），引入"按工具名"粒度的 dangerous 自动通过白名单，重写 system prompt 与全部用户可见文案
+- 范围：把 Plan 1+2 的"AI 网页采集器"重新定位为"AI 网页助手 (AIPageGo)"，新增 9 个交互工具（fillInput / setCheckbox / selectOption / submitForm / hover / focus / uploadFile / getValue / extractFormState），引入"按工具名"粒度的 dangerous 自动通过白名单，重写 system prompt 与全部用户可见文案
 - 前置：`docs/superpowers/specs/2026-05-09-ai-collector-extension-design.md`、`2026-05-10-plan2-design.md`、Plan 2 实施计划
 
 ## 1. 目标与定位
 
-AtWebPilot 是侧边面板里的 AI 网页助手。三类用法：
+AIPageGo 是侧边面板里的 AI 网页助手。三类用法：
 
 - **读**：总结当前页、翻译、抽取重点、回答关于本页内容的问题
 - **写**：填表、勾选、选下拉、点击按钮、提交表单、上传文件
 - **采**：保留原采集能力（主图、详情、评论）
 
-任意一段对话（无论是读、写还是采）都可以**一键固化为 URL 模式匹配的可重放工具**——这是 AtWebPilot 的核心价值，与传统 AI 助手的差异点。
+任意一段对话（无论是读、写还是采）都可以**一键固化为 URL 模式匹配的可重放工具**——这是 AIPageGo 的核心价值，与传统 AI 助手的差异点。
 
 非目标（推迟到后续）：
 - 跨 tab 导航（`chrome.tabs.update` / 新开 tab）
@@ -28,8 +28,8 @@ AtWebPilot 是侧边面板里的 AI 网页助手。三类用法：
 | 决策点 | 选择 |
 |---|---|
 | 新工具集 | fillInput / setCheckbox / selectOption / submitForm / hover / focus / uploadFile / getValue / extractFormState（9 个） |
-| 产品名 | 全重命名为 AtWebPilot；仓库目录由用户在 plan 完成后手动 `mv` |
-| IDB DB_NAME | 保持 `"atwebpilot"` 不变（避免丢已保存工具） |
+| 产品名 | 全重命名为 AIPageGo；仓库目录由用户在 plan 完成后手动 `mv` |
+| IDB DB_NAME | 保持 `"aipagego"` 不变（避免丢已保存工具） |
 | URL pattern 推荐 | 不变（用户主动保存才入库；保存后按 pattern 匹配） |
 | system prompt | 全场景重写（读 / 写 / 采 / 多步） |
 | dangerous 自动通过 | 按工具名粒度的白名单 `autoApproveDangerous: BuiltinTool[]`，对话页 + 设置页都能改 |
@@ -352,19 +352,19 @@ export type LlmSettings = {
 
 | 位置 | 旧 | 新 |
 |---|---|---|
-| `package.json` `name` | `atwebpilot2` | `atwebpilot` |
-| `package.json` `description` | （空） | `AtWebPilot — AI 网页助手` |
-| `manifest.name` | `atwebpilot2 — AI 网页采集器` | `AtWebPilot — AI 网页助手` |
+| `package.json` `name` | `aipagego2` | `aipagego` |
+| `package.json` `description` | （空） | `AIPageGo — AI 网页助手` |
+| `manifest.name` | `aipagego2 — AI 网页采集器` | `AIPageGo — AI 网页助手` |
 | `manifest.description` | `对话式 AI 采集 + 工具固化复用` | `让 AI 帮你浏览、总结、操作网页，并把成功的对话固化为可复用工具` |
-| `manifest.action.default_title` | `atwebpilot2` | `AtWebPilot` |
-| `index.html <title>` | `atwebpilot2` | `AtWebPilot` |
-| `app.tsx <h1>`（如有） | `atwebpilot2` | `AtWebPilot` |
-| `console.info("[atwebpilot2] ...")` | `[atwebpilot2]` | `[atwebpilot]` |
+| `manifest.action.default_title` | `aipagego2` | `AIPageGo` |
+| `index.html <title>` | `aipagego2` | `AIPageGo` |
+| `app.tsx <h1>`（如有） | `aipagego2` | `AIPageGo` |
+| `console.info("[aipagego2] ...")` | `[aipagego2]` | `[aipagego]` |
 | 输入框 placeholder | `描述要采集什么…（Ctrl/⌘ + Enter 发送）` | `要让 AI 做什么？例如"总结此页"/"填写注册表单"/"采集前 50 条评论"（Ctrl/⌘ + Enter 发送）` |
 | 空 chat 提示 | `输入指令，让 AI 帮你浏览、总结、操作或采集网页…` | （新增） |
-| save dialog 默认名 | `采集器 ${date}` | `AtWebPilot 任务 ${date}` |
-| **IDB DB_NAME** | `"atwebpilot"` | **不变** |
-| 仓库目录路径 | `atwebpilot2` | spec 收尾后用户手动 `mv` |
+| save dialog 默认名 | `采集器 ${date}` | `AIPageGo 任务 ${date}` |
+| **IDB DB_NAME** | `"aipagego"` | **不变** |
+| 仓库目录路径 | `aipagego2` | spec 收尾后用户手动 `mv` |
 | 包 import 别名 `@/...` | 不变 | 不影响功能 |
 
 ### 6.2 system prompt 重写
@@ -374,7 +374,7 @@ export type LlmSettings = {
 ```typescript
 export function buildSystemPrompt(input: { url: string; title?: string }): string {
   return [
-    "你是 AtWebPilot，一个嵌入到浏览器侧边面板的 AI 网页助手。",
+    "你是 AIPageGo，一个嵌入到浏览器侧边面板的 AI 网页助手。",
     "用户在浏览网页时会请你完成各种任务：",
     "",
     "1. 阅读类：总结、翻译、提取重点、回答关于本页内容的问题",
@@ -422,8 +422,8 @@ export function buildSystemPrompt(input: { url: string; title?: string }): strin
 ## 8. 模块边界与文件结构
 
 ```
-atwebpilot2/                                  ← 仓库目录暂不动
-├─ package.json                          # MOD: name → atwebpilot, description
+aipagego2/                                  ← 仓库目录暂不动
+├─ package.json                          # MOD: name → aipagego, description
 ├─ README.md                             # MOD: 全篇重写为"网页助手"
 ├─ src/
 │  ├─ manifest.ts                        # MOD: name/description/title
@@ -513,7 +513,7 @@ atwebpilot2/                                  ← 仓库目录暂不动
 - 多模态截屏
 - 自动备份开关
 - e2e 自动化
-- 仓库**目录**重命名（spec 完成后用户自行 `mv ~/code/atwebpilot2 ~/code/atwebpilot`）
+- 仓库**目录**重命名（spec 完成后用户自行 `mv ~/code/aipagego2 ~/code/aipagego`）
 
 ## 12. 评审与下一步
 

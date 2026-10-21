@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { renderPairPage } from "../src/pair-page";
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import type { PairPayload } from "@aipagego/shared/pairing";
 
 const payload: PairPayload = {
   v: 1,
   installId: "inst_abc",
   secret: "s3cr3t",
   sessionId: "sess_1",
-  label: "~/code/atwebpilot2",
+  label: "~/code/aipagego",
   pid: 1234,
   port: 51234,
   mcpVersion: "0.0.75"
@@ -16,7 +16,7 @@ const payload: PairPayload = {
 describe("renderPairPage", () => {
   it("embeds the payload and posts it", () => {
     const html = renderPairPage(payload);
-    expect(html).toContain("atwebpilot-pair");
+    expect(html).toContain("aipagego-pair");
     expect(html).toContain("window.postMessage");
     expect(html).toContain("inst_abc");
     expect(html).toContain("51234");
@@ -24,7 +24,7 @@ describe("renderPairPage", () => {
 
   it("shows the session label, pid and port to the user", () => {
     const html = renderPairPage(payload);
-    expect(html).toContain("~/code/atwebpilot2");
+    expect(html).toContain("~/code/aipagego");
     expect(html).toContain("pid 1234");
     expect(html).toContain("MCP v0.0.75");
   });
@@ -72,7 +72,7 @@ describe("renderPairPage — install ordering", () => {
   const html = renderPairPage(payload);
 
   it("answers the relay's ready announcement", () => {
-    expect(html).toContain("atwebpilot-pair-ready");
+    expect(html).toContain("aipagego-pair-ready");
   });
 
   it("keeps announcing rather than posting once", () => {

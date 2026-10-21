@@ -11,7 +11,7 @@ import {
   type ServerToClient,
   type StartChatSession,
   type TabsUpdate
-} from "@atwebpilot/shared/protocol";
+} from "@aipagego/shared/protocol";
 import { buildHello } from "./coordinator-hello";
 import {
   GRACEFUL_CLOSE_CODE,
@@ -19,9 +19,9 @@ import {
   nextReconnect,
   wake,
   type ReconnectState
-} from "@atwebpilot/shared/pairing";
+} from "@aipagego/shared/pairing";
 
-const HEARTBEAT_ALARM = "atwebpilot-coordinator-heartbeat";
+const HEARTBEAT_ALARM = "aipagego-coordinator-heartbeat";
 
 export type ClientStatus = "disconnected" | "connecting" | "connected" | "error";
 

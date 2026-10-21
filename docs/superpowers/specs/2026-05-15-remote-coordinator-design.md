@@ -1,22 +1,22 @@
-# 远程协调器：把 AtWebPilot 暴露给外部 AI 与服务端 — 设计文档
+# 远程协调器：把 AIPageGo 暴露给外部 AI 与服务端 — 设计文档
 
 - 日期：2026-05-15
 - 状态：草案，待评审
-- 范围：让 AtWebPilot 扩展能被三类外部消费者驱动——本地 MCP 客户端（Claude Desktop / Code / Cursor 等）、用户自己的业务后端、未来的远程 SaaS——同时保留现有 sidepanel 用户路径完全不变
+- 范围：让 AIPageGo 扩展能被三类外部消费者驱动——本地 MCP 客户端（Claude Desktop / Code / Cursor 等）、用户自己的业务后端、未来的远程 SaaS——同时保留现有 sidepanel 用户路径完全不变
 - 前置：Plan 1–7 全部已落地（19 个内置工具、step / 工具持久化、URL pattern、static-scan、多 tab 上下文）
 
 ## 1. 背景与目标
 
-当前 AtWebPilot 只有一条驱动路径：用户在 sidepanel 输入指令 → LLM 调工具 → 工具改页面。两个反复出现的诉求让这条路径不够：
+当前 AIPageGo 只有一条驱动路径：用户在 sidepanel 输入指令 → LLM 调工具 → 工具改页面。两个反复出现的诉求让这条路径不够：
 
 1. **想让自己写的服务端代码下指令**：跑长任务、批量采集、定时巡查、和现有业务系统串成流水线，而不是手动开浏览器一个个跑
 2. **想让别的 AI 用这套能力**：Claude Code 在写代码时直接调"这个页面的主图采下来"；Claude Desktop 在做分析时直接"把这三个 tab 里的表汇总"——而不是 copy/paste
 
-这两个诉求底层共享同一个能力：**让 AtWebPilot 扩展接受来自浏览器外的指令**。本设计把这条能力抽象成 "Coordinator + Worker" 模型，让两个场景共用一套协议、一套核心代码，部署上分两种形态。
+这两个诉求底层共享同一个能力：**让 AIPageGo 扩展接受来自浏览器外的指令**。本设计把这条能力抽象成 "Coordinator + Worker" 模型，让两个场景共用一套协议、一套核心代码，部署上分两种形态。
 
 目标：
 
-- MCP 用户零配置（装扩展 + 装一个本地二进制 + 配对码）就能在 Claude Desktop 里用 AtWebPilot 工具
+- MCP 用户零配置（装扩展 + 装一个本地二进制 + 配对码）就能在 Claude Desktop 里用 AIPageGo 工具
 - 业务后端能在自己的代码里 `POST /tasks` 派一个采集任务，扩展跑完结果回流
 - attended（真人浏览器）和 unattended（headless Chrome）两种 worker 用同一套接入协议
 - 不影响 sidepanel 现有用户路径与工具体验
@@ -42,7 +42,7 @@
 └───────────┼───────────────────────┼────────────────────────┼────────────┘
             ▼                       ▼                        ▼
    ┌──────────────────┐    ┌────────────────┐    ┌─────────────────────┐
-   │ atwebpilot-daemon  │    │ atwebpilot-daemon│    │   atwebpilot-server   │
+   │ aipagego-daemon  │    │ aipagego-daemon│    │   aipagego-server   │
    │   (本地单进程)    │    │   (本地)       │    │   (你的机房/云)     │
    │  ─────────────── │    │ ─────────────  │    │  ─────────────────  │
    │  MCP Server      │    │  MCP Server    │    │  REST API           │
@@ -74,7 +74,7 @@
 从单包改为 pnpm workspaces：
 
 ```
-atwebpilot2/
+aipagego2/
 ├─ packages/
 │  ├─ shared/                    ← 三方共享，纯函数 + 类型
 │  │  ├─ src/
@@ -105,7 +105,7 @@ atwebpilot2/
 │  │        └─ pages/CoordinatorSettings.tsx   ← 新
 │  ├─ daemon/                    ← 新：本地 MCP 入口
 │  │  ├─ src/
-│  │  │  ├─ cli.ts               ← `atwebpilot-daemon` 入口
+│  │  │  ├─ cli.ts               ← `aipagego-daemon` 入口
 │  │  │  ├─ mcp-server.ts        ← @modelcontextprotocol/sdk stdio
 │  │  │  ├─ pair.ts              ← 配对码生成/校验
 │  │  │  └─ index.ts
@@ -164,7 +164,7 @@ atwebpilot2/
 
 ### 4.2 Worker 接入（首次配对 + 重连）
 
-`atwebpilot-daemon` 启动时在控制台打印 6 位配对码（5 分钟内有效）。用户在扩展设置粘 ws url + 配对码：
+`aipagego-daemon` 启动时在控制台打印 6 位配对码（5 分钟内有效）。用户在扩展设置粘 ws url + 配对码：
 
 ```
 扩展                    Daemon                              用户
@@ -343,7 +343,7 @@ AI                  MCP            Coordinator                  Worker
 ### 5.3 Audit log
 
 ```
-daemon: ~/.atwebpilot/audit.log (append-only)
+daemon: ~/.aipagego/audit.log (append-only)
 server: PG.audit_events
 ─────────────────────────────────────────────
 ts | worker_id | session_id | ai_fingerprint |

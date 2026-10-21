@@ -16,7 +16,7 @@ vi.stubGlobal("chrome", {
   storage: {
     local: {
       get: vi.fn().mockResolvedValue({
-        "atwebpilot.llm": { selfHealEnabled: true, apiKey: "sk-test", maxSelfHealOutputTokens: 4096 }
+        "aipagego.llm": { selfHealEnabled: true, apiKey: "sk-test", maxSelfHealOutputTokens: 4096 }
       })
     },
     session: {
@@ -52,7 +52,7 @@ describe("runTool self-heal integration", () => {
       storage: {
         local: {
           get: vi.fn().mockResolvedValue({
-            "atwebpilot.llm": { selfHealEnabled: true, apiKey: "sk-test", maxSelfHealOutputTokens: 4096 }
+            "aipagego.llm": { selfHealEnabled: true, apiKey: "sk-test", maxSelfHealOutputTokens: 4096 }
           })
         },
         session: {
@@ -116,7 +116,7 @@ describe("runTool self-heal integration", () => {
 
     // Disable self-heal in settings
     (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-      "atwebpilot.llm": { selfHealEnabled: false, apiKey: "sk-test" }
+      "aipagego.llm": { selfHealEnabled: false, apiKey: "sk-test" }
     });
 
     const draft = await saveDraft({

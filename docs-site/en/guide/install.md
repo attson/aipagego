@@ -4,7 +4,7 @@ Three ways to use it.
 
 ## Option 1: Browser extension only
 
-1. Grab `atwebpilot-<version>.zip` from [Releases](https://github.com/attson/atwebpilot/releases/latest) and unzip
+1. Grab `aipagego-<version>.zip` from [Releases](https://github.com/attson/aipagego/releases/latest) and unzip
 2. Open `chrome://extensions`
 3. Turn on "Developer mode" (top-right)
 4. Click "Load unpacked" → select the unzipped `dist/` directory
@@ -15,18 +15,18 @@ Three ways to use it.
 Codex:
 
 ```bash
-npx -y @attson/atwebpilot-mcp --install-codex-skill
-codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
+npx -y @attson/aipagego-mcp --install-codex-skill
+codex mcp add aipagego -- npx -y @attson/aipagego-mcp
 ```
 
 The first command installs a user-level Codex Skill so live-page tasks can discover
-AtWebPilot without changing any project's `AGENTS.md`. Start a new Codex session after
+AIPageGo without changing any project's `AGENTS.md`. Start a new Codex session after
 installation. The installer refuses to overwrite a modified Skill unless `--force` is explicit.
 
 Claude Code:
 
 ```bash
-claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 ```
 
 Then install the extension as in Option 1. **No port to fill in** — the first time the AI
@@ -38,8 +38,8 @@ See [MCP Bridge](/en/advanced/mcp-bridge).
 ## Option 3: Build from source
 
 ```bash
-git clone https://github.com/attson/atwebpilot
-cd atwebpilot
+git clone https://github.com/attson/aipagego
+cd aipagego
 pnpm install
 pnpm build       # → packages/extension/dist/
 ```

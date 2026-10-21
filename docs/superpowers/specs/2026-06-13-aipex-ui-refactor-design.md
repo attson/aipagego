@@ -2,7 +2,7 @@
 
 **状态**：草稿 · 2026-06-13 · 作者：assistant + attson
 
-把 sidepanel 从「5-tab 顶导 + 多堆栏 chat 页」重构为「单 chat surface + 4 个右侧 drawer」，参考 AIPex 的 single-surface 哲学，同时保留 AtWebPilot 自有的差异化产品概念（URL 匹配工具推荐、每-tab 一会话、危险工具分级授权、保存为可重放工具）。
+把 sidepanel 从「5-tab 顶导 + 多堆栏 chat 页」重构为「单 chat surface + 4 个右侧 drawer」，参考 AIPex 的 single-surface 哲学，同时保留 AIPageGo 自有的差异化产品概念（URL 匹配工具推荐、每-tab 一会话、危险工具分级授权、保存为可重放工具）。
 
 参考: [`packages/extension/src/sidepanel/`](../../../packages/extension/src/sidepanel/) · AIPex `AIPexStudio/AIPex` `packages/browser-ext/src/pages/common/app-root.tsx`
 
@@ -40,7 +40,7 @@
 
 ```
 ┌──────────────────────────────────────────────────┐
-│ AtWebPilot          + ⏱ 🧰 ⚙ 💭•                │  header title 行
+│ AIPageGo          + ⏱ 🧰 ⚙ 💭•                │  header title 行
 │ ● shop.example.com/goods.html · Tab #142     │  tab 身份行
 ├──────────────────────────────────────────────────┤
 │                                                  │
@@ -69,7 +69,7 @@
 
 ### 5.1 Header title 行（~40px）
 
-- 左：`AtWebPilot`（点 = 关闭所有 drawer + 滚到最新消息）
+- 左：`AIPageGo`（点 = 关闭所有 drawer + 滚到最新消息）
 - 右 5 个 icon：
 
   | icon | 含义 | 点击行为 | badge |

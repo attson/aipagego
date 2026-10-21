@@ -28,7 +28,7 @@ describe("local session adapters", () => {
           content: [{
             type: "tool_use",
             id: "call-1",
-            name: "mcp__atwebpilot__browser_resize",
+            name: "mcp__aipagego__browser_resize",
             input: { session_id: "secret-token", width: 390, height: 844 }
           }]
         }
@@ -80,7 +80,7 @@ describe("local session adapters", () => {
           type: "function_call",
           call_id: "direct-1",
           id: "item-1",
-          name: "mcp__atwebpilot__browser_waitFor",
+          name: "mcp__aipagego__browser_waitFor",
           arguments: JSON.stringify({ session_id: "secret-token", ms: 500 })
         }
       },
@@ -102,9 +102,9 @@ describe("local session adapters", () => {
           id: "item-2",
           name: "exec",
           input: [
-            "const fake = 'await tools.mcp__atwebpilot__browser_resize({width: 1})';",
-            "// await tools.mcp__atwebpilot__browser_click({selector: '.x'});",
-            "const a = await tools.mcp__atwebpilot__browser_screenshot({session_id: token}); text(a);"
+            "const fake = 'await tools.mcp__aipagego__browser_resize({width: 1})';",
+            "// await tools.mcp__aipagego__browser_click({selector: '.x'});",
+            "const a = await tools.mcp__aipagego__browser_screenshot({session_id: token}); text(a);"
           ].join("\n")
         }
       }
@@ -144,7 +144,7 @@ describe("local session adapters", () => {
           call_id: "exec-1",
           id: "item-1",
           name: "exec",
-          input: "const r = await tools.mcp__atwebpilot__list_tabs({}); text(r);"
+          input: "const r = await tools.mcp__aipagego__list_tabs({}); text(r);"
         }
       },
       {
@@ -227,7 +227,7 @@ describe("local session adapters", () => {
             call_id: "exec-1",
             id: "item-1",
             name: "exec",
-            input: "const r = await tools.mcp__atwebpilot__pairing_status({}); text(r);"
+            input: "const r = await tools.mcp__aipagego__pairing_status({}); text(r);"
           }
         },
         {
@@ -398,7 +398,7 @@ describe("session analyzer CLI", () => {
     expect(options.claudeDir).toBe("/tmp/claude");
   });
 
-  it("selects the most recent session containing an AtWebPilot call", () => {
+  it("selects the most recent session containing an AIPageGo call", () => {
     const events = [
       { ...event(1, "list_tabs"), sessionKey: "older", timestampMs: 10 },
       { ...event(2, "browser_click"), sessionKey: "newer", timestampMs: 20 },
@@ -420,7 +420,7 @@ describe("session analyzer CLI", () => {
 
 describe("session history scanner", () => {
   it("scans available clients and tolerates a missing client directory", async () => {
-    const root = await mkdtemp(join(tmpdir(), "atwebpilot-session-analysis-"));
+    const root = await mkdtemp(join(tmpdir(), "aipagego-session-analysis-"));
     try {
       const claudeDir = join(root, "claude");
       await mkdir(claudeDir);
@@ -433,7 +433,7 @@ describe("session history scanner", () => {
           content: [{
             type: "tool_use",
             id: "call-1",
-            name: "mcp__atwebpilot__browser_waitFor",
+            name: "mcp__aipagego__browser_waitFor",
             input: { ms: 100, session_id: "private-token" }
           }]
         }

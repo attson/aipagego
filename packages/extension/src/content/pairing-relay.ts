@@ -5,7 +5,7 @@ import {
   comparePairingVersions,
   type PairPayload,
   type PairingDecision
-} from "@atwebpilot/shared/pairing";
+} from "@aipagego/shared/pairing";
 
 /**
  * Relays the pairing page's postMessage to the service worker, and renders the
@@ -124,7 +124,7 @@ export function askUser(
 ): Promise<boolean> {
   return new Promise((resolve) => {
     const host = document.createElement("div");
-    host.setAttribute("data-atwebpilot-pairing", "");
+    host.setAttribute("data-aipagego-pairing", "");
     host.style.cssText = "position:fixed;inset:0;z-index:2147483647";
     const root = host.attachShadow({ mode: "closed" });
 
@@ -152,7 +152,7 @@ export function askUser(
             ${payload.mcpVersion ? `MCP v${escapeHtml(payload.mcpVersion)}` : "MCP 版本未知"} · 扩展 v${escapeHtml(extensionVersion)}
           </p>
           ${versionWarning ? `<p class="warning">${escapeHtml(versionWarning)}</p>` : ""}
-          <p class="meta">允许后，本机上的 AtWebPilot MCP 会话都可以直接连接，无需再次确认。可在扩展设置里撤销。</p>
+          <p class="meta">允许后，本机上的 AIPageGo MCP 会话都可以直接连接，无需再次确认。可在扩展设置里撤销。</p>
           <div class="row">
             <button class="deny">拒绝</button>
             <button class="allow">允许</button>

@@ -2,8 +2,9 @@ import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/prom
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readAIPageGoEnv } from "./env";
 
-const SKILL_DIRECTORY_NAME = "atwebpilot-browser";
+const SKILL_DIRECTORY_NAME = "aipagego-browser";
 
 export type SkillInstallStatus = "installed" | "unchanged" | "overwritten";
 
@@ -74,7 +75,7 @@ export function defaultCodexSkillsRoot(
   env: Record<string, string | undefined> = process.env,
   homeDirectory = homedir()
 ): string {
-  return env.ATWEBPILOT_CODEX_SKILLS_DIR || join(homeDirectory, ".agents", "skills");
+  return readAIPageGoEnv(env, "CODEX_SKILLS_DIR") || join(homeDirectory, ".agents", "skills");
 }
 
 export async function resolveBundledSkillFile(moduleUrl = import.meta.url): Promise<string> {

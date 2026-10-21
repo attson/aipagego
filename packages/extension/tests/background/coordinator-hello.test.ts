@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildHello } from "../../src/background/coordinator-hello";
-import { HelloSchema, PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import { HelloSchema, PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 function fakeChrome(tabs: { id: number; url: string; title: string }[] = []) {
   return {

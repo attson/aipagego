@@ -5,7 +5,7 @@ import { MockLlmClient } from "@/background/mock-llm-client";
 import { DEMO_PROMPT, DEMO_ROUNDS } from "../../demo/scenario";
 import { COMMENTS_ID, mountMockPage } from "../../demo/page";
 import { runDemoStep } from "../../demo/harness";
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
 
 /**
  * The demo's headline claim, end to end: the scripted conversation drives the

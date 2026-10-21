@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { attemptHeal } from "@/background/self-heal";
-import type { Step } from "@atwebpilot/shared/types";
+import type { Step } from "@aipagego/shared/types";
 
 const baseCtx = {
   tool: {

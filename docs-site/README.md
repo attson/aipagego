@@ -1,4 +1,4 @@
-# atwebpilot-docs
+# aipagego-docs
 
 VitePress 站点，部署到 GitHub Pages。**独立于仓库根 pnpm workspace**。
 
@@ -6,7 +6,7 @@ VitePress 站点，部署到 GitHub Pages。**独立于仓库根 pnpm workspace*
 
     cd docs-site
     pnpm install
-    pnpm dev          # → http://localhost:5173/atwebpilot/
+    pnpm dev          # → http://localhost:5173/aipagego/
 
 ## 工具参考自动生成
 

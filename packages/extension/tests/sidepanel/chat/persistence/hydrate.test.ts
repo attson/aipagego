@@ -5,7 +5,7 @@ import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import { ensureSession, useStore } from "@/sidepanel/chat/session-store";
 import { hydrateOnBoot } from "@/sidepanel/chat/persistence/hydrate";
 import { _resetAutoPersistForTests } from "@/sidepanel/chat/persistence/auto-persist";
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 
 const URL = "https://example.com";
 const EMPTY_DATA = {

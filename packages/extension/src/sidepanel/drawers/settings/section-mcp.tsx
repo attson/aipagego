@@ -2,15 +2,15 @@ import { Check, Copy } from "lucide-react";
 import { useState } from "react";
 
 const CLAUDE_CODE_COMMAND =
-  "claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp";
+  "claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp";
 const WS_URL = "ws://127.0.0.1:8787/worker";
 
 const JSON_CONFIG = JSON.stringify(
   {
     mcpServers: {
-      atwebpilot: {
+      aipagego: {
         command: "npx",
-        args: ["-y", "@attson/atwebpilot-mcp"],
+        args: ["-y", "@attson/aipagego-mcp"],
       },
     },
   },
@@ -43,15 +43,15 @@ export function SectionMcp() {
 
       <ConfigBlock
         title="扩展 Coordinator"
-        description="打开左侧 Coordinator 分类，把 WS URL 填为下面地址，然后点击连接。Token 默认可留空；设置 ATWEBPILOT_WS_TOKEN 时需填同一个 token。"
+        description="打开左侧 Coordinator 分类，把 WS URL 填为下面地址，然后点击连接。Token 默认可留空；设置 AIPAGEGO_WS_TOKEN 时需填同一个 token。"
         code={WS_URL}
         copyLabel="复制 Coordinator WS URL"
       />
 
       <div className="rounded border border-zinc-800 bg-zinc-950 px-2 py-2 text-[11px] text-zinc-400 space-y-1">
         <div>可选环境变量：</div>
-        <code className="block text-zinc-300">ATWEBPILOT_WS_PORT=8787</code>
-        <code className="block text-zinc-300">ATWEBPILOT_WS_TOKEN=your-token</code>
+        <code className="block text-zinc-300">AIPAGEGO_WS_PORT=8787</code>
+        <code className="block text-zinc-300">AIPAGEGO_WS_TOKEN=your-token</code>
       </div>
     </section>
   );

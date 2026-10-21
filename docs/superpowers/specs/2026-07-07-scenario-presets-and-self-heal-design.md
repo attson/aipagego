@@ -2,7 +2,7 @@
 
 **状态**：草稿 · 2026-07-07 · 作者：assistant + attson
 
-给 AtWebPilot 引入 **Preset 库**（内置一批「打开这个网站就能直接用」的 prompt / tool），配合 **Tool 运行时自愈**（重放时某一步失败，自动看新 DOM 让 LLM 补一版继续跑），让首次装完的用户第一次就能成功、再次运行不会因为网站小改而崩。
+给 AIPageGo 引入 **Preset 库**（内置一批「打开这个网站就能直接用」的 prompt / tool），配合 **Tool 运行时自愈**（重放时某一步失败，自动看新 DOM 让 LLM 补一版继续跑），让首次装完的用户第一次就能成功、再次运行不会因为网站小改而崩。
 
 ## 1 · 背景
 
@@ -34,7 +34,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  @atwebpilot/shared/presets/                                    │
+│  @aipagego/shared/presets/                                    │
 │  ├─ index.ts        PRESETS: Preset[]                           │
 │  ├─ ecommerce/*.ts  淘宝 / 京东 / 1688 / Amazon                      │
 │  └─ content/*.ts    维基 / GitHub / Medium / 知乎 / 公众号 / …    │
@@ -444,12 +444,12 @@ Tool-form preset 首批全部限定：
 
 ## 11 · 测试策略
 
-### 11.1 `@atwebpilot/shared`
+### 11.1 `@aipagego/shared`
 
 - `tests/preset-registry.test.ts`：所有 `PRESETS` 通过 `PresetSchema`(zod) 校验；id 唯一；URL pattern 编译成功；tool-form 的 `steps` 通过 `StepSchema.array()`。
 - `tests/preset-match.test.ts`：`matchPresetsByUrl`——单命中/多命中/未命中/dedup。
 
-### 11.2 `@atwebpilot/extension` 新增
+### 11.2 `@aipagego/extension` 新增
 
 - `tests/background/self-heal.test.ts`：
   - Mock `requestSidepanelLlm` 返回合法补丁 → `runTool` 完成 + appendVersion + `session_event: self_heal_completed`

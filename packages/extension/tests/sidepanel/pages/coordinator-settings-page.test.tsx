@@ -139,23 +139,23 @@ describe("CoordinatorSettingsPage", () => {
     await flushAsync();
 
     expect(chromeMock.storage.local.set).toHaveBeenCalledWith({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:7842/worker",
         enabled: true
       }
     });
     expect(chromeMock.storage.local.set).toHaveBeenCalledWith({
-      "atwebpilot.coordinator.token": "wpk_xyz"
+      "aipagego.coordinator.token": "wpk_xyz"
     });
   });
 
   it("断开 button writes enabled: false to config", async () => {
     const chromeMock = fakeChromeStorage({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:7842/worker",
         enabled: true
       },
-      "atwebpilot.coordinator.token": "wpk_existing"
+      "aipagego.coordinator.token": "wpk_existing"
     });
     vi.stubGlobal("chrome", chromeMock);
     await act(async () => {
@@ -174,7 +174,7 @@ describe("CoordinatorSettingsPage", () => {
     await flushAsync();
 
     expect(chromeMock.storage.local.set).toHaveBeenCalledWith({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:7842/worker",
         enabled: false
       }
@@ -284,11 +284,11 @@ describe("CoordinatorSettingsPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-07T12:00:00Z"));
     vi.stubGlobal("chrome", fakeChromeStorage({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:8787/worker",
         enabled: true
       },
-      "atwebpilot.coordinator.connection_status": {
+      "aipagego.coordinator.connection_status": {
         status: "connected",
         ws_url: "ws://localhost:8787/worker",
         updated_at: Date.now() - 60_000
@@ -308,11 +308,11 @@ describe("CoordinatorSettingsPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-07T12:00:00Z"));
     vi.stubGlobal("chrome", fakeChromeStorage({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:8787/worker",
         enabled: true
       },
-      "atwebpilot.coordinator.connection_status": {
+      "aipagego.coordinator.connection_status": {
         status: "connected",
         ws_url: "ws://localhost:8787/worker",
         updated_at: Date.now()
@@ -355,7 +355,7 @@ describe("CoordinatorSettingsPage", () => {
 
     await act(async () => {
       await chromeMock.storage.local.set({
-        "atwebpilot.coordinator.connection_status": {
+        "aipagego.coordinator.connection_status": {
           status: "connected",
           ws_url: "ws://localhost:8787/worker",
           updated_at: Date.now()
@@ -372,11 +372,11 @@ describe("CoordinatorSettingsPage", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-07T12:00:00Z"));
     vi.stubGlobal("chrome", fakeChromeStorage({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:8787/worker",
         enabled: false
       },
-      "atwebpilot.coordinator.connection_status": {
+      "aipagego.coordinator.connection_status": {
         status: "connected",
         ws_url: "ws://localhost:8787/worker",
         updated_at: Date.now()

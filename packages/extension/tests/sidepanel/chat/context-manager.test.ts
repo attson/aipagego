@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ChatMessage, ImagePart } from "@atwebpilot/shared/types";
+import type { ChatMessage, ImagePart } from "@aipagego/shared/types";
 import {
   buildCurrentUserContent,
   buildInitialMessagesForNextTurn,

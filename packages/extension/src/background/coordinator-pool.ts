@@ -1,4 +1,4 @@
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import type { PairPayload } from "@aipagego/shared/pairing";
 import { CoordinatorClient, type CoordinatorClientOptions } from "./coordinator-client";
 
 /**

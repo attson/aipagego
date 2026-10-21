@@ -1,18 +1,18 @@
-# 发布 @attson/atwebpilot-mcp 到 npm Implementation Plan
+# 发布 @attson/aipagego-mcp 到 npm Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 让 `npx -y @attson/atwebpilot-mcp` 即用——`packages/mcp-server` 改名 + tsup bundle + Apache-2.0 + npm publish CI + env var rename + 一行装文档。
+**Goal:** 让 `npx -y @attson/aipagego-mcp` 即用——`packages/mcp-server` 改名 + tsup bundle + Apache-2.0 + npm publish CI + env var rename + 一行装文档。
 
-**Architecture:** tsup 打 single-file ESM bundle（含 shebang，内联 workspace deps，external `ws/@modelcontextprotocol/sdk/zod`）。package.json 改 name 到 `@attson/atwebpilot-mcp`、`private:false`、`bin/exports` 指向 `dist/index.js`、`publishConfig.access:public`。新 workflow `publish-mcp-server.yml` on `v*` tag 跑 `npm publish --provenance`。env var 硬切换 `WEBPILOT_*` → `ATWEBPILOT_*`。
+**Architecture:** tsup 打 single-file ESM bundle（含 shebang，内联 workspace deps，external `ws/@modelcontextprotocol/sdk/zod`）。package.json 改 name 到 `@attson/aipagego-mcp`、`private:false`、`bin/exports` 指向 `dist/index.js`、`publishConfig.access:public`。新 workflow `publish-mcp-server.yml` on `v*` tag 跑 `npm publish --provenance`。env var 硬切换 `WEBPILOT_*` → `AIPAGEGO_*`。
 
 **Tech Stack:** tsup (esbuild), pnpm workspaces, GitHub Actions, npm registry。
 
 **对应 spec:** `../specs/2026-06-07-mcp-publish-design.md`
 
 **关键既有事实（已核对）:**
-- 当前主分支 head `42deae6 chore: release v0.0.18`，root `package.json` version `0.0.18`，**已发 v0.0.18 release**（atwebpilot-0.0.18.zip on Github Release）。
-- mcp-server 当前 `name: "@atwebpilot/mcp-server"`, `private:true`, `version:"0.0.0"`, `bin/exports` 指 `./src/index.ts`，无 build。
+- 当前主分支 head `42deae6 chore: release v0.0.18`，root `package.json` version `0.0.18`，**已发 v0.0.18 release**（aipagego-0.0.18.zip on Github Release）。
+- mcp-server 当前 `name: "@aipagego/mcp-server"`, `private:true`, `version:"0.0.0"`, `bin/exports` 指 `./src/index.ts`，无 build。
 - 现有 CI workflow 只有 `.github/workflows/build-extension.yml`（on push branch + v* tag + PR）。
 - 用户 `~/.claude.json` 已配 `webpilot` MCP server 指向 tsx 绝对路径（用户手动改，不在本 plan 自动范围）。
 
@@ -22,7 +22,7 @@
 
 新增 / 修改：
 
-- **修改** `packages/mcp-server/package.json` — name `@attson/atwebpilot-mcp`、private:false、Apache-2.0、bin/exports 指 dist/、workspace deps 移到 devDeps、加 `tsup` devDep、加 `publishConfig.access:public`
+- **修改** `packages/mcp-server/package.json` — name `@attson/aipagego-mcp`、private:false、Apache-2.0、bin/exports 指 dist/、workspace deps 移到 devDeps、加 `tsup` devDep、加 `publishConfig.access:public`
 - **新增** `packages/mcp-server/tsup.config.ts` — 单文件 ESM bundle 配置
 - **修改** `packages/mcp-server/src/index.ts` — env var rename 2 处
 - **新增** `packages/mcp-server/LICENSE` — Apache-2.0 全文
@@ -33,8 +33,8 @@
 - **修改** `docs/superpowers/specs/README.md` — Plan 17 索引已加（spec phase 写时）
 
 **不动**：
-- `packages/shared`, `packages/coordinator` 包名仍 `@atwebpilot/*`（仅内部用，不发 npm）
-- `packages/extension` 包名 `@atwebpilot/extension`（仍 private）
+- `packages/shared`, `packages/coordinator` 包名仍 `@aipagego/*`（仅内部用，不发 npm）
+- `packages/extension` 包名 `@aipagego/extension`（仍 private）
 - `.github/workflows/build-extension.yml`（继续负责扩展 build + Release）
 
 ---
@@ -48,7 +48,7 @@
 - [ ] **Step 1: 切分支**
 
 ```bash
-cd /Users/attson/code/atwebpilot2
+cd /Users/attson/code/aipagego2
 git checkout main
 git pull --ff-only
 git status   # MUST be clean
@@ -85,7 +85,7 @@ export default defineConfig({
   clean: true,
   banner: { js: "#!/usr/bin/env node" },
   // 内联 workspace 包源码：npm 上不存在这俩包
-  noExternal: ["@atwebpilot/shared", "@atwebpilot/coordinator"],
+  noExternal: ["@aipagego/shared", "@aipagego/coordinator"],
   // 这三个声明在 dependencies，npm 自动装到用户机器
   external: ["ws", "@modelcontextprotocol/sdk", "zod"],
   sourcemap: false,
@@ -97,19 +97,19 @@ export default defineConfig({
 - [ ] **Step 5: 验证 typecheck 仍过**
 
 ```bash
-pnpm -F @atwebpilot/mcp-server typecheck
+pnpm -F @aipagego/mcp-server typecheck
 ```
 
 Expected: clean (no output). 
 
-注意：当前包名仍是 `@atwebpilot/mcp-server`（Task 2 才改名），所以 pnpm filter 用这个旧名。
+注意：当前包名仍是 `@aipagego/mcp-server`（Task 2 才改名），所以 pnpm filter 用这个旧名。
 
 - [ ] **Step 6: 烟测 tsup build**
 
 ⚠ 这一步不应该完全成功——tsup 会构建，但因为 package.json 里 `bin/exports` 仍指 `./src/index.ts`、产物没有用武之地。我们只是确认 tsup 能跑：
 
 ```bash
-pnpm -F @atwebpilot/mcp-server exec tsup 2>&1 | tail -10
+pnpm -F @aipagego/mcp-server exec tsup 2>&1 | tail -10
 ```
 
 Expected: tsup 打印 build 进度、产出 `packages/mcp-server/dist/index.js`，无致命错。
@@ -172,14 +172,14 @@ cat packages/mcp-server/package.json
 
 ```json
 {
-  "name": "@attson/atwebpilot-mcp",
+  "name": "@attson/aipagego-mcp",
   "version": "0.0.19",
   "license": "Apache-2.0",
-  "description": "MCP server for the atwebpilot browser extension — let Claude Code drive your browser.",
-  "homepage": "https://github.com/attson/atwebpilot#readme",
-  "repository": { "type": "git", "url": "git+https://github.com/attson/atwebpilot.git" },
+  "description": "MCP server for the aipagego browser extension — let Claude Code drive your browser.",
+  "homepage": "https://github.com/attson/aipagego#readme",
+  "repository": { "type": "git", "url": "git+https://github.com/attson/aipagego.git" },
   "type": "module",
-  "bin": { "atwebpilot-mcp": "./dist/index.js" },
+  "bin": { "aipagego-mcp": "./dist/index.js" },
   "exports": { ".": "./dist/index.js" },
   "files": ["dist", "README.md", "LICENSE"],
   "publishConfig": { "access": "public" },
@@ -195,8 +195,8 @@ cat packages/mcp-server/package.json
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@atwebpilot/shared": "workspace:*",
-    "@atwebpilot/coordinator": "workspace:*",
+    "@aipagego/shared": "workspace:*",
+    "@aipagego/coordinator": "workspace:*",
     "@types/node": "^20",
     "@types/ws": "^8.5.12",
     "tsup": "^8.0.0",
@@ -208,7 +208,7 @@ cat packages/mcp-server/package.json
 ```
 
 **关键变化**：
-- `name`: `@atwebpilot/mcp-server` → `@attson/atwebpilot-mcp`
+- `name`: `@aipagego/mcp-server` → `@attson/aipagego-mcp`
 - 删 `"private": true`
 - `version` 0.0.0 → 0.0.19
 - 加 `license` / `description` / `homepage` / `repository`
@@ -230,18 +230,18 @@ Expected: 成功，可能提示 `Already up to date`（如果 lockfile 已是新
 - [ ] **Step 4: 验证 typecheck + test 仍过**
 
 ```bash
-pnpm -F @attson/atwebpilot-mcp typecheck
-pnpm -F @attson/atwebpilot-mcp test 2>&1 | tail -10
+pnpm -F @attson/aipagego-mcp typecheck
+pnpm -F @attson/aipagego-mcp test 2>&1 | tail -10
 ```
 
 Expected：typecheck clean；test 25 passed (5 files)。
 
-注意 pnpm filter 现在用**新名** `@attson/atwebpilot-mcp`。
+注意 pnpm filter 现在用**新名** `@attson/aipagego-mcp`。
 
 - [ ] **Step 5: 重新 build dist/**
 
 ```bash
-pnpm -F @attson/atwebpilot-mcp build 2>&1 | tail -10
+pnpm -F @attson/aipagego-mcp build 2>&1 | tail -10
 ls -la packages/mcp-server/dist/index.js
 head -1 packages/mcp-server/dist/index.js
 ```
@@ -251,7 +251,7 @@ Expected: `dist/index.js` 存在，第一行 `#!/usr/bin/env node`。
 - [ ] **Step 6: 烟测 bundled 启动**
 
 ```bash
-ATWEBPILOT_WS_PORT=8888 node packages/mcp-server/dist/index.js &
+AIPAGEGO_WS_PORT=8888 node packages/mcp-server/dist/index.js &
 PID=$!
 sleep 2
 kill $PID 2>/dev/null
@@ -272,12 +272,12 @@ Expected: 4 包 typecheck clean；519 测试全绿。
 
 ```bash
 git add packages/mcp-server/package.json pnpm-lock.yaml
-git commit -m "chore(mcp-server): rename to @attson/atwebpilot-mcp, prep for npm publish"
+git commit -m "chore(mcp-server): rename to @attson/aipagego-mcp, prep for npm publish"
 ```
 
 ---
 
-## Task 3: env var rename WEBPILOT_* → ATWEBPILOT_*
+## Task 3: env var rename WEBPILOT_* → AIPAGEGO_*
 
 **Files:**
 - Modify: `packages/mcp-server/src/index.ts`
@@ -292,8 +292,8 @@ git commit -m "chore(mcp-server): rename to @attson/atwebpilot-mcp, prep for npm
 
 改成：
 ```ts
-  const port = Number(process.env.ATWEBPILOT_WS_PORT ?? 8787);
-  const token = process.env.ATWEBPILOT_WS_TOKEN || undefined;
+  const port = Number(process.env.AIPAGEGO_WS_PORT ?? 8787);
+  const token = process.env.AIPAGEGO_WS_TOKEN || undefined;
 ```
 
 - [ ] **Step 2: 全仓再扫一遍 `WEBPILOT_`（全大写）**
@@ -302,13 +302,13 @@ git commit -m "chore(mcp-server): rename to @attson/atwebpilot-mcp, prep for npm
 grep -rIn 'WEBPILOT_' --exclude-dir={node_modules,dist,.git} . 2>/dev/null
 ```
 
-Expected: 仅命中 `packages/mcp-server/README.md` 里几处（Task 6 才重写 README 覆盖）。如果命中 src 文件其他位置，也一并改成 `ATWEBPILOT_`。
+Expected: 仅命中 `packages/mcp-server/README.md` 里几处（Task 6 才重写 README 覆盖）。如果命中 src 文件其他位置，也一并改成 `AIPAGEGO_`。
 
 - [ ] **Step 3: 验证 typecheck + test 仍过**
 
 ```bash
-pnpm -F @attson/atwebpilot-mcp typecheck
-pnpm -F @attson/atwebpilot-mcp test 2>&1 | tail -5
+pnpm -F @attson/aipagego-mcp typecheck
+pnpm -F @attson/aipagego-mcp test 2>&1 | tail -5
 ```
 
 Expected: 通过，25 测试。
@@ -316,21 +316,21 @@ Expected: 通过，25 测试。
 - [ ] **Step 4: 重 build + 烟测 bundled 启动**
 
 ```bash
-pnpm -F @attson/atwebpilot-mcp build 2>&1 | tail -5
-ATWEBPILOT_WS_PORT=8889 node packages/mcp-server/dist/index.js 2>/tmp/mcp-smoke.log &
+pnpm -F @attson/aipagego-mcp build 2>&1 | tail -5
+AIPAGEGO_WS_PORT=8889 node packages/mcp-server/dist/index.js 2>/tmp/mcp-smoke.log &
 PID=$!
 sleep 2
 kill $PID 2>/dev/null
 cat /tmp/mcp-smoke.log
 ```
 
-Expected: stderr 含 `[atwebpilot-mcp] ws://127.0.0.1:8889/worker ready; stdio MCP connected`。
+Expected: stderr 含 `[aipagego-mcp] ws://127.0.0.1:8889/worker ready; stdio MCP connected`。
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add packages/mcp-server/src/index.ts
-git commit -m "refactor(mcp-server): env var WEBPILOT_* → ATWEBPILOT_* (no fallback)"
+git commit -m "refactor(mcp-server): env var WEBPILOT_* → AIPAGEGO_* (no fallback)"
 ```
 
 ---
@@ -376,26 +376,26 @@ git commit -m "chore(mcp-server): add Apache-2.0 LICENSE"
 把 `packages/mcp-server/README.md` 整个内容换为：
 
 ```markdown
-# @attson/atwebpilot-mcp
+# @attson/aipagego-mcp
 
-让 Claude Code 经一个本地 ws 中继驱动 atwebpilot 浏览器扩展操作网页（读 / 写 / 采）。
+让 Claude Code 经一个本地 ws 中继驱动 aipagego 浏览器扩展操作网页（读 / 写 / 采）。
 
 ## 给用户：一行装
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
 可选环境变量：
 
-- `ATWEBPILOT_WS_PORT`（默认 8787）：本地 ws 监听端口
-- `ATWEBPILOT_WS_TOKEN`（可选）：扩展连接时要求 `bearer.<token>` 子协议
+- `AIPAGEGO_WS_PORT`（默认 8787）：本地 ws 监听端口
+- `AIPAGEGO_WS_TOKEN`（可选）：扩展连接时要求 `bearer.<token>` 子协议
 
-然后[下载 release zip](https://github.com/attson/atwebpilot/releases/latest) 加载已解压扩展，
+然后[下载 release zip](https://github.com/attson/aipagego/releases/latest) 加载已解压扩展，
 在扩展设置 → Coordinator 子页填 `ws://127.0.0.1:8787/worker` → 连接。新会话 Claude 调
 `list_tabs` 即可看到当前标签页。
 
 ## 给开发者：本地 monorepo
 
-    pnpm -F @attson/atwebpilot-mcp start
+    pnpm -F @attson/aipagego-mcp start
 
 环境变量同上，路径用 `tsx src/index.ts` 直跑（包内 `start` script 已封）。
 
@@ -440,13 +440,13 @@ grep -n "^## " README.md | head -5
 
 只想 **用**（不开发）：
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
-然后下载 [最新 release zip](https://github.com/attson/atwebpilot/releases/latest)，在
+然后下载 [最新 release zip](https://github.com/attson/aipagego/releases/latest)，在
 `chrome://extensions` 加载已解压扩展，扩展设置 → Coordinator 填
 `ws://127.0.0.1:8787/worker` → 连接。
 
-可选环境变量：`ATWEBPILOT_WS_PORT`（默认 8787）、`ATWEBPILOT_WS_TOKEN`（可选）。
+可选环境变量：`AIPAGEGO_WS_PORT`（默认 8787）、`AIPAGEGO_WS_TOKEN`（可选）。
 
 ---
 
@@ -514,7 +514,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build mcp-server
-        run: pnpm -F @attson/atwebpilot-mcp build
+        run: pnpm -F @attson/aipagego-mcp build
 
       - name: Verify dist
         run: |
@@ -571,7 +571,7 @@ sed -n '1,30p' docs/superpowers/plans/README.md
 
 ```bash
 git add docs/superpowers/plans/README.md
-git commit -m "docs(plan): add Plan 17 index row — npm publish @attson/atwebpilot-mcp"
+git commit -m "docs(plan): add Plan 17 index row — npm publish @attson/aipagego-mcp"
 ```
 
 ---
@@ -599,7 +599,7 @@ Expected: 519 测试全绿（无回归——env var rename 不破坏行为）。
 - [ ] **Step 3: extension build**
 
 ```bash
-pnpm -F @atwebpilot/extension build 2>&1 | tail -5
+pnpm -F @aipagego/extension build 2>&1 | tail -5
 ```
 
 Expected: vite 正常出 dist。
@@ -607,7 +607,7 @@ Expected: vite 正常出 dist。
 - [ ] **Step 4: mcp-server build**
 
 ```bash
-pnpm -F @attson/atwebpilot-mcp build 2>&1 | tail -10
+pnpm -F @attson/aipagego-mcp build 2>&1 | tail -10
 ls -la packages/mcp-server/dist/index.js
 head -1 packages/mcp-server/dist/index.js
 wc -c packages/mcp-server/dist/index.js
@@ -618,19 +618,19 @@ Expected：dist/index.js 存在；shebang 在第一行；大小 < 2 MB（健全�
 - [ ] **Step 5: 烟测 bundled 启动**
 
 ```bash
-ATWEBPILOT_WS_PORT=8890 node packages/mcp-server/dist/index.js 2>/tmp/mcp-final.log &
+AIPAGEGO_WS_PORT=8890 node packages/mcp-server/dist/index.js 2>/tmp/mcp-final.log &
 PID=$!
 sleep 3
 kill $PID 2>/dev/null
 cat /tmp/mcp-final.log
 ```
 
-Expected: stderr 含 `[atwebpilot-mcp] ws://127.0.0.1:8890/worker ready; stdio MCP connected`。
+Expected: stderr 含 `[aipagego-mcp] ws://127.0.0.1:8890/worker ready; stdio MCP connected`。
 
 - [ ] **Step 6: 漏网扫描 WEBPILOT_**
 
 ```bash
-grep -rIn 'WEBPILOT_' --exclude-dir={node_modules,dist,.git} . 2>/dev/null | grep -v 'ATWEBPILOT_'
+grep -rIn 'WEBPILOT_' --exclude-dir={node_modules,dist,.git} . 2>/dev/null | grep -v 'AIPAGEGO_'
 ```
 
 Expected: 空输出。
@@ -663,30 +663,30 @@ git push -u origin feat/mcp-publish
 
 ```bash
 gh pr create --base main --head feat/mcp-publish \
-  --title "feat(mcp-server): publish @attson/atwebpilot-mcp to npm (Plan 17)" \
+  --title "feat(mcp-server): publish @attson/aipagego-mcp to npm (Plan 17)" \
   --body "$(cat <<'EOF'
 ## Summary
 
-让 `npx -y @attson/atwebpilot-mcp` 即用。对应 spec [`2026-06-07-mcp-publish-design.md`](docs/superpowers/specs/2026-06-07-mcp-publish-design.md)。
+让 `npx -y @attson/aipagego-mcp` 即用。对应 spec [`2026-06-07-mcp-publish-design.md`](docs/superpowers/specs/2026-06-07-mcp-publish-design.md)。
 
-- 包改名 `@atwebpilot/mcp-server` → `@attson/atwebpilot-mcp`（个人 scope，无需注册 org）
+- 包改名 `@aipagego/mcp-server` → `@attson/aipagego-mcp`（个人 scope，无需注册 org）
 - tsup 打 single-file ESM bundle（含 shebang，内联 shared+coordinator）
 - Apache-2.0 license
-- env var `WEBPILOT_*` → `ATWEBPILOT_*` 硬切换（无回退）
+- env var `WEBPILOT_*` → `AIPAGEGO_*` 硬切换（无回退）
 - 新 workflow `publish-mcp-server.yml` on `v*` tag → `npm publish --provenance --access public`
 - 根 README 加一行装小节
 
 ## Test Plan
 
 - [x] `pnpm -r typecheck/test` — 4 包全绿，519 测试零回归
-- [x] `pnpm -F @attson/atwebpilot-mcp build` — dist/index.js 出，含 shebang，< 2 MB
+- [x] `pnpm -F @attson/aipagego-mcp build` — dist/index.js 出，含 shebang，< 2 MB
 - [x] `node dist/index.js` 启动 stderr 含 ready 行
-- [x] 漏网扫描 `WEBPILOT_` 空输出（除 `ATWEBPILOT_`）
+- [x] 漏网扫描 `WEBPILOT_` 空输出（除 `AIPAGEGO_`）
 - [ ] **合入后**：root v0.0.18 → 0.0.19，tag v0.0.19 触发 **两个** workflow
-  - [ ] `build-extension.yml` 出 `atwebpilot-0.0.19.zip` GitHub Release
-  - [ ] `publish-mcp-server.yml` `npm publish @attson/atwebpilot-mcp@0.0.19`
-- [ ] `npm view @attson/atwebpilot-mcp` 显示 0.0.19
-- [ ] 在 monorepo 之外 `npx -y @attson/atwebpilot-mcp` 启动 ws server
+  - [ ] `build-extension.yml` 出 `aipagego-0.0.19.zip` GitHub Release
+  - [ ] `publish-mcp-server.yml` `npm publish @attson/aipagego-mcp@0.0.19`
+- [ ] `npm view @attson/aipagego-mcp` 显示 0.0.19
+- [ ] 在 monorepo 之外 `npx -y @attson/aipagego-mcp` 启动 ws server
 - [ ] 用户更新 `~/.claude.json`：command 改 npx，env var 改名
 
 ## ⚠ Tag 前必须完成的手动前置
@@ -714,11 +714,11 @@ gh pr checks $(gh pr view --json number --jq .number)
 > 「请完成下列两步，完成后告诉我『NPM_TOKEN 已设置』再继续」：
 >
 > 1. npmjs.com → 登录 → Profile → Access Tokens → Generate Granular Token：
->    - Name: `atwebpilot-github-actions`
+>    - Name: `aipagego-github-actions`
 >    - Expiration: 1y 或 No expiration
 >    - Permissions: Read and write
 >    - Packages and scopes: limited to `@attson/*`
-> 2. GitHub repo (https://github.com/attson/atwebpilot) → Settings → Secrets and variables → Actions → New repository secret：
+> 2. GitHub repo (https://github.com/attson/aipagego) → Settings → Secrets and variables → Actions → New repository secret：
 >    - Name: `NPM_TOKEN`
 >    - Value: 上一步的 token
 
@@ -727,7 +727,7 @@ gh pr checks $(gh pr view --json number --jq .number)
 - [ ] **Step 6: 用 gh API 验证 NPM_TOKEN 存在**
 
 ```bash
-gh secret list --repo attson/atwebpilot | grep -i NPM_TOKEN
+gh secret list --repo attson/aipagego | grep -i NPM_TOKEN
 ```
 
 Expected: 显示 `NPM_TOKEN` 一行（不显示值，但能确认存在）。
@@ -778,21 +778,21 @@ gh run list --limit 5 --json status,conclusion,name,headBranch,headSha,event,cre
 
 ```bash
 sleep 30   # npm registry 索引有时延
-npm view @attson/atwebpilot-mcp version
-npm view @attson/atwebpilot-mcp dist.tarball
+npm view @attson/aipagego-mcp version
+npm view @attson/aipagego-mcp dist.tarball
 ```
 
-Expected: version `0.0.19`；tarball URL 类似 `https://registry.npmjs.org/@attson/atwebpilot-mcp/-/atwebpilot-mcp-0.0.19.tgz`。
+Expected: version `0.0.19`；tarball URL 类似 `https://registry.npmjs.org/@attson/aipagego-mcp/-/aipagego-mcp-0.0.19.tgz`。
 
 - [ ] **Step 12: 终验 npx 在新目录可用**
 
 ```bash
 cd /tmp
-mkdir -p atwebpilot-mcp-smoke && cd atwebpilot-mcp-smoke
-ATWEBPILOT_WS_PORT=8891 timeout 5 npx -y @attson/atwebpilot-mcp 2>&1 | head -5
+mkdir -p aipagego-mcp-smoke && cd aipagego-mcp-smoke
+AIPAGEGO_WS_PORT=8891 timeout 5 npx -y @attson/aipagego-mcp 2>&1 | head -5
 ```
 
-Expected: stderr 含 ready 行 `[atwebpilot-mcp] ws://127.0.0.1:8891/worker ready; stdio MCP connected`。timeout 后退出码 124 是预期的（npx 启动了 stdio server，等 input 直到被杀）。
+Expected: stderr 含 ready 行 `[aipagego-mcp] ws://127.0.0.1:8891/worker ready; stdio MCP connected`。timeout 后退出码 124 是预期的（npx 启动了 stdio server，等 input 直到被杀）。
 
 - [ ] **Step 13: 验证 GitHub Release v0.0.19**
 
@@ -800,7 +800,7 @@ Expected: stderr 含 ready 行 `[atwebpilot-mcp] ws://127.0.0.1:8891/worker read
 gh release view v0.0.19 --json url,assets --jq '.url, .assets[].name'
 ```
 
-Expected: URL 显示，asset 名 `atwebpilot-0.0.19.zip`。
+Expected: URL 显示，asset 名 `aipagego-0.0.19.zip`。
 
 ---
 
@@ -820,8 +820,8 @@ Expected: URL 显示，asset 名 `atwebpilot-0.0.19.zip`。
 - **Spec §8 风险**：plan 内对应防护：tsup 烟测（T1+T2+T3+T9）防 bundle 错；漏网扫描（T9 Step 6）防 env var 漏；publish workflow `Verify dist` 步骤（T7）防 shebang 漏。
 
 **类型一致性**：
-- 包名 `@attson/atwebpilot-mcp` 在 T2、T7、T10 中所有 `pnpm -F` / `npx` / `npm view` 命令一致。
-- env var `ATWEBPILOT_WS_PORT`/`ATWEBPILOT_WS_TOKEN` 在 T3、T5、T6、T9、T10 中一致。
+- 包名 `@attson/aipagego-mcp` 在 T2、T7、T10 中所有 `pnpm -F` / `npx` / `npm view` 命令一致。
+- env var `AIPAGEGO_WS_PORT`/`AIPAGEGO_WS_TOKEN` 在 T3、T5、T6、T9、T10 中一致。
 - Version `0.0.19` 在 T2、T10 中一致；root version 用 `0.0.18`→`0.0.19` sed。
 
 **占位扫描**：无 TBD/TODO/"similar to"。每命令完整；每 commit message 写定。

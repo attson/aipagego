@@ -5,7 +5,7 @@ import {
   generateSummaryStep
 } from "@/sidepanel/llm/summary-step";
 import type { LlmClient, LlmStreamEvent } from "@/sidepanel/llm/types";
-import type { ChatMessage, Json, Step } from "@atwebpilot/shared/types";
+import type { ChatMessage, Json, Step } from "@aipagego/shared/types";
 
 function streamFrom(events: LlmStreamEvent[]): AsyncIterable<LlmStreamEvent> {
   return (async function* () {

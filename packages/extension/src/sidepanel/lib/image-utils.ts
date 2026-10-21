@@ -1,4 +1,4 @@
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 export const MAX_IMAGES_PER_TURN = 5;

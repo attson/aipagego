@@ -1,22 +1,22 @@
 ---
 layout: home
 hero:
-  name: AtWebPilot
+  name: AIPageGo
   text: AI Web Assistant
   tagline: Read, write, and scrape the tab you're on — chat like a normal chatbot, AI drives the tools
   image:
     src: /mockups/sidepanel-hero-landscape.svg
-    alt: AtWebPilot side panel embedded in a browser
+    alt: AIPageGo side panel embedded in a browser
   actions:
     - theme: brand
       text: Download latest
-      link: https://github.com/attson/atwebpilot/releases/latest
+      link: https://github.com/attson/aipagego/releases/latest
     - theme: alt
       text: Quick start →
       link: /en/guide/install
     - theme: alt
       text: View on GitHub
-      link: https://github.com/attson/atwebpilot
+      link: https://github.com/attson/aipagego
 features:
   - icon: 📖
     title: Read
@@ -87,7 +87,7 @@ import { withBase } from 'vitepress';
   <div class="step-card">
     <div class="step-num">1</div>
     <h3>Download the zip</h3>
-    <p>Grab the latest <code>atwebpilot-vX.Y.Z.zip</code> from <a href="https://github.com/attson/atwebpilot/releases/latest">GitHub Releases</a> and unzip.</p>
+    <p>Grab the latest <code>aipagego-vX.Y.Z.zip</code> from <a href="https://github.com/attson/aipagego/releases/latest">GitHub Releases</a> and unzip.</p>
   </div>
   <div class="step-card">
     <div class="step-num">2</div>

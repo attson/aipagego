@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 function asObj(raw: Json): Record<string, unknown> {
   return (raw ?? {}) as Record<string, unknown>;

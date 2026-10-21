@@ -7,7 +7,7 @@ import type {
   TextPart,
   ToolResultPart,
   ToolUsePart,
-} from "@atwebpilot/shared/types";
+} from "@aipagego/shared/types";
 import { truncateContent } from "@/sidepanel/llm/truncate";
 
 export type UserMessageContent = Extract<ChatMessage, { role: "user" }>["content"];

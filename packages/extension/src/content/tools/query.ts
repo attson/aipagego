@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 
 type SingleArgs = { selector: string; root?: string };
 type MultiArgs = { selector: string; root?: string; limit?: number };

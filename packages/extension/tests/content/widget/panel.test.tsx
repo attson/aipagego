@@ -47,7 +47,7 @@ vi.mock("@/sidepanel/rpc", () => ({
 }));
 
 // Widget looks up its tab via a content-script-safe helper (calls the
-// atwebpilot.getTabId side-channel through chrome.runtime, not chrome.tabs).
+// aipagego.getTabId side-channel through chrome.runtime, not chrome.tabs).
 vi.mock("@/content/widget/tab-info", () => ({
   getWidgetTabInfo: vi.fn().mockResolvedValue({ tabId: 42, url: "https://example.com" }),
 }));
@@ -72,7 +72,7 @@ describe("Panel", () => {
     await act(async () => {
       root.render(<Panel onClose={() => {}} onMinimize={() => {}} />);
     });
-    expect(container.textContent).toContain("AtWebPilot");
+    expect(container.textContent).toContain("AIPageGo");
   });
 
   it("renders the input textarea", async () => {

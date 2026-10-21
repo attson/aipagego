@@ -5,7 +5,7 @@ import {
   listTrusted,
   revokeTrust
 } from "@/background/pairing-host";
-import type { PairPayload } from "@atwebpilot/shared/pairing";
+import type { PairPayload } from "@aipagego/shared/pairing";
 
 const realChrome = globalThis.chrome;
 
@@ -14,7 +14,7 @@ const payload: PairPayload = {
   installId: "inst_abc",
   secret: "s3cr3t",
   sessionId: "sess_1",
-  label: "~/code/atwebpilot2",
+  label: "~/code/aipagego",
   pid: 1,
   port: 51234
 };

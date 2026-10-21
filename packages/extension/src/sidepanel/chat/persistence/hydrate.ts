@@ -1,4 +1,4 @@
-import type { PersistedSession } from "@atwebpilot/shared/types";
+import type { PersistedSession } from "@aipagego/shared/types";
 import { rehydrateFromPersisted } from "@/sidepanel/chat/session-store";
 import { setPersistIdFor } from "./auto-persist";
 import * as ss from "./sessions-storage";

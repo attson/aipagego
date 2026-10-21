@@ -28,13 +28,13 @@ describe("widget RPCs", () => {
     await dispatch({ type: "widget.openSidepanel", tabId: 42, pendingApprovalId: "abc" } as any);
     expect(chrome.sidePanel.open).toHaveBeenCalledWith({ tabId: 42 });
     expect(chrome.storage.session.set).toHaveBeenCalledWith(
-      expect.objectContaining({ "atwebpilot.pendingApproval": expect.objectContaining({ tabId: 42, approvalId: "abc" }) })
+      expect.objectContaining({ "aipagego.pendingApproval": expect.objectContaining({ tabId: 42, approvalId: "abc" }) })
     );
   });
 
   it("widget.markHostHidden appends an assistant-disabled site rule", async () => {
     (chrome.storage.local.get as any).mockResolvedValueOnce({
-      "atwebpilot.llm": {
+      "aipagego.llm": {
         siteInjectionRules: [
           { pattern: "foo.com", injectionMode: "read", assistant: "inherit" }
         ]
@@ -44,7 +44,7 @@ describe("widget RPCs", () => {
     await dispatch({ type: "widget.markHostHidden", host: "bar.com" } as any);
     expect(chrome.storage.local.set).toHaveBeenCalledWith(
       {
-        "atwebpilot.llm": {
+        "aipagego.llm": {
           siteInjectionRules: [
             { pattern: "foo.com", injectionMode: "read", assistant: "inherit" },
             { pattern: "bar.com", injectionMode: "inherit", assistant: "disabled" }

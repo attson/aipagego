@@ -1,4 +1,4 @@
-import type { AttachedTab } from "@atwebpilot/shared/types";
+import type { AttachedTab } from "@aipagego/shared/types";
 
 type SavedToolHint = { name: string; description: string; version: number };
 
@@ -99,7 +99,7 @@ export function buildSystemPrompt(input: {
 
   if (lang === "en") {
     return [
-      "You are AtWebPilot, an AI web assistant embedded in a browser side panel.",
+      "You are AIPageGo, an AI web assistant embedded in a browser side panel.",
       "Respond in the same language as the user. Tools are available — use them efficiently.",
       "",
       "=== Tool-call format ===",
@@ -154,7 +154,7 @@ export function buildSystemPrompt(input: {
 
   // zh (default)
   return [
-    "你是 AtWebPilot，一个嵌入浏览器侧边面板的 AI 网页助手。",
+    "你是 AIPageGo，一个嵌入浏览器侧边面板的 AI 网页助手。",
     "用户用什么语言你就回什么语言。工具可用，请高效调用。",
     "",
     "=== 工具调用格式 ===",

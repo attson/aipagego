@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 用 VitePress 在 `docs-site/` 建一个 GitHub Pages 展示站（首页 + 快速上手 + 工具参考 + 高阶主题），中文为主 + 英文 MVP 5 页；工具参考页从 `TOOL_DEFS` 自动生成；GitHub Actions 部署到 `https://attson.github.io/atwebpilot/`。
+**Goal:** 用 VitePress 在 `docs-site/` 建一个 GitHub Pages 展示站（首页 + 快速上手 + 工具参考 + 高阶主题），中文为主 + 英文 MVP 5 页；工具参考页从 `TOOL_DEFS` 自动生成；GitHub Actions 部署到 `https://attson.github.io/aipagego/`。
 
 **Architecture:** 独立目录 `docs-site/`（不进 pnpm workspace），VitePress 默认主题；工具参考页由 `scripts/gen-tools.mjs` 每次 build 前从 `packages/shared/src/llm/builtin-tool-defs.ts` 生成；SVG mockup 手写 4 张；部署 workflow 单独一份，触发范围仅 `docs-site/**` + `builtin-tool-defs.ts`。
 
@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- **VitePress base URL**：`base: '/atwebpilot/'`（GH Pages 部署地址 `https://attson.github.io/atwebpilot/`）
+- **VitePress base URL**：`base: '/aipagego/'`（GH Pages 部署地址 `https://attson.github.io/aipagego/`）
 - **Node 版本**：20（与仓库现有 CI 一致）
 - **pnpm 版本**：8+（与仓库现有 CI 一致）
 - **`docs-site/` 独立**：**不**修改仓库根 `pnpm-workspace.yaml`；`docs-site/` 有自己的 `package.json` + lock；`docs-site/node_modules`、`docs-site/.vitepress/dist`、`docs-site/.vitepress/cache` 加入 `.gitignore`
@@ -41,7 +41,7 @@
 **Interfaces:**
 - Consumes: 无（第一步）
 - Produces:
-  - VitePress 项目起得来（`pnpm dev` 能开 `http://localhost:5173/atwebpilot/`）
+  - VitePress 项目起得来（`pnpm dev` 能开 `http://localhost:5173/aipagego/`）
   - `config.ts` 里 `themeConfig.locales` 声明中英两个 locale；nav 里只有 `首页` / `GitHub` 两项（后面 task 逐步添加）
   - 中英文首页 md 用 VitePress hero layout；hero image 引用 `/mockups/sidepanel-hero.svg`（Task 5 才生成，本 task 里链接先留着，dev 服会显示占位图 alt）
 
@@ -51,7 +51,7 @@ Create `docs-site/package.json`：
 
 ```json
 {
-  "name": "atwebpilot-docs",
+  "name": "aipagego-docs",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -101,7 +101,7 @@ Create `docs-site/tsconfig.json`：
 Create `docs-site/README.md`：
 
 ```md
-# atwebpilot-docs
+# aipagego-docs
 
 VitePress 站点，部署到 GitHub Pages。**独立于仓库根 pnpm workspace**。
 
@@ -109,7 +109,7 @@ VitePress 站点，部署到 GitHub Pages。**独立于仓库根 pnpm workspace*
 
     cd docs-site
     pnpm install
-    pnpm dev          # → http://localhost:5173/atwebpilot/
+    pnpm dev          # → http://localhost:5173/aipagego/
 
 ## 工具参考自动生成
 
@@ -144,18 +144,18 @@ Create `docs-site/.vitepress/config.ts`：
 import { defineConfig } from 'vitepress';
 
 export default defineConfig({
-  base: '/atwebpilot/',
-  title: 'AtWebPilot',
+  base: '/aipagego/',
+  title: 'AIPageGo',
   description: 'AI 网页助手 · 在当前 tab 上读写采',
   head: [
-    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/atwebpilot/favicon.svg' }],
+    ['link', { rel: 'icon', type: 'image/svg+xml', href: '/aipagego/favicon.svg' }],
   ],
   cleanUrls: true,
   lastUpdated: false,
   ignoreDeadLinks: false,
   themeConfig: {
     logo: '/logo.svg',
-    socialLinks: [{ icon: 'github', link: 'https://github.com/attson/atwebpilot' }],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/attson/aipagego' }],
   },
   locales: {
     root: {
@@ -164,7 +164,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: '首页', link: '/' },
-          { text: 'GitHub', link: 'https://github.com/attson/atwebpilot' },
+          { text: 'GitHub', link: 'https://github.com/attson/aipagego' },
         ],
         footer: {
           message: 'MIT License',
@@ -181,7 +181,7 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Home', link: '/en/' },
-          { text: 'GitHub', link: 'https://github.com/attson/atwebpilot' },
+          { text: 'GitHub', link: 'https://github.com/attson/aipagego' },
         ],
         footer: {
           message: 'MIT License',
@@ -245,19 +245,19 @@ Create `docs-site/index.md`：
 ---
 layout: home
 hero:
-  name: AtWebPilot
+  name: AIPageGo
   text: AI 网页助手
   tagline: 在当前 tab 上读、写、采
   image:
     src: /mockups/sidepanel-hero.svg
-    alt: AtWebPilot 侧边面板
+    alt: AIPageGo 侧边面板
   actions:
     - theme: brand
       text: 下载最新版本
-      link: https://github.com/attson/atwebpilot/releases/latest
+      link: https://github.com/attson/aipagego/releases/latest
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/attson/atwebpilot
+      link: https://github.com/attson/aipagego
 features:
   - title: 读
     details: 总结、翻译、抽重点、回答本页问题
@@ -285,7 +285,7 @@ features:
 
 ## 也能被 Claude Code 通过 MCP 驱动
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
 配合浏览器扩展和本地 Coordinator，Claude Code 可以在真实网页上读写采。见 [MCP Bridge](/advanced/mcp-bridge)。
 ```
@@ -298,19 +298,19 @@ Create `docs-site/en/index.md`：
 ---
 layout: home
 hero:
-  name: AtWebPilot
+  name: AIPageGo
   text: AI Web Assistant
   tagline: Read, write, and scrape from the tab you're on
   image:
     src: /mockups/sidepanel-hero.svg
-    alt: AtWebPilot side panel
+    alt: AIPageGo side panel
   actions:
     - theme: brand
       text: Download latest
-      link: https://github.com/attson/atwebpilot/releases/latest
+      link: https://github.com/attson/aipagego/releases/latest
     - theme: alt
       text: View on GitHub
-      link: https://github.com/attson/atwebpilot
+      link: https://github.com/attson/aipagego
 features:
   - title: Read
     details: Summarize, translate, extract key points, answer questions about the page
@@ -338,7 +338,7 @@ Scrape the first 50 comments
 
 ## Drive it from Claude Code via MCP
 
-    claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+    claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 
 See [MCP Bridge](/en/advanced/mcp-bridge) for details.
 ```
@@ -354,8 +354,8 @@ Expected: 无 error；`vitepress` / `vue` / `tsx` 全部装上；lockfile 生成
 ```bash
 cd docs-site && pnpm dev 2>&1 | head -10 &
 sleep 3
-curl -sSf http://localhost:5173/atwebpilot/ | head -5
-curl -sSf http://localhost:5173/atwebpilot/en/ | head -5
+curl -sSf http://localhost:5173/aipagego/ | head -5
+curl -sSf http://localhost:5173/aipagego/en/ | head -5
 pkill -f "vitepress dev" 2>/dev/null || true
 ```
 
@@ -364,13 +364,13 @@ Expected: 中文首页与英文首页都返回 HTML；stderr 无 error。
 - [ ] **Step 6: 提交**
 
 ```bash
-cd /Users/attson/code/atwebpilot2
+cd /Users/attson/code/aipagego2
 git add docs-site/ .gitignore
 git commit -m "$(cat <<'EOF'
 docs(site): bootstrap VitePress + 中英文首页
 
 独立 docs-site/ 目录（不进 pnpm workspace）；default theme + brand
-color；中英 locale；base /atwebpilot/。首页 hero 引用 mockups
+color；中英 locale；base /aipagego/。首页 hero 引用 mockups
 (Task 5 生成)；socialLinks 到 GitHub。
 EOF
 )"
@@ -408,7 +408,7 @@ Create `docs-site/guide/install.md`：
 
 ## 方式 1：只用浏览器扩展（最简）
 
-1. 前往 [Releases](https://github.com/attson/atwebpilot/releases/latest) 下载 `atwebpilot-<version>.zip` 并解压
+1. 前往 [Releases](https://github.com/attson/aipagego/releases/latest) 下载 `aipagego-<version>.zip` 并解压
 2. 打开 `chrome://extensions`
 3. 右上角开启「开发者模式」
 4. 点「加载已解压的扩展程序」→ 选择解压出来的 `dist/` 目录
@@ -417,7 +417,7 @@ Create `docs-site/guide/install.md`：
 ## 方式 2：加 MCP 让 Claude Code 驱动浏览器
 
 ```bash
-claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 ```
 
 再照方式 1 装扩展。扩展设置里 Coordinator 页填 `ws://127.0.0.1:8787/worker` → 连接。
@@ -427,8 +427,8 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 ## 方式 3：自己 build
 
 ```bash
-git clone https://github.com/attson/atwebpilot
-cd atwebpilot
+git clone https://github.com/attson/aipagego
+cd aipagego
 pnpm install
 pnpm build       # 产出 packages/extension/dist/
 ```
@@ -566,7 +566,7 @@ Three ways to use it.
 
 ## Option 1: Browser extension only
 
-1. Grab `atwebpilot-<version>.zip` from [Releases](https://github.com/attson/atwebpilot/releases/latest) and unzip
+1. Grab `aipagego-<version>.zip` from [Releases](https://github.com/attson/aipagego/releases/latest) and unzip
 2. Open `chrome://extensions`
 3. Turn on "Developer mode" (top-right)
 4. Click "Load unpacked" → select the unzipped `dist/` directory
@@ -575,7 +575,7 @@ Three ways to use it.
 ## Option 2: Add MCP so Claude Code can drive the browser
 
 ```bash
-claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 ```
 
 Then install the extension as in Option 1. In extension Settings → Coordinator, enter `ws://127.0.0.1:8787/worker` and connect.
@@ -585,8 +585,8 @@ See [MCP Bridge](/en/advanced/mcp-bridge).
 ## Option 3: Build from source
 
 ```bash
-git clone https://github.com/attson/atwebpilot
-cd atwebpilot
+git clone https://github.com/attson/aipagego
+cd aipagego
 pnpm install
 pnpm build       # → packages/extension/dist/
 ```
@@ -726,7 +726,7 @@ Modify `docs-site/.vitepress/config.ts`。
               { text: '第一条任务', link: '/guide/first-task' },
             ],
           },
-          { text: 'GitHub', link: 'https://github.com/attson/atwebpilot' },
+          { text: 'GitHub', link: 'https://github.com/attson/aipagego' },
         ],
 ```
 
@@ -760,7 +760,7 @@ Modify `docs-site/.vitepress/config.ts`。
               { text: 'First task', link: '/en/guide/first-task' },
             ],
           },
-          { text: 'GitHub', link: 'https://github.com/attson/atwebpilot' },
+          { text: 'GitHub', link: 'https://github.com/attson/aipagego' },
         ],
 ```
 
@@ -786,12 +786,12 @@ Modify `docs-site/.vitepress/config.ts`。
 ```bash
 cd docs-site && pnpm dev 2>&1 | head -5 &
 sleep 3
-curl -sSf http://localhost:5173/atwebpilot/guide/install > /dev/null
-curl -sSf http://localhost:5173/atwebpilot/guide/config > /dev/null
-curl -sSf http://localhost:5173/atwebpilot/guide/first-task > /dev/null
-curl -sSf http://localhost:5173/atwebpilot/en/guide/install > /dev/null
-curl -sSf http://localhost:5173/atwebpilot/en/guide/config > /dev/null
-curl -sSf http://localhost:5173/atwebpilot/en/guide/first-task > /dev/null
+curl -sSf http://localhost:5173/aipagego/guide/install > /dev/null
+curl -sSf http://localhost:5173/aipagego/guide/config > /dev/null
+curl -sSf http://localhost:5173/aipagego/guide/first-task > /dev/null
+curl -sSf http://localhost:5173/aipagego/en/guide/install > /dev/null
+curl -sSf http://localhost:5173/aipagego/en/guide/config > /dev/null
+curl -sSf http://localhost:5173/aipagego/en/guide/first-task > /dev/null
 pkill -f "vitepress dev" 2>/dev/null || true
 ```
 
@@ -849,7 +849,7 @@ Create `docs-site/advanced/save-as-tool.md`：
 
 会话结束（`✓ N 步成功执行`）后，顶部小条出现 `[保存为工具]` 按钮，点击：
 
-- **名称**：默认 `AtWebPilot 任务 YYYY-MM-DD`；改成能描述这次动作的
+- **名称**：默认 `AIPageGo 任务 YYYY-MM-DD`；改成能描述这次动作的
 - **URL 模式**：默认从当前 URL 推断（`https://shop.example.com/goods.html*` → `https://*.example.com/**`）；改成合适的匹配范围
 - **描述**：默认用户初始 prompt；改成简介
 - **保存的 step 数**：只保存"成功执行"的 step；跳过 / 失败 / 待审的不带
@@ -1025,10 +1025,10 @@ Create `docs-site/advanced/mcp-bridge.md`：
 
 ## 概念
 
-MCP Bridge = stdio MCP server + 本地 Coordinator，两者打包在 `@attson/atwebpilot-mcp`。装了之后：
+MCP Bridge = stdio MCP server + 本地 Coordinator，两者打包在 `@attson/aipagego-mcp`。装了之后：
 
 ```
-Claude Code ─(MCP stdio)─→ atwebpilot-mcp ─(WS worker)─→ Chrome 扩展 ─→ 网页
+Claude Code ─(MCP stdio)─→ aipagego-mcp ─(WS worker)─→ Chrome 扩展 ─→ 网页
 ```
 
 Claude Code 里就能调 `browser_*` 系列工具在真实网页上读、写、采。
@@ -1036,14 +1036,14 @@ Claude Code 里就能调 `browser_*` 系列工具在真实网页上读、写、�
 ## 安装
 
 ```bash
-claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 ```
 
 然后照常装扩展。扩展 → 设置 → Coordinator 填 `ws://127.0.0.1:8787/worker` → 连接。
 
 可选环境变量：
-- `ATWEBPILOT_WS_PORT`（默认 8787）
-- `ATWEBPILOT_WS_TOKEN`（可选；填了扩展 side 也要填同样 token）
+- `AIPAGEGO_WS_PORT`（默认 8787）
+- `AIPAGEGO_WS_TOKEN`（可选；填了扩展 side 也要填同样 token）
 
 ## Claude Code 可用的 MCP tools
 
@@ -1060,7 +1060,7 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 ## 手起 mcp-server（开发用）
 
 ```bash
-pnpm -F @atwebpilot/mcp-server start
+pnpm -F @aipagego/mcp-server start
 ```
 
 监听 `ws://127.0.0.1:8787/worker`。用于本地调试 mcp-server 逻辑，不用装 npx 包。
@@ -1172,8 +1172,8 @@ Modify `docs-site/.vitepress/config.ts`。
 cd docs-site && pnpm dev 2>&1 | head -5 &
 sleep 3
 for p in save-as-tool multi-tab coordinator mcp-bridge; do
-  curl -sSf "http://localhost:5173/atwebpilot/advanced/$p" > /dev/null && echo "OK zh $p" || echo "FAIL zh $p"
-  curl -sSf "http://localhost:5173/atwebpilot/en/advanced/$p" > /dev/null && echo "OK en $p" || echo "FAIL en $p"
+  curl -sSf "http://localhost:5173/aipagego/advanced/$p" > /dev/null && echo "OK zh $p" || echo "FAIL zh $p"
+  curl -sSf "http://localhost:5173/aipagego/en/advanced/$p" > /dev/null && echo "OK en $p" || echo "FAIL en $p"
 done
 pkill -f "vitepress dev" 2>/dev/null || true
 ```
@@ -1439,7 +1439,7 @@ Create `docs-site/en/tools/overview.md`：
 
 <!-- English version is a short summary; auto-generated Chinese pages have full param tables. -->
 
-AtWebPilot ships **41 built-in tools** grouped by category:
+AIPageGo ships **41 built-in tools** grouped by category:
 
 | Category | Description | Chinese page |
 |---|---|---|
@@ -1523,9 +1523,9 @@ Modify `docs-site/.vitepress/config.ts`。
 cd docs-site && pnpm dev 2>&1 | head -5 &
 sleep 3
 for p in overview inspect action danger meta; do
-  curl -sSf "http://localhost:5173/atwebpilot/tools/$p" > /dev/null && echo "OK $p" || echo "FAIL $p"
+  curl -sSf "http://localhost:5173/aipagego/tools/$p" > /dev/null && echo "OK $p" || echo "FAIL $p"
 done
-curl -sSf "http://localhost:5173/atwebpilot/en/tools/overview" > /dev/null && echo "OK en overview"
+curl -sSf "http://localhost:5173/aipagego/en/tools/overview" > /dev/null && echo "OK en overview"
 pkill -f "vitepress dev" 2>/dev/null || true
 ```
 
@@ -1575,7 +1575,7 @@ Create `docs-site/public/mockups/sidepanel-hero.svg`：
 
   <!-- Header -->
   <rect x="0" y="0" width="380" height="44" fill="#18181b"/>
-  <text x="12" y="27" fill="#e4e4e7" font-size="13" font-weight="700">AtWebPilot</text>
+  <text x="12" y="27" fill="#e4e4e7" font-size="13" font-weight="700">AIPageGo</text>
   <text x="86" y="27" fill="#71717a" font-size="10" font-family="ui-monospace, monospace">v0.0.43</text>
   <!-- Header icons -->
   <g fill="#71717a" transform="translate(220, 15)">
@@ -1807,10 +1807,10 @@ Expected: `build complete` 之类；无 `dead link` warn；无 `Error`。
 cd docs-site && pnpm preview 2>&1 | head -5 &
 sleep 2
 # 首页应能加载 sidepanel-hero.svg
-curl -sSf http://localhost:4173/atwebpilot/mockups/sidepanel-hero.svg > /dev/null && echo "OK hero.svg"
-curl -sSf http://localhost:4173/atwebpilot/mockups/compact-mode.svg > /dev/null && echo "OK compact.svg"
-curl -sSf http://localhost:4173/atwebpilot/mockups/full-mode.svg > /dev/null && echo "OK full.svg"
-curl -sSf http://localhost:4173/atwebpilot/mockups/approval-flow.svg > /dev/null && echo "OK approval.svg"
+curl -sSf http://localhost:4173/aipagego/mockups/sidepanel-hero.svg > /dev/null && echo "OK hero.svg"
+curl -sSf http://localhost:4173/aipagego/mockups/compact-mode.svg > /dev/null && echo "OK compact.svg"
+curl -sSf http://localhost:4173/aipagego/mockups/full-mode.svg > /dev/null && echo "OK full.svg"
+curl -sSf http://localhost:4173/aipagego/mockups/approval-flow.svg > /dev/null && echo "OK approval.svg"
 pkill -f "vitepress preview" 2>/dev/null || true
 ```
 
@@ -1999,7 +1999,7 @@ git commit -m "docs: github-pages-site plan — 6-task 实施计划"
 | §3.1 首页 hero + features + 三行 prompt | Task 1 Step 3 |
 | §3.2 顶部 nav 结构 | Task 2 Step 5 + Task 3 Step 6 + Task 4 Step 4（逐步累加） |
 | §4 目录结构 + package.json + tsconfig | Task 1 Step 1-2 |
-| §5.1 base URL /atwebpilot/ | Task 1 Step 2（config.ts 里 `base`） |
+| §5.1 base URL /aipagego/ | Task 1 Step 2（config.ts 里 `base`） |
 | §5.2 i18n 策略（root + /en/ + 占位模板） | Task 1 Step 2（config.ts locales）+ Task 3 Step 5（占位 EN 页）+ Task 4 Step 3（EN overview 简版） |
 | §6 gen 脚本 + severity 分类 + 输出格式 | Task 4 Step 1-2 |
 | §7 部署 workflow | Task 6 Step 1 |

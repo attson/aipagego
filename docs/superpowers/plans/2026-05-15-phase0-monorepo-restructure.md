@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 把现有单包 AtWebPilot 扩展改造成 pnpm workspaces monorepo —— `packages/shared/`（纯函数 + 类型，给后续 coordinator/daemon/server 共享）与 `packages/extension/`（现有扩展整体迁入）—— 不改任何运行时行为，所有 168 个测试与 build 产物保持一致。
+**Goal:** 把现有单包 AIPageGo 扩展改造成 pnpm workspaces monorepo —— `packages/shared/`（纯函数 + 类型，给后续 coordinator/daemon/server 共享）与 `packages/extension/`（现有扩展整体迁入）—— 不改任何运行时行为，所有 168 个测试与 build 产物保持一致。
 
-**Architecture:** 五步小步快跑：先建空骨架（workspace + root scripts），再把 `src/shared/*` 镜像到 `packages/shared/`，然后 codemod 全量 `@/shared/X` → `@atwebpilot/shared/X` 并删旧 `src/shared/`，再把剩余扩展源码整体迁入 `packages/extension/`，最后改 CI 工作流路径。每步 commit，每步跑全测套防回归。
+**Architecture:** 五步小步快跑：先建空骨架（workspace + root scripts），再把 `src/shared/*` 镜像到 `packages/shared/`，然后 codemod 全量 `@/shared/X` → `@aipagego/shared/X` 并删旧 `src/shared/`，再把剩余扩展源码整体迁入 `packages/extension/`，最后改 CI 工作流路径。每步 commit，每步跑全测套防回归。
 
 **Tech Stack:** pnpm 9 workspaces、TypeScript 5.5、Vite 5 + @crxjs（不变）、vitest 2 + happy-dom（不变）、GitHub Actions（路径调整）。
 
@@ -15,7 +15,7 @@
 ## 文件结构总览（Phase 0 结束态）
 
 ```
-atwebpilot2/
+aipagego2/
 ├─ pnpm-workspace.yaml                ← 新
 ├─ package.json                       ← 改写为 workspace 编排（仅留 -r 转发脚本）
 ├─ pnpm-lock.yaml                     ← 自动重新生成
@@ -42,7 +42,7 @@ atwebpilot2/
 │  │     ├─ static-scan.test.ts
 │  │     └─ url-pattern.test.ts
 │  └─ extension/
-│     ├─ package.json                 ← 含 "@atwebpilot/shared": "workspace:*"
+│     ├─ package.json                 ← 含 "@aipagego/shared": "workspace:*"
 │     ├─ tsconfig.json                ← 含 @/* 别名
 │     ├─ vite.config.ts
 │     ├─ tailwind.config.ts
@@ -66,10 +66,10 @@ atwebpilot2/
 
 **关键设计**：
 
-1. `@atwebpilot/shared` 通过 `package.json#exports` 做子路径暴露：`@atwebpilot/shared/types`、`@atwebpilot/shared/messages` 等，与现有 `@/shared/types` 形如直接映射，codemod 是纯字符串替换
+1. `@aipagego/shared` 通过 `package.json#exports` 做子路径暴露：`@aipagego/shared/types`、`@aipagego/shared/messages` 等，与现有 `@/shared/types` 形如直接映射，codemod 是纯字符串替换
 2. 扩展包内 `@/*` 别名保留（指向 `packages/extension/src/*`），扩展内部 import 完全不动
 3. 不引入 TS project references（避免 `tsc -b` 复杂度），每包独立 `tsc --noEmit`
-4. `@atwebpilot/shared` 以 **源码引用** 形式被扩展消费（exports 指向 `.ts`），不需要预 build；vite 通过 `@crxjs` 与 react 插件正常打包
+4. `@aipagego/shared` 以 **源码引用** 形式被扩展消费（exports 指向 `.ts`），不需要预 build；vite 通过 `@crxjs` 与 react 插件正常打包
 
 ---
 
@@ -94,18 +94,18 @@ packages:
 
 ```json
 {
-  "name": "atwebpilot-monorepo",
+  "name": "aipagego-monorepo",
   "private": true,
   "version": "0.0.5",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）monorepo root",
+  "description": "AIPageGo — AI 网页助手（侧边面板）monorepo root",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @atwebpilot/extension dev",
-    "build": "pnpm --filter @atwebpilot/extension build",
-    "preview": "pnpm --filter @atwebpilot/extension preview",
+    "dev": "pnpm --filter @aipagego/extension dev",
+    "build": "pnpm --filter @aipagego/extension build",
+    "preview": "pnpm --filter @aipagego/extension preview",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:watch": "pnpm --filter @atwebpilot/extension test:watch"
+    "test:watch": "pnpm --filter @aipagego/extension test:watch"
   },
   "packageManager": "pnpm@9.0.0"
 }
@@ -127,7 +127,7 @@ git commit -m "feat(workspace): scaffold pnpm workspaces skeleton"
 
 ---
 
-## Task 2: 创建 `@atwebpilot/shared` 包（镜像 src/shared）
+## Task 2: 创建 `@aipagego/shared` 包（镜像 src/shared）
 
 镜像而非搬动——这样在 Task 3 codemod 完成前，原 `src/shared/` 仍服务现有扩展代码，typecheck / test / build 始终绿。
 
@@ -142,7 +142,7 @@ git commit -m "feat(workspace): scaffold pnpm workspaces skeleton"
 
 ```json
 {
-  "name": "@atwebpilot/shared",
+  "name": "@aipagego/shared",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -252,8 +252,8 @@ Expected: 无输出（shared 应当只 import 自身相对路径）。如果有�
 Run:
 ```bash
 pnpm install
-pnpm --filter @atwebpilot/shared typecheck
-pnpm --filter @atwebpilot/shared test
+pnpm --filter @aipagego/shared typecheck
+pnpm --filter @aipagego/shared test
 ```
 Expected:
 - `typecheck` 0 error
@@ -263,22 +263,22 @@ Expected:
 
 ```bash
 git add packages/shared pnpm-lock.yaml
-git commit -m "feat(shared): add @atwebpilot/shared package mirroring src/shared"
+git commit -m "feat(shared): add @aipagego/shared package mirroring src/shared"
 ```
 
 ---
 
-## Task 3: Codemod `@/shared/*` → `@atwebpilot/shared/*` 并删除 `src/shared/`
+## Task 3: Codemod `@/shared/*` → `@aipagego/shared/*` 并删除 `src/shared/`
 
 此 task 让现扩展全量切到新 shared 包。完成后 `src/shared/` 与 `tests/shared/` 永久删除。
 
 **Files:**
 - Modify: 当前 80+ 处 `from "@/shared/..."` 引用，分布于 `src/` 与 `tests/`
-- Modify: `package.json`（root 暂时还是单包形态，需要加 `@atwebpilot/shared` 作为本地依赖）
+- Modify: `package.json`（root 暂时还是单包形态，需要加 `@aipagego/shared` 作为本地依赖）
 - Modify: `tsconfig.json`（暂保留 `@/*` 别名，无需改）
 - Delete: `src/shared/`、`tests/shared/`
 
-- [ ] **Step 1: 给 root `package.json` 加 `@atwebpilot/shared` 依赖**
+- [ ] **Step 1: 给 root `package.json` 加 `@aipagego/shared` 依赖**
 
 注意：上一步已经把 root `package.json` 改成 monorepo 编排器了，没有 dependencies 字段。但现在扩展代码还在 `src/`，还没迁到 `packages/extension/`——扩展此刻是"用 root 的 node_modules + workspace 链接"在跑。所以需要在 root `package.json` 临时加一个 dep：
 
@@ -286,10 +286,10 @@ git commit -m "feat(shared): add @atwebpilot/shared package mirroring src/shared
 
 ```json
 {
-  "name": "atwebpilot-monorepo",
+  "name": "aipagego-monorepo",
   "private": true,
   "version": "0.0.5",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）monorepo root",
+  "description": "AIPageGo — AI 网页助手（侧边面板）monorepo root",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -301,7 +301,7 @@ git commit -m "feat(shared): add @atwebpilot/shared package mirroring src/shared
   },
   "packageManager": "pnpm@9.0.0",
   "dependencies": {
-    "@atwebpilot/shared": "workspace:*",
+    "@aipagego/shared": "workspace:*",
     "idb": "^8.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -327,14 +327,14 @@ git commit -m "feat(shared): add @atwebpilot/shared package mirroring src/shared
 }
 ```
 
-这把全部 deps 恢复回 root（与 Task 1 之前一致），只多了 `@atwebpilot/shared: workspace:*`。Task 4 会再次把这些 deps 移到 `packages/extension`，但当下要它们留在 root 让 vite 能找到。
+这把全部 deps 恢复回 root（与 Task 1 之前一致），只多了 `@aipagego/shared: workspace:*`。Task 4 会再次把这些 deps 移到 `packages/extension`，但当下要它们留在 root 让 vite 能找到。
 
-- [ ] **Step 2: 重新装依赖让 `@atwebpilot/shared` symlink 到 root node_modules**
+- [ ] **Step 2: 重新装依赖让 `@aipagego/shared` symlink 到 root node_modules**
 
 Run: `pnpm install`
-Expected: `node_modules/@atwebpilot/shared` 是指向 `packages/shared` 的 symlink。
+Expected: `node_modules/@aipagego/shared` 是指向 `packages/shared` 的 symlink。
 
-Run: `ls -la node_modules/@atwebpilot/`
+Run: `ls -la node_modules/@aipagego/`
 Expected: `shared -> ../../packages/shared`
 
 - [ ] **Step 3: 写一个一次性 codemod 脚本**
@@ -354,7 +354,7 @@ const files = execSync(
 let total = 0;
 for (const file of files) {
   const before = readFileSync(file, "utf8");
-  const after = before.replace(/from "@\/shared\/([^"]+)"/g, 'from "@atwebpilot/shared/$1"');
+  const after = before.replace(/from "@\/shared\/([^"]+)"/g, 'from "@aipagego/shared/$1"');
   if (before !== after) {
     const diff = (before.match(/@\/shared\//g) || []).length;
     total += diff;
@@ -393,7 +393,7 @@ pnpm build
 
 Expected:
 - typecheck 0 error
-- test 全绿（注意 `test` 脚本里既跑 root 的 vitest，也通过 `pnpm -r` 把 shared 包的 vitest 也带跑——总测试数仍 168 左右，shared 那 37 个搬到 `@atwebpilot/shared` 包跑）
+- test 全绿（注意 `test` 脚本里既跑 root 的 vitest，也通过 `pnpm -r` 把 shared 包的 vitest 也带跑——总测试数仍 168 左右，shared 那 37 个搬到 `@aipagego/shared` 包跑）
 - build 产出 `dist/`，与改造前 byte-by-byte 不需要一致但应能加载（必要时 `chrome://extensions` 重 load）
 
 - [ ] **Step 8: 删 codemod 临时脚本**
@@ -405,9 +405,9 @@ Run: `git rm tools/codemod-shared-imports.mjs`
 
 ```bash
 git add -A
-git commit -m "refactor: migrate extension imports to @atwebpilot/shared
+git commit -m "refactor: migrate extension imports to @aipagego/shared
 
-80 imports of @/shared/X rewritten to @atwebpilot/shared/X via codemod.
+80 imports of @/shared/X rewritten to @aipagego/shared/X via codemod.
 Old src/shared and tests/shared removed; tests now run inside the
 shared package."
 ```
@@ -431,11 +431,11 @@ shared package."
 
 ```json
 {
-  "name": "@atwebpilot/extension",
+  "name": "@aipagego/extension",
   "version": "0.0.5",
   "private": true,
   "type": "module",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）",
+  "description": "AIPageGo — AI 网页助手（侧边面板）",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -445,7 +445,7 @@ shared package."
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@atwebpilot/shared": "workspace:*",
+    "@aipagego/shared": "workspace:*",
     "idb": "^8.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -568,18 +568,18 @@ export default defineConfig({
 
 ```json
 {
-  "name": "atwebpilot-monorepo",
+  "name": "aipagego-monorepo",
   "private": true,
   "version": "0.0.5",
-  "description": "AtWebPilot — AI 网页助手（侧边面板）monorepo root",
+  "description": "AIPageGo — AI 网页助手（侧边面板）monorepo root",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @atwebpilot/extension dev",
-    "build": "pnpm --filter @atwebpilot/extension build",
-    "preview": "pnpm --filter @atwebpilot/extension preview",
+    "dev": "pnpm --filter @aipagego/extension dev",
+    "build": "pnpm --filter @aipagego/extension build",
+    "preview": "pnpm --filter @aipagego/extension preview",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
-    "test:watch": "pnpm --filter @atwebpilot/extension test:watch"
+    "test:watch": "pnpm --filter @aipagego/extension test:watch"
   },
   "packageManager": "pnpm@9.0.0"
 }
@@ -602,7 +602,7 @@ git rm -f tsconfig.tsbuildinfo 2>/dev/null || true
 - [ ] **Step 8: 重新装依赖**
 
 Run: `pnpm install`
-Expected: `packages/extension/node_modules` 与 `node_modules` 各自就位；`packages/extension/node_modules/@atwebpilot/shared` symlink 到 `packages/shared`。
+Expected: `packages/extension/node_modules` 与 `node_modules` 各自就位；`packages/extension/node_modules/@aipagego/shared` symlink 到 `packages/shared`。
 
 - [ ] **Step 9: 验证 typecheck、test、build 全绿**
 
@@ -653,7 +653,7 @@ CI 现在跑 `pnpm typecheck && pnpm test && pnpm build`——这三个 root scr
         run: |
           version=$(node -p "require('./package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "zip_name=atwebpilot-$version.zip" >> "$GITHUB_OUTPUT"
+          echo "zip_name=aipagego-$version.zip" >> "$GITHUB_OUTPUT"
 ```
 改为：
 ```yaml
@@ -662,7 +662,7 @@ CI 现在跑 `pnpm typecheck && pnpm test && pnpm build`——这三个 root scr
         run: |
           version=$(node -p "require('./packages/extension/package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "zip_name=atwebpilot-$version.zip" >> "$GITHUB_OUTPUT"
+          echo "zip_name=aipagego-$version.zip" >> "$GITHUB_OUTPUT"
 ```
 
 第二处（zip 打包路径）：
@@ -698,14 +698,14 @@ Run:
 rm -rf packages/extension/dist
 pnpm build
 ls packages/extension/dist/manifest.json
-cd packages/extension/dist && zip -r /tmp/atwebpilot-test.zip . && cd - && ls -la /tmp/atwebpilot-test.zip
-unzip -l /tmp/atwebpilot-test.zip | head -20
+cd packages/extension/dist && zip -r /tmp/aipagego-test.zip . && cd - && ls -la /tmp/aipagego-test.zip
+unzip -l /tmp/aipagego-test.zip | head -20
 ```
 Expected:
 - `manifest.json` 在 zip 根目录
 - zip 内文件结构与之前发版一致（顶层包含 manifest、html、js、css 等）
 
-清理：`rm /tmp/atwebpilot-test.zip`
+清理：`rm /tmp/aipagego-test.zip`
 
 - [ ] **Step 4: Commit**
 
@@ -737,12 +737,12 @@ Run: `head -100 AGENTS.md`
 在 AGENTS.md 里找到形如 ```src/├─ shared/...``` 的目录树块（或类似的 markdown 段落），整体替换为：
 
 ```
-atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 起）
+aipagego2/                              # pnpm workspaces monorepo（Phase 0 起）
 ├─ packages/
 │  ├─ shared/                        # 纯函数 + 类型，给后续 coordinator/daemon/server 共享
 │  │  ├─ src/                        # types / messages / static-scan / url-pattern / infer-json-schema
 │  │  └─ tests/
-│  └─ extension/                     # AtWebPilot 浏览器扩展（现 19 工具 + sidepanel + LLM agent loop）
+│  └─ extension/                     # AIPageGo 浏览器扩展（现 19 工具 + sidepanel + LLM agent loop）
 │     ├─ src/
 │     │  ├─ background/              # Service Worker (IndexedDB / RPC / tab-watcher / scripting)
 │     │  ├─ content/                 # Content script + 19 个内置工具
@@ -766,8 +766,8 @@ atwebpilot2/                              # pnpm workspaces monorepo（Phase 0 �
 | `pnpm build` | 产 `packages/extension/dist/` |
 | `pnpm typecheck` | shared + extension 串跑 tsc --noEmit |
 | `pnpm test` | shared + extension 串跑 vitest |
-| `pnpm --filter @atwebpilot/shared test` | 只跑 shared 包测试 |
-| `pnpm --filter @atwebpilot/extension test:watch` | 扩展测试 watch 模式 |
+| `pnpm --filter @aipagego/shared test` | 只跑 shared 包测试 |
+| `pnpm --filter @aipagego/extension test:watch` | 扩展测试 watch 模式 |
 ```
 
 如果 AGENTS.md 还有其它处提到 `src/shared/`、`src/background/` 形如旧路径的，一并替换为 `packages/shared/src/` 与 `packages/extension/src/background/` 等。

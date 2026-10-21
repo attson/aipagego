@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import type { Preset } from "@atwebpilot/shared/preset";
-import type { Tool } from "@atwebpilot/shared/types";
-import { matchesAny } from "@atwebpilot/shared/url-pattern";
+import type { Preset } from "@aipagego/shared/preset";
+import type { Tool } from "@aipagego/shared/types";
+import { matchesAny } from "@aipagego/shared/url-pattern";
 import { rpc, currentTabInfo } from "@/sidepanel/rpc";
 import { useUi } from "@/sidepanel/chat/ui-store";
 

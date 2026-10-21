@@ -207,7 +207,7 @@ export type RunRecord = {
 };
 
 export type ExportBundle = {
-  schema: "atwebpilot.tools/v2";
+  schema: "aipagego.tools/v2";
   exportedAt: number;
   tools: Tool[];
 };

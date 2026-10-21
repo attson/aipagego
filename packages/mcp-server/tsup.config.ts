@@ -7,7 +7,7 @@ export default defineConfig({
   outDir: "dist",
   clean: true,
   banner: { js: "#!/usr/bin/env node" },
-  noExternal: ["@atwebpilot/shared", "@atwebpilot/coordinator"],
+  noExternal: ["@aipagego/shared", "@aipagego/coordinator"],
   external: ["ws", "@modelcontextprotocol/sdk", "zod"],
   sourcemap: false,
   dts: false,

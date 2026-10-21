@@ -13,7 +13,7 @@
 ## 文件结构（Plan 2 增量）
 
 ```
-atwebpilot2/
+aipagego2/
 ├─ src/
 │  ├─ manifest.ts                                # MOD: 加 host_permissions for LLM 域名 + webNavigation 权限
 │  ├─ shared/
@@ -780,7 +780,7 @@ import { handleRpc } from "./rpc-handlers";
 import { installTabWatcher } from "./tab-watcher";
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("[atwebpilot2] service worker installed");
+  console.info("[aipagego2] service worker installed");
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -790,7 +790,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((e) => console.error("[atwebpilot2] sidePanel setPanelBehavior", e));
+  .catch((e) => console.error("[aipagego2] sidePanel setPanelBehavior", e));
 
 installTabWatcher();
 
@@ -2674,7 +2674,7 @@ git commit -m "feat(chat): add session main loop with approval + error feedback"
 import { create } from "zustand";
 import type { LlmSettings } from "@/shared/types";
 
-const KEY = "atwebpilot.llm";
+const KEY = "aipagego.llm";
 
 const DEFAULTS: LlmSettings = {
   provider: "anthropic",
@@ -2756,7 +2756,7 @@ export function SettingsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `atwebpilot-tools-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `aipagego-tools-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       setMsg(`导出 ${bundle.tools.length} 个工具`);
@@ -4009,7 +4009,7 @@ git commit -m "feat(sidepanel): wire chat page as default + fix-with-AI from too
 - [ ] **Step 1: 重写 `README.md`**
 
 ```markdown
-# atwebpilot2 — AI 网页采集器（Plan 2：对话采集与工具固化）
+# aipagego2 — AI 网页采集器（Plan 2：对话采集与工具固化）
 
 ## 装载
 

@@ -24,7 +24,7 @@ export function Header({ debugBadge, onNewChat, chatMode, onToggleChatMode }: Pr
     <div className="border-b border-zinc-800 bg-zinc-900">
       <div className="flex items-center justify-between px-3 pt-2.5">
         <div className="flex items-baseline gap-1.5 truncate">
-          <span className="font-bold text-zinc-100 text-[13px] tracking-tight">AtWebPilot</span>
+          <span className="font-bold text-zinc-100 text-[13px] tracking-tight">AIPageGo</span>
           <span className="text-zinc-500 text-[10px] font-mono" data-testid="header-version">
             v{__APP_VERSION__}
           </span>

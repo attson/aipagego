@@ -1,5 +1,5 @@
-import { ContentRequest } from "@atwebpilot/shared/messages";
-import type { Json } from "@atwebpilot/shared/types";
+import { ContentRequest } from "@aipagego/shared/messages";
+import type { Json } from "@aipagego/shared/types";
 import { injectMain } from "./inject-main";
 import { callTool } from "./tools";
 let installed = false;
@@ -36,7 +36,7 @@ export function installContentRunner(): () => void {
   };
 }
 
-async function handle(req: import("@atwebpilot/shared/messages").ContentRequest): Promise<Json> {
+async function handle(req: import("@aipagego/shared/messages").ContentRequest): Promise<Json> {
   if (req.type === "content.runStep") {
     const { step, bindings } = req;
     if (step.kind === "tool") {

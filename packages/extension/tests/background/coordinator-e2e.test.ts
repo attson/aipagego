@@ -6,7 +6,7 @@ import {
   PROTOCOL_VERSION,
   ClientToServerSchema,
   type Hello
-} from "@atwebpilot/shared/protocol";
+} from "@aipagego/shared/protocol";
 
 function fakeChrome() {
   return {
@@ -117,7 +117,7 @@ describe("coordinator-client end-to-end with ws server", () => {
   it("START_CHAT_SESSION → continuation guard nudges exactly once", async () => {
     // Pre-arm the allow flag in the fake chrome.storage.local
     const fakeStorage = new Map<string, unknown>();
-    fakeStorage.set("atwebpilot.coordinator.allow_remote_chat", true);
+    fakeStorage.set("aipagego.coordinator.allow_remote_chat", true);
     vi.stubGlobal("chrome", {
       ...((globalThis as { chrome?: unknown }).chrome as object),
       storage: {

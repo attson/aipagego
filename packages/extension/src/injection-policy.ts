@@ -1,10 +1,10 @@
 import {
   resolveInjectionPolicy,
   type ResolvedInjectionPolicy
-} from "@atwebpilot/shared";
-import type { InjectionMode, LlmSettings, SiteInjectionRule } from "@atwebpilot/shared/types";
+} from "@aipagego/shared";
+import type { InjectionMode, LlmSettings, SiteInjectionRule } from "@aipagego/shared/types";
 
-export const SETTINGS_KEY = "atwebpilot.llm";
+export const SETTINGS_KEY = "aipagego.llm";
 export const DEFAULT_INJECTION_MODE: InjectionMode = "diagnostic";
 export const DEFAULT_ASSISTANT_ENABLED = true;
 

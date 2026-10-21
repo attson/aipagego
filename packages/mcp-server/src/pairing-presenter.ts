@@ -25,7 +25,7 @@ export function createPairingPresenter(
       return true;
     } catch (error) {
       console.error(
-        `[atwebpilot-mcp] failed to open pairing page ${url}:`,
+        `[aipagego-mcp] failed to open pairing page ${url}:`,
         error instanceof Error ? error.message : String(error)
       );
       return false;
@@ -35,9 +35,9 @@ export function createPairingPresenter(
   const requestHostPresentation = (url: string, fallbackOnFailure: boolean): void => {
     void server.elicitInput({
       mode: "url",
-      message: "Open AtWebPilot in the browser to approve this pairing request.",
+      message: "Open AIPageGo in the browser to approve this pairing request.",
       url,
-      elicitationId: `atwebpilot-pairing-${randomUUID()}`
+      elicitationId: `aipagego-pairing-${randomUUID()}`
     }).catch(async (error) => {
       // A pending elicitation is rejected when the MCP transport closes. The
       // host is going away in that case, so opening a browser would be a
@@ -45,8 +45,8 @@ export function createPairingPresenter(
       if (!server.transport) return;
       console.error(
         fallbackOnFailure
-          ? "[atwebpilot-mcp] URL elicitation failed; falling back to the system browser:"
-          : "[atwebpilot-mcp] URL elicitation failed:",
+          ? "[aipagego-mcp] URL elicitation failed; falling back to the system browser:"
+          : "[aipagego-mcp] URL elicitation failed:",
         error instanceof Error ? error.message : String(error)
       );
       if (fallbackOnFailure && await runFallback(url)) return;

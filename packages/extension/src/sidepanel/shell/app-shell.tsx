@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ImagePart, Json, ReplayableTool, Step, Tool, AttachedTab } from "@atwebpilot/shared/types";
-import type { Preset } from "@atwebpilot/shared/preset";
+import type { ImagePart, Json, ReplayableTool, Step, Tool, AttachedTab } from "@aipagego/shared/types";
+import type { Preset } from "@aipagego/shared/preset";
 
 import {
   getGlobalApprover,
@@ -54,7 +54,7 @@ import type {
   MentionToolOption,
   MentionBookmarkOption,
 } from "@/sidepanel/input/mention-picker";
-import { matchesAny } from "@atwebpilot/shared/url-pattern";
+import { matchesAny } from "@aipagego/shared/url-pattern";
 import { loadBookmarks } from "@/sidepanel/lib/bookmarks";
 import { fileToImagePart, MAX_IMAGES_PER_TURN } from "@/sidepanel/lib/image-utils";
 import { buildMetaTools } from "@/sidepanel/lib/meta-tools";
@@ -149,7 +149,7 @@ export function AppShell() {
   // Pending approval focus: when sidepanel opens after dangerous-tool handoff,
   // scroll to and briefly highlight the awaiting step card.
   useEffect(() => {
-    const KEY = "atwebpilot.pendingApproval";
+    const KEY = "aipagego.pendingApproval";
     void chrome.storage.session.get([KEY]).then(async (res) => {
       const p = (res as Record<string, unknown>)[KEY] as
         | { tabId: number; approvalId: string; ts: number }
@@ -171,9 +171,9 @@ export function AppShell() {
   }, []);
 
   // Widget 通过 widget.openSidepanelWithSave 唤起本面板时,BG 会在 chrome.storage.session
-  // 存 atwebpilot.pendingSave;这里读到就调 showSave(tabId) 弹保存对话框。
+  // 存 aipagego.pendingSave;这里读到就调 showSave(tabId) 弹保存对话框。
   useEffect(() => {
-    const KEY = "atwebpilot.pendingSave";
+    const KEY = "aipagego.pendingSave";
     void chrome.storage.session.get([KEY]).then(async (res) => {
       const p = (res as any)[KEY] as { tabId: number; ts: number } | undefined;
       if (!p) return;
@@ -221,7 +221,7 @@ export function AppShell() {
     function onMsg(msg: unknown) {
       if (!msg || typeof msg !== "object") return;
       const m = msg as { type?: string; selector?: string };
-      if (m.type === "atwebpilot.captureResult" && typeof m.selector === "string") {
+      if (m.type === "aipagego.captureResult" && typeof m.selector === "string") {
         const selector = m.selector;
         setStagedSelectors((prev) =>
           prev.includes(selector) ? prev : [...prev, selector]
@@ -883,7 +883,7 @@ export function AppShell() {
         <SaveAsToolDialog
           tabId={currentTabId}
           initialName={
-            recommendations[0]?.name ?? `AtWebPilot 任务 ${new Date().toISOString().slice(0, 10)}`
+            recommendations[0]?.name ?? `AIPageGo 任务 ${new Date().toISOString().slice(0, 10)}`
           }
           initialDescription={
             (session.messages.find(

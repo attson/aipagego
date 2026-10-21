@@ -1,6 +1,7 @@
-import { TOOL_DEFS } from "@atwebpilot/shared/llm";
-import type { LlmTool } from "@atwebpilot/shared/llm";
-import type { JsonSchema } from "@atwebpilot/shared/types";
+import { TOOL_DEFS } from "@aipagego/shared/llm";
+import type { LlmTool } from "@aipagego/shared/llm";
+import type { JsonSchema } from "@aipagego/shared/types";
+import { readAIPageGoEnv } from "./env";
 
 /**
  * Tools deliberately withheld from MCP.
@@ -202,11 +203,11 @@ export function generateBrowserTools(mode: ToolMode = "core"): GeneratedTool[] {
  * warning on stderr — stdout is the MCP channel and must stay clean.
  */
 export function readToolMode(env: Record<string, string | undefined>): ToolMode {
-  const raw = env.ATWEBPILOT_MCP_TOOLS;
+  const raw = readAIPageGoEnv(env, "MCP_TOOLS");
   if (raw == null || raw === "") return "core";
   if (raw === "core" || raw === "full") return raw;
   process.stderr.write(
-    `[atwebpilot-mcp] ATWEBPILOT_MCP_TOOLS="${raw}" is not recognised; using "core"\n`
+    `[aipagego-mcp] AIPAGEGO_MCP_TOOLS="${raw}" is not recognised; using "core"\n`
   );
   return "core";
 }

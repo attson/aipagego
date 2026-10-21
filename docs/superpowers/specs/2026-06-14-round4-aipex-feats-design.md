@@ -8,7 +8,7 @@
 
 - **G1 AI 主动截屏** —— 新增 BuiltinTool `screenshot`，AI 可以截当前 tab（可选区域）作为 vision 输入
 - **G2 可视化 element capture（基础版）** —— sidepanel 一键进入"选元素"模式，用户点页面任意元素，selector 自动回填到 input 框
-- **G3 External replay** —— 外站可通过 `window.postMessage({ type: "atwebpilot:run", prompt, steps? })` 唤起 sidepanel 接管（白名单 + 用户审阅）
+- **G3 External replay** —— 外站可通过 `window.postMessage({ type: "aipagego:run", prompt, steps? })` 唤起 sidepanel 接管（白名单 + 用户审阅）
 
 ## 2 · 非目标
 
@@ -86,7 +86,7 @@
 ### 4.1 形态
 
 input toolbar 加一个新按钮 `🎯`（旁边的 `📎`、`@` 同行）。点击：
-1. sidepanel 发消息给当前 tab content script: `{type: "atwebpilot.startCapture"}`
+1. sidepanel 发消息给当前 tab content script: `{type: "aipagego.startCapture"}`
 2. content script 注入一个 overlay：鼠标 hover 高亮元素（红色虚线框），点击 = 选中
 3. content script 回 sidepanel: `{selector, tagName, text}`
 4. sidepanel 把 `[selector]` 插入 textarea 当前光标位置
@@ -114,9 +114,9 @@ input toolbar 加一个新按钮 `🎯`（旁边的 `📎`、`@` 同行）。点
 
 ### 5.1 安全模型
 
-- 外站 JS 通过 `window.postMessage({ source: "atwebpilot-replay", payload: ...}, "*")` 向 content script 发请求
+- 外站 JS 通过 `window.postMessage({ source: "aipagego-replay", payload: ...}, "*")` 向 content script 发请求
 - content script 接到后向 BG 转发
-- BG 写入 `chrome.storage.local: atwebpilot.pending_replay = {sourceUrl, ts, prompt, steps?}`（30s TTL）
+- BG 写入 `chrome.storage.local: aipagego.pending_replay = {sourceUrl, ts, prompt, steps?}`（30s TTL）
 - BG 调 `chrome.sidePanel.open({tabId})` 唤起
 - sidepanel mount 时检查 pending_replay，**总是显示审阅 modal**（不论 autoSend），用户看清来源、prompt、step count 再点接受 / 拒绝
 
@@ -129,7 +129,7 @@ input toolbar 加一个新按钮 `🎯`（旁边的 `📎`、`@` 同行）。点
 
 ```ts
 type ReplayMessage = {
-  source: "atwebpilot-replay";
+  source: "aipagego-replay";
   payload: {
     /** 必填 prompt — 让用户知道做什么 */
     prompt: string;

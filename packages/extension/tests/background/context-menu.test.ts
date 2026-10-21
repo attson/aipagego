@@ -12,24 +12,24 @@ function info(extras: Partial<chrome.contextMenus.OnClickData> = {}): chrome.con
 
 describe("promptFor", () => {
   it("summarize → autoSend prompt", () => {
-    const p = promptFor("atwebpilot.summarize", info());
+    const p = promptFor("aipagego.summarize", info());
     expect(p?.autoSend).toBe(true);
     expect(p?.text).toMatch(/总结/);
     expect(p?.sourceUrl).toBe("https://example.com");
   });
 
   it("extract returns null when there's no selectionText", () => {
-    expect(promptFor("atwebpilot.extract", info())).toBeNull();
+    expect(promptFor("aipagego.extract", info())).toBeNull();
   });
 
   it("extract embeds the selection text", () => {
-    const p = promptFor("atwebpilot.extract", info({ selectionText: "  hello world  " }));
+    const p = promptFor("aipagego.extract", info({ selectionText: "  hello world  " }));
     expect(p?.text).toContain("hello world");
     expect(p?.autoSend).toBe(false);
   });
 
   it("custom returns an empty-text prompt (auto-send off)", () => {
-    const p = promptFor("atwebpilot.custom", info());
+    const p = promptFor("aipagego.custom", info());
     expect(p?.text).toBe("");
     expect(p?.autoSend).toBe(false);
   });

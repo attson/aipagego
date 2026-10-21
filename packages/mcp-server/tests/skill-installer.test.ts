@@ -3,12 +3,16 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { installCodexSkill, runSkillInstallCommand } from "../src/skill-installer";
+import {
+  defaultCodexSkillsRoot,
+  installCodexSkill,
+  runSkillInstallCommand
+} from "../src/skill-installer";
 
 const temporaryDirectories: string[] = [];
 
 async function temporaryDirectory(): Promise<string> {
-  const directory = await mkdtemp(join(tmpdir(), "atwebpilot-skill-test-"));
+  const directory = await mkdtemp(join(tmpdir(), "aipagego-skill-test-"));
   temporaryDirectories.push(directory);
   return directory;
 }
@@ -24,7 +28,7 @@ describe("Codex Skill metadata", () => {
     const skillPath = fileURLToPath(new URL("../../../skill/SKILL.md", import.meta.url));
     const content = await readFile(skillPath, "utf8");
 
-    expect(content).toMatch(/^---\nname: atwebpilot-browser\n/);
+    expect(content).toMatch(/^---\nname: aipagego-browser\n/);
     expect(content).toMatch(/description:.*live web page/i);
     expect(content).toMatch(/localhost/i);
     expect(content).toMatch(/authenticated/i);
@@ -34,11 +38,16 @@ describe("Codex Skill metadata", () => {
 });
 
 describe("installCodexSkill", () => {
+  it("uses the configured skills root", () => {
+    expect(defaultCodexSkillsRoot({ AIPAGEGO_CODEX_SKILLS_DIR: "/new" }, "/home/test"))
+      .toBe("/new");
+  });
+
   it("installs once and treats identical content as unchanged", async () => {
     const root = await temporaryDirectory();
     const sourceFile = join(root, "source.md");
     const skillsRoot = join(root, "skills");
-    await writeFile(sourceFile, "---\nname: atwebpilot-browser\n---\nbody\n", "utf8");
+    await writeFile(sourceFile, "---\nname: aipagego-browser\n---\nbody\n", "utf8");
 
     await expect(installCodexSkill({ sourceFile, skillsRoot })).resolves.toMatchObject({
       status: "installed"
@@ -46,15 +55,15 @@ describe("installCodexSkill", () => {
     await expect(installCodexSkill({ sourceFile, skillsRoot })).resolves.toMatchObject({
       status: "unchanged"
     });
-    await expect(readFile(join(skillsRoot, "atwebpilot-browser", "SKILL.md"), "utf8"))
-      .resolves.toBe("---\nname: atwebpilot-browser\n---\nbody\n");
+    await expect(readFile(join(skillsRoot, "aipagego-browser", "SKILL.md"), "utf8"))
+      .resolves.toBe("---\nname: aipagego-browser\n---\nbody\n");
   });
 
   it("refuses to overwrite a modified Skill unless force is explicit", async () => {
     const root = await temporaryDirectory();
     const sourceFile = join(root, "source.md");
     const skillsRoot = join(root, "skills");
-    const targetDirectory = join(skillsRoot, "atwebpilot-browser");
+    const targetDirectory = join(skillsRoot, "aipagego-browser");
     const targetFile = join(targetDirectory, "SKILL.md");
     await writeFile(sourceFile, "new version\n", "utf8");
     await mkdir(targetDirectory, { recursive: true });

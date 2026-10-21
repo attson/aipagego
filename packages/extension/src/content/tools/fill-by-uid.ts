@@ -1,4 +1,4 @@
-import type { Json } from "@atwebpilot/shared/types";
+import type { Json } from "@aipagego/shared/types";
 import { lookupUid } from "./uid-cache";
 
 function setInputValue(el: Element, value: string, clear: boolean): void {

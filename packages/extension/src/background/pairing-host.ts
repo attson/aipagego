@@ -1,4 +1,4 @@
-import type { PairPayload, PairingDecision, TrustRecord } from "@atwebpilot/shared/pairing";
+import type { PairPayload, PairingDecision, TrustRecord } from "@aipagego/shared/pairing";
 
 /**
  * Install-level trust store.
@@ -10,10 +10,10 @@ import type { PairPayload, PairingDecision, TrustRecord } from "@atwebpilot/shar
  *
  * What this protects against is a local process silently taking control of the
  * browser. What it cannot protect against is a process that can read
- * `~/.atwebpilot/` — which could already do considerably worse.
+ * `~/.aipagego/` — which could already do considerably worse.
  */
 
-const KEY = "atwebpilot.pairing.trusted";
+const KEY = "aipagego.pairing.trusted";
 
 async function readAll(): Promise<TrustRecord[]> {
   try {
@@ -44,7 +44,7 @@ export async function decidePairing(payload: PairPayload): Promise<PairingDecisi
     // The likely cause is another process having taken the remembered port and
     // claiming an install id it cannot back up.
     console.warn(
-      "[atwebpilot] pairing: known installId with a mismatched secret — asking the user",
+      "[aipagego] pairing: known installId with a mismatched secret — asking the user",
       payload.installId
     );
     return "ask";

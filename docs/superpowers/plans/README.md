@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | 1 | [`2026-05-09-plan1-executable-skeleton.md`](./2026-05-09-plan1-executable-skeleton.md) | 30 | 51 | 51 |
 | 2 | [`2026-05-10-plan2-ai-conversation.md`](./2026-05-10-plan2-ai-conversation.md) | 26 | +37 | 88 |
-| 3 | [`2026-05-10-plan3-atwebpilot.md`](./2026-05-10-plan3-atwebpilot.md) | 29 | +46 | 134 |
+| 3 | [`2026-05-10-plan3-aipagego.md`](./2026-05-10-plan3-aipagego.md) | 29 | +46 | 134 |
 | 4 | [`2026-05-10-plan4-per-tab-sessions.md`](./2026-05-10-plan4-per-tab-sessions.md) | 13 | +16 | 150 |
 | 5 | [`2026-05-10-plan5-summary-step.md`](./2026-05-10-plan5-summary-step.md) | 6 | +18 | 168 |
 | 6 | [`2026-05-14-multi-tab-context.md`](./2026-05-14-multi-tab-context.md) | 23 | +69 | 237 |
@@ -19,7 +19,7 @@
 | 13 | [`2026-05-23-raw-llm-exchange-log.md`](./2026-05-23-raw-llm-exchange-log.md) | 9 | +29 + continuation guard 3 | 472 |
 | 14 | [`2026-06-04-remote-testable-chat.md`](./2026-06-04-remote-testable-chat.md) | 17 | +20 (shared) +27 (extension) | ~492 |
 | 15 | [`2026-06-06-mcp-bridge.md`](./2026-06-06-mcp-bridge.md) | 7 | 0 (新包) | ~492 |
-| 16 | [`2026-06-06-atwebpilot-rename.md`](./2026-06-06-atwebpilot-rename.md) | 7 | 0 (rename only) | ~492 |
+| 16 | [`2026-06-06-aipagego-rename.md`](./2026-06-06-aipagego-rename.md) | 7 | 0 (rename only) | ~492 |
 | 17 | [`2026-06-07-mcp-publish.md`](./2026-06-07-mcp-publish.md) | 9 | 0 (publish only) | ~492 |
 | 18 | [`2026-09-18-non-intrusive-screenshot.md`](./2026-09-18-non-intrusive-screenshot.md) | 4 | + focused MCP/CDP capture tests | current |
 | 19 | [`2026-09-18-mcp-round-efficiency.md`](./2026-09-18-mcp-round-efficiency.md) | 6 | +7 focused MCP/extension tests | current |

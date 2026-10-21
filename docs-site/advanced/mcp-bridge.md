@@ -2,10 +2,10 @@
 
 ## 概念
 
-MCP Bridge = stdio MCP server + 本地 Coordinator，两者打包在 `@attson/atwebpilot-mcp`。装了之后：
+MCP Bridge = stdio MCP server + 本地 Coordinator，两者打包在 `@attson/aipagego-mcp`。装了之后：
 
 ```
-Codex / Claude Code ─(MCP stdio)─→ atwebpilot-mcp ─(WS worker)─→ Chrome 扩展 ─→ 网页
+Codex / Claude Code ─(MCP stdio)─→ aipagego-mcp ─(WS worker)─→ Chrome 扩展 ─→ 网页
 ```
 
 Codex 或 Claude Code 里就能调 `browser_*` 系列工具在真实网页上读、写、采。
@@ -19,18 +19,18 @@ Codex 或 Claude Code 里就能调 `browser_*` 系列工具在真实网页上读
 ### Codex CLI
 
 ```bash
-npx -y @attson/atwebpilot-mcp --install-codex-skill
-codex mcp add atwebpilot -- npx -y @attson/atwebpilot-mcp
+npx -y @attson/aipagego-mcp --install-codex-skill
+codex mcp add aipagego -- npx -y @attson/aipagego-mcp
 ```
 
 第一条命令安装用户级 Skill，第二条把 server 加到 Codex 的用户级 MCP 配置；两者都不会修改
 项目的 `AGENTS.md`。新开一个 Codex 会话后，可用
-`codex mcp get atwebpilot` 检查配置。
+`codex mcp get aipagego` 检查配置。
 
 ### Claude Code
 
 ```bash
-claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
+claude mcp add aipagego --scope user -- npx -y @attson/aipagego-mcp
 ```
 
 ### 连接扩展
@@ -48,10 +48,10 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 
 | 变量 | 说明 |
 |---|---|
-| `ATWEBPILOT_WS_PORT` | 固定端口。默认是自动选一个空闲端口并复用上次那个 |
-| `ATWEBPILOT_WS_TOKEN` | 要求扩展带 `bearer.<token>` 子协议 |
-| `ATWEBPILOT_MCP_TOOLS` | 连接前仅控制面；连接后为 `core`（默认 31 个）或 `full`（全部 51 个） |
-| `ATWEBPILOT_CODEX_SKILLS_DIR` | 覆盖 Skill 安装根目录；默认 `~/.agents/skills` |
+| `AIPAGEGO_WS_PORT` | 固定端口。默认是自动选一个空闲端口并复用上次那个 |
+| `AIPAGEGO_WS_TOKEN` | 要求扩展带 `bearer.<token>` 子协议 |
+| `AIPAGEGO_MCP_TOOLS` | 连接前仅控制面；连接后为 `core`（默认 31 个）或 `full`（全部 51 个） |
+| `AIPAGEGO_CODEX_SKILLS_DIR` | 覆盖 Skill 安装根目录；默认 `~/.agents/skills` |
 
 ## Codex / Claude Code 可用的 MCP tools
 
@@ -64,7 +64,7 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 | `browser_*` × 51 | 扩展全部内置工具的 MCP 包装 |
 | `get_quota` | 查询当前 session 剩余次数 |
 | `close_session` | 关闭 session |
-| `atwebpilot_skill_read` | 读取推荐的工具使用流程与安全约定 |
+| `aipagego_skill_read` | 读取推荐的工具使用流程与安全约定 |
 
 `browser_*` 与扩展内置工具一一对应，参数一致，只是把 `tabId` 换成 `session_id`。详见
 [工具参考](/tools/overview)。
@@ -77,9 +77,9 @@ claude mcp add atwebpilot --scope user -- npx -y @attson/atwebpilot-mcp
 
 ## 替代 `@playwright/mcp --extension`
 
-playwright-ext 的每个能力这里都有对应项（名字是 AtWebPilot 的）：
+playwright-ext 的每个能力这里都有对应项（名字是 AIPageGo 的）：
 
-| playwright-ext | AtWebPilot |
+| playwright-ext | AIPageGo |
 |---|---|
 | `browser_snapshot` | `browser_takeSnapshot`（uid 可直接喂给 `clickByUid` / `fillByUid`） |
 | `browser_find` | `browser_findElements` |
@@ -97,13 +97,13 @@ playwright-ext 的每个能力这里都有对应项（名字是 AtWebPilot 的�
 两处语义差异要知道，见 [页面事件录制](/advanced/recorder)：默认档下 `handleDialog` 是**预先策略**
 而不是反应式；`resize` 动的是真实窗口。
 
-AtWebPilot 额外有的：页面索引四件套、`extractImages`、`httpRequest`、`downloadSpreadsheet`
+AIPageGo 额外有的：页面索引四件套、`extractImages`、`httpRequest`、`downloadSpreadsheet`
 （真 `.xlsx`）、书签与历史搜索。
 
 ## 手起 mcp-server（开发用）
 
 ```bash
-pnpm -F @attson/atwebpilot-mcp start
+pnpm -F @attson/aipagego-mcp start
 ```
 
 不绑端口；首次用到浏览器时才绑并弹配对页。用于本地调试 mcp-server 逻辑，不用装 npx 包。

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { Coordinator } from "../src/coordinator";
 import { FakeClock, FakeIdGen } from "../src/clock";
-import { SESSION_IDLE_TIMEOUT_MS } from "@atwebpilot/shared/protocol";
+import { SESSION_IDLE_TIMEOUT_MS } from "@aipagego/shared/protocol";
 import type { WSHub } from "../src/ws-hub";
 import type { Worker } from "../src/types";
 

@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { FakeClock, FakeIdGen } from "@atwebpilot/coordinator";
-import { PROTOCOL_VERSION, type Hello } from "@atwebpilot/shared/protocol";
+import { FakeClock, FakeIdGen } from "@aipagego/coordinator";
+import { PROTOCOL_VERSION, type Hello } from "@aipagego/shared/protocol";
 import { WebSocket } from "ws";
 import { createHubEnsurer } from "../src/ensure-hub";
 import { loadLastPort, loadOrCreateIdentity, saveLastPort } from "../src/identity";
@@ -14,7 +14,7 @@ const dirs: string[] = [];
 const made: Array<ReturnType<typeof createHubEnsurer>> = [];
 
 const tmp = () => {
-  const d = mkdtempSync(join(tmpdir(), "atwebpilot-hub-"));
+  const d = mkdtempSync(join(tmpdir(), "aipagego-hub-"));
   dirs.push(d);
   return d;
 };
@@ -324,7 +324,7 @@ describe("createHubEnsurer", () => {
       explicitPort: port,
       processInfo: { sessionId: "s3", label: "~/code/x", pid: 3 }
     });
-    await expect(pinned.ensure()).rejects.toThrow(/ATWEBPILOT_WS_PORT/);
+    await expect(pinned.ensure()).rejects.toThrow(/AIPAGEGO_WS_PORT/);
   });
 
   it("serves the pairing page from the bound port", async () => {

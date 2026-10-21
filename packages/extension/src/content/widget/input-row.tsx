@@ -5,7 +5,7 @@ import { InputBox } from "@/sidepanel/input/input-box";
 import { fileToImagePart, MAX_IMAGE_BYTES, MAX_IMAGES_PER_TURN } from "@/sidepanel/lib/image-utils";
 import { setPermissionMode } from "@/sidepanel/chat/session-store";
 import { useSettings } from "@/sidepanel/chat/settings-store";
-import type { ImagePart } from "@atwebpilot/shared/types";
+import type { ImagePart } from "@aipagego/shared/types";
 import type { SessionData } from "@/sidepanel/chat/session-store";
 import type { PermissionMode } from "@/sidepanel/chat/severity";
 

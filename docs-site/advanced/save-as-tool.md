@@ -8,7 +8,7 @@
 
 会话结束（`✓ N 步成功执行`）后，顶部小条出现 `[保存为工具]` 按钮，点击：
 
-- **名称**：默认 `AtWebPilot 任务 YYYY-MM-DD`；改成能描述这次动作的
+- **名称**：默认 `AIPageGo 任务 YYYY-MM-DD`；改成能描述这次动作的
 - **URL 模式**：默认从当前 URL 推断（`https://shop.example.com/goods.html*` → `https://*.example.com/**`）；改成合适的匹配范围
 - **描述**：默认用户初始 prompt；改成简介
 - **保存的 step 数**：只保存"成功执行"的 step；跳过 / 失败 / 待审的不带

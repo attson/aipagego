@@ -42,7 +42,7 @@ returns a first `[上下文记忆]` message, preserves `page-index-1` /
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/context-manager.test.ts
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/context-manager.test.ts
 ```
 
 Expected: fails because `@/sidepanel/chat/context-manager` does not exist.
@@ -72,7 +72,7 @@ Rules:
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/context-manager.test.ts
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/context-manager.test.ts
 ```
 
 Expected: passes.
@@ -105,7 +105,7 @@ current image/text content.
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/run-session.test.ts -t "current multimodal"
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/run-session.test.ts -t "current multimodal"
 ```
 
 Expected: fails because `runChatSession` still appends `userPrompt` only.
@@ -134,7 +134,7 @@ Initialize messages with:
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/run-session.test.ts -t "current multimodal"
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/run-session.test.ts -t "current multimodal"
 ```
 
 Expected: passes.
@@ -201,7 +201,7 @@ Pass both into `runChatSession`.
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension typecheck
+pnpm --filter @aipagego/extension typecheck
 ```
 
 Expected: passes.
@@ -227,7 +227,7 @@ Add Plan 31 to the specs index and describe:
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/context-manager.test.ts tests/sidepanel/chat/run-session.test.ts
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/context-manager.test.ts tests/sidepanel/chat/run-session.test.ts
 ```
 
 Expected: passes.
@@ -237,7 +237,7 @@ Expected: passes.
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/input/input-box.test.tsx tests/sidepanel/input/input-toolbar.test.tsx
+pnpm --filter @aipagego/extension test -- tests/sidepanel/input/input-box.test.tsx tests/sidepanel/input/input-toolbar.test.tsx
 ```
 
 Expected: passes.
@@ -247,7 +247,7 @@ Expected: passes.
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension typecheck
+pnpm --filter @aipagego/extension typecheck
 ```
 
 Expected: passes.
@@ -338,8 +338,8 @@ LLM / 上下文 / MCP / 权限 / 外观 / 浮窗 / Coordinator / 高级
 Run:
 
 ```bash
-pnpm --filter @atwebpilot/extension test -- tests/sidepanel/chat/context-manager.test.ts tests/sidepanel/drawers/settings/section-context.test.tsx tests/sidepanel/drawers/settings-drawer.test.tsx tests/sidepanel/drawers/settings/section-llm.test.tsx
-pnpm --filter @atwebpilot/extension typecheck
+pnpm --filter @aipagego/extension test -- tests/sidepanel/chat/context-manager.test.ts tests/sidepanel/drawers/settings/section-context.test.tsx tests/sidepanel/drawers/settings-drawer.test.tsx tests/sidepanel/drawers/settings/section-llm.test.tsx
+pnpm --filter @aipagego/extension typecheck
 ```
 
 Expected: passes.

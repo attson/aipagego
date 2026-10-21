@@ -1,4 +1,4 @@
-import type { Json, Step } from "@atwebpilot/shared/types";
+import type { Json, Step } from "@aipagego/shared/types";
 import {
   captureVisualEvidence,
   resolveVisualEvidenceTarget

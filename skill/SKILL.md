@@ -1,11 +1,11 @@
 ---
-name: atwebpilot-browser
-description: Use AtWebPilot when a task requires inspecting, testing, debugging, screenshotting, reading, or interacting with a live web page in the user's existing Chrome, including localhost and authenticated pages. Do not use it for pure code editing or static source analysis that does not require observing a live page.
+name: aipagego-browser
+description: Use AIPageGo when a task requires inspecting, testing, debugging, screenshotting, reading, or interacting with a live web page in the user's existing Chrome, including localhost and authenticated pages. Do not use it for pure code editing or static source analysis that does not require observing a live page.
 ---
 
-# atwebpilot-browser skill
+# aipagego-browser skill
 
-A reusable strategy for agents that drive AtWebPilot's browser extension via
+A reusable strategy for agents that drive AIPageGo's browser extension via
 MCP. Inspired by AIPex's [aipex-browser](https://github.com/AIPexStudio/AIPex)
 pattern: tool usage flow, common scenarios, safety rails — all in one bundle
 so an agent doesn't have to discover them from scratch.
@@ -13,7 +13,7 @@ so an agent doesn't have to discover them from scratch.
 ## Capabilities you have
 
 When this skill is loaded, you can drive any open tab through these tools
-(exposed by `@attson/atwebpilot-mcp`):
+(exposed by `@attson/aipagego-mcp`):
 
 ### Control plane
 
@@ -91,7 +91,7 @@ do this, in order:
 `localStorage[...]`). It is slower, loses schema validation, and usually trips
 the dangerous-tier review that the purpose-built tool would have avoided.
 
-`ATWEBPILOT_MCP_TOOLS=full` advertises everything from the start for users who
+`AIPAGEGO_MCP_TOOLS=full` advertises everything from the start for users who
 prefer to pay the context cost once. `browser_call` is a current-turn
 compatibility path; use the native tool once the host exposes it.
 
@@ -198,7 +198,7 @@ openTab({ url: "https://example.com" })  // 自动 attach
 
 ## Reference
 
-- README: https://github.com/attson/atwebpilot
+- README: https://github.com/attson/aipagego
 - 工具完整 schema 由 mcp-server 的 `tools/list` 暴露
 
 ## Observing a page: console, network, dialogs

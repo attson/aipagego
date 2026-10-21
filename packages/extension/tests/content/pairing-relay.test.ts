@@ -4,7 +4,7 @@ import {
   PAIR_PAGE_SOURCE,
   PAIR_READY_SOURCE,
   PAIR_RESULT_SOURCE
-} from "@atwebpilot/shared/pairing";
+} from "@aipagego/shared/pairing";
 
 const realChrome = globalThis.chrome;
 
@@ -13,7 +13,7 @@ const payload = {
   installId: "inst_abc",
   secret: "s3cr3t",
   sessionId: "sess_1",
-  label: "~/code/atwebpilot2",
+  label: "~/code/aipagego",
   pid: 1234,
   port: 51234,
   mcpVersion: "0.0.74"
@@ -113,7 +113,7 @@ describe("pairing relay", () => {
   it("reports success without an overlay when already trusted", async () => {
     pairMessage();
     await settle();
-    expect(document.querySelector("[data-atwebpilot-pairing]")).toBeNull();
+    expect(document.querySelector("[data-aipagego-pairing]")).toBeNull();
     expect(results()[0]).toMatchObject({
       ok: true,
       trusted: true,
@@ -146,14 +146,14 @@ describe("pairing relay", () => {
     reply = { decision: "ask" };
     pairMessage();
     await settle();
-    expect(document.querySelector("[data-atwebpilot-pairing]")).not.toBeNull();
+    expect(document.querySelector("[data-aipagego-pairing]")).not.toBeNull();
   });
 
   it("keeps the overlay out of the page's reach", async () => {
     reply = { decision: "ask" };
     pairMessage();
     await settle();
-    const host = document.querySelector("[data-atwebpilot-pairing]")!;
+    const host = document.querySelector("[data-aipagego-pairing]")!;
     // A closed shadow root is not reachable from the page.
     expect(host.shadowRoot).toBeNull();
   });

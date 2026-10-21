@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add a GitHub Actions workflow that automatically verifies and packages the AtWebPilot Chromium MV3 extension. The workflow should make normal branch and pull-request builds trustworthy, and create a downloadable zip when a version tag is pushed.
+Add a GitHub Actions workflow that automatically verifies and packages the AIPageGo Chromium MV3 extension. The workflow should make normal branch and pull-request builds trustworthy, and create a downloadable zip when a version tag is pushed.
 
 ## Scope
 
@@ -28,7 +28,7 @@ The workflow runs on:
 4. Run `pnpm typecheck`.
 5. Run `pnpm test`.
 6. Run `pnpm build`.
-7. Read `package.json` version and create `atwebpilot-${version}.zip` from the contents of `dist/`.
+7. Read `package.json` version and create `aipagego-${version}.zip` from the contents of `dist/`.
 8. Upload the zip as a workflow artifact for all runs.
 9. For `v*` tag runs, publish or update a GitHub Release and upload the same zip as a release asset.
 

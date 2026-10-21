@@ -10,7 +10,7 @@ import {
 const realChrome = globalThis.chrome;
 
 function fakeChrome(opts: { has?: boolean; grant?: boolean; stored?: boolean }) {
-  const store: Record<string, unknown> = { "atwebpilot.recorder.cdpEnabled": opts.stored ?? false };
+  const store: Record<string, unknown> = { "aipagego.recorder.cdpEnabled": opts.stored ?? false };
   const stub = {
     permissions: {
       contains: vi.fn(async () => opts.has ?? false),
@@ -69,25 +69,25 @@ describe("setCdpRecorderEnabled", () => {
     const { stub, store } = fakeChrome({ has: false, grant: true });
     expect(await setCdpRecorderEnabled(true)).toBe(true);
     expect(stub.permissions.request).toHaveBeenCalled();
-    expect(store["atwebpilot.recorder.cdpEnabled"]).toBe(true);
+    expect(store["aipagego.recorder.cdpEnabled"]).toBe(true);
   });
 
   it("stays off when the user declines", async () => {
     const { store } = fakeChrome({ has: false, grant: false });
     expect(await setCdpRecorderEnabled(false || true)).toBe(false);
-    expect(store["atwebpilot.recorder.cdpEnabled"]).toBe(false);
+    expect(store["aipagego.recorder.cdpEnabled"]).toBe(false);
   });
 
   it("turning off does not ask for anything", async () => {
     const { stub, store } = fakeChrome({ has: true, stored: true });
     expect(await setCdpRecorderEnabled(false)).toBe(false);
     expect(stub.permissions.request).not.toHaveBeenCalled();
-    expect(store["atwebpilot.recorder.cdpEnabled"]).toBe(false);
+    expect(store["aipagego.recorder.cdpEnabled"]).toBe(false);
   });
 
   it("revoking the permission also clears the flag", async () => {
     const { store } = fakeChrome({ has: true, stored: true });
     await removeDebuggerPermission();
-    expect(store["atwebpilot.recorder.cdpEnabled"]).toBe(false);
+    expect(store["aipagego.recorder.cdpEnabled"]).toBe(false);
   });
 });

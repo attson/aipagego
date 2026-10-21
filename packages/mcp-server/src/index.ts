@@ -1,8 +1,9 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { DefaultClock, DefaultIdGen } from "@atwebpilot/coordinator";
+import { DefaultClock, DefaultIdGen } from "@aipagego/coordinator";
 import { createMcpServer } from "./mcp-server";
 import { createHubEnsurer, defaultOpenUrl } from "./ensure-hub";
 import { runSkillInstallCommand } from "./skill-installer";
+import { readAIPageGoEnv } from "./env";
 
 // ⚠ stdout 是 MCP 通道，日志一律 console.error。
 async function main(): Promise<void> {
@@ -16,10 +17,11 @@ async function main(): Promise<void> {
     throw new Error(`Unknown option: ${args.join(", ")}`);
   }
 
-  const explicitPort = process.env.ATWEBPILOT_WS_PORT
-    ? Number(process.env.ATWEBPILOT_WS_PORT)
+  const portValue = readAIPageGoEnv(process.env, "WS_PORT");
+  const explicitPort = portValue
+    ? Number(portValue)
     : undefined;
-  const token = process.env.ATWEBPILOT_WS_TOKEN || undefined;
+  const token = readAIPageGoEnv(process.env, "WS_TOKEN") || undefined;
 
   const clock = new DefaultClock();
   const idGen = new DefaultIdGen();
@@ -35,7 +37,7 @@ async function main(): Promise<void> {
 
   const server = createMcpServer(deps, undefined, { fallbackOpenUrl: defaultOpenUrl });
   await server.connect(new StdioServerTransport());
-  console.error("[atwebpilot-mcp] stdio MCP connected; ws port binds on first browser use");
+  console.error("[aipagego-mcp] stdio MCP connected; ws port binds on first browser use");
 
   const shutdown = () => {
     const bundle = deps.peek();
@@ -48,4 +50,4 @@ async function main(): Promise<void> {
   process.stdin.on("close", shutdown);
 }
 
-main().catch((e) => { console.error("[atwebpilot-mcp] fatal", e); process.exit(1); });
+main().catch((e) => { console.error("[aipagego-mcp] fatal", e); process.exit(1); });

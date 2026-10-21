@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Add GitHub Actions automation that validates, builds, zips, uploads, and tag-releases the AtWebPilot Chrome extension.
+**Goal:** Add GitHub Actions automation that validates, builds, zips, uploads, and tag-releases the AIPageGo Chrome extension.
 
 **Architecture:** A single workflow file owns CI packaging. It uses Corepack-managed pnpm, existing package scripts, a shell zip step rooted in `dist/`, artifact upload for every run, and GitHub Release upload for `v*` tag runs.
 
@@ -86,7 +86,7 @@ jobs:
         run: |
           version=$(node -p "require('./package.json').version")
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "zip_name=atwebpilot-$version.zip" >> "$GITHUB_OUTPUT"
+          echo "zip_name=aipagego-$version.zip" >> "$GITHUB_OUTPUT"
 
       - name: Package dist
         run: |
@@ -96,7 +96,7 @@ jobs:
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4
         with:
-          name: atwebpilot-extension-${{ steps.package.outputs.version }}
+          name: aipagego-extension-${{ steps.package.outputs.version }}
           path: ${{ steps.package.outputs.zip_name }}
           if-no-files-found: error
 
@@ -149,7 +149,7 @@ Add this section near the existing build instructions in `README.md`:
 
 仓库包含 `.github/workflows/build-extension.yml` 自动打包流程：
 
-- `push` / `pull_request` / 手动运行会执行 `pnpm typecheck`、`pnpm test`、`pnpm build`，并上传 `atwebpilot-<version>.zip` artifact。
+- `push` / `pull_request` / 手动运行会执行 `pnpm typecheck`、`pnpm test`、`pnpm build`，并上传 `aipagego-<version>.zip` artifact。
 - 推送 `v*` tag（例如 `v0.0.1`）会在通过检查后创建 GitHub Release，并上传同一个 zip。
 - zip 内容来自 `dist/` 内部，`manifest.json` 位于压缩包根目录，可直接用于 Chrome 扩展加载或发布前检查。
 
@@ -165,7 +165,7 @@ git push origin v0.0.1
 
 Run:
 ```bash
-rg -n "GitHub Actions 打包|atwebpilot-<version>|git tag v" README.md
+rg -n "GitHub Actions 打包|aipagego-<version>|git tag v" README.md
 ```
 
 Expected: all three phrases are found.
@@ -221,7 +221,7 @@ Expected: exits 0 and `dist/manifest.json` exists.
 Run:
 ```bash
 version=$(node -p "require('./package.json').version")
-zip_name="atwebpilot-$version.zip"
+zip_name="aipagego-$version.zip"
 rm -f "$zip_name"
 (cd dist && zip -r "../$zip_name" .)
 unzip -l "$zip_name" | sed -n '1,40p'
@@ -234,7 +234,7 @@ Expected: zip exists and listing includes `manifest.json` at archive root.
 Run:
 ```bash
 version=$(node -p "require('./package.json').version")
-rm -f "atwebpilot-$version.zip"
+rm -f "aipagego-$version.zip"
 ```
 
 Expected: local zip is removed; workflow still creates it in CI.

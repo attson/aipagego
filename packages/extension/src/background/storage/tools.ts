@@ -1,7 +1,7 @@
-import { matchesAny } from "@atwebpilot/shared/url-pattern";
-import { ToolSchema } from "@atwebpilot/shared/messages";
-import type { JsonSchema, PromptTool, Step, StepsTool, Tool, ToolDraft, ToolOrigin } from "@atwebpilot/shared/types";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { matchesAny } from "@aipagego/shared/url-pattern";
+import { ToolSchema } from "@aipagego/shared/messages";
+import type { JsonSchema, PromptTool, Step, StepsTool, Tool, ToolDraft, ToolOrigin } from "@aipagego/shared/types";
+import { PRESETS } from "@aipagego/shared/presets";
 import { getDB } from "./db";
 
 function uuid(): string {

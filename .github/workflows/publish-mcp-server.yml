@@ -39,7 +39,7 @@ jobs:
           echo "mcp-server version -> $version"
 
       - name: Build mcp-server
-        run: pnpm -F @attson/atwebpilot-mcp build
+        run: pnpm -F @attson/aipagego-mcp build
 
       - name: Verify dist
         run: |

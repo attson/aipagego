@@ -24,11 +24,11 @@ type Active = {
 let active: Active | null = null;
 
 function ensureStyle(): void {
-  if (document.getElementById("atwebpilot-capture-style")) return;
+  if (document.getElementById("aipagego-capture-style")) return;
   const s = document.createElement("style");
-  s.id = "atwebpilot-capture-style";
+  s.id = "aipagego-capture-style";
   s.textContent = `
-    .atwebpilot-capture-hover {
+    .aipagego-capture-hover {
       position: fixed;
       pointer-events: none;
       border: 2px dashed #ef4444;
@@ -37,7 +37,7 @@ function ensureStyle(): void {
       z-index: 2147483646;
       transition: all 70ms ease-out;
     }
-    .atwebpilot-capture-banner {
+    .aipagego-capture-banner {
       position: fixed;
       top: 0;
       left: 0;
@@ -65,10 +65,10 @@ function start(): void {
   if (active) return;
   ensureStyle();
   const overlay = document.createElement("div");
-  overlay.className = "atwebpilot-capture-banner";
-  overlay.textContent = "AtWebPilot: 点击页面上要选的元素（ESC 取消）";
+  overlay.className = "aipagego-capture-banner";
+  overlay.textContent = "AIPageGo: 点击页面上要选的元素（ESC 取消）";
   const hover = document.createElement("div");
-  hover.className = "atwebpilot-capture-hover";
+  hover.className = "aipagego-capture-hover";
   document.documentElement.appendChild(overlay);
   document.documentElement.appendChild(hover);
 
@@ -91,7 +91,7 @@ function start(): void {
     e.stopPropagation();
     const sel = selectorFor(lastTarget);
     void chrome.runtime
-      .sendMessage({ type: "atwebpilot.captureResult", selector: sel })
+      .sendMessage({ type: "aipagego.captureResult", selector: sel })
       .catch(() => undefined);
     stop();
   }
@@ -99,7 +99,7 @@ function start(): void {
     if (e.key === "Escape") {
       e.preventDefault();
       void chrome.runtime
-        .sendMessage({ type: "atwebpilot.captureCancelled" })
+        .sendMessage({ type: "aipagego.captureCancelled" })
         .catch(() => undefined);
       stop();
     }
@@ -125,8 +125,8 @@ function start(): void {
 
 const listener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (msg) => {
   if (msg && typeof msg === "object") {
-    if ((msg as { type?: string }).type === "atwebpilot.startCapture") start();
-    if ((msg as { type?: string }).type === "atwebpilot.stopCapture") stop();
+    if ((msg as { type?: string }).type === "aipagego.startCapture") start();
+    if ((msg as { type?: string }).type === "aipagego.stopCapture") stop();
   }
   return false;
 };

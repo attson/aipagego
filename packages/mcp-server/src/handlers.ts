@@ -1,12 +1,12 @@
-import type { Coordinator, TabInfo } from "@atwebpilot/coordinator";
+import type { Coordinator, TabInfo } from "@aipagego/coordinator";
 import {
   CAPABILITIES,
   isCapability,
   type Capability
-} from "@atwebpilot/shared/capability";
-import type { BuiltinTool, Json } from "@atwebpilot/shared/types";
-import type { Exec, Result } from "@atwebpilot/shared/protocol";
-import { highestSeverity, runStaticScan } from "@atwebpilot/shared/static-scan";
+} from "@aipagego/shared/capability";
+import type { BuiltinTool, Json } from "@aipagego/shared/types";
+import type { Exec, Result } from "@aipagego/shared/protocol";
+import { highestSeverity, runStaticScan } from "@aipagego/shared/static-scan";
 import type { GeneratedTool } from "./tool-gen";
 import { PairingWaitTimeoutError } from "./pairing-errors";
 

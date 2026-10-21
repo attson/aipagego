@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { AttachedTab, ChatMessage, ImagePart, Json, LlmExchange, PersistedSessionData, Step, ToolUsePart } from "@atwebpilot/shared/types";
+import type { AttachedTab, ChatMessage, ImagePart, Json, LlmExchange, PersistedSessionData, Step, ToolUsePart } from "@aipagego/shared/types";
 import type { PermissionMode } from "./severity";
 
 export const SELF_INSTANCE_ID: string =

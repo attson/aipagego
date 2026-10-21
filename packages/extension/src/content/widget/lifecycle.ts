@@ -19,5 +19,5 @@ export function setTeardown(fn: (() => void) | null): void {
 export function unmountWidget(): void {
   teardownWidget?.();
   teardownWidget = null;
-  document.querySelector("atwebpilot-widget")?.remove();
+  document.querySelector("aipagego-widget")?.remove();
 }

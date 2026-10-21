@@ -19,15 +19,15 @@ describe("mountWidget", () => {
   it("creates the assistant host when explicitly mounted", async () => {
     const { mountWidget } = await import("@/content/widget/mount");
     await mountWidget();
-    expect(document.querySelector("atwebpilot-widget")?.shadowRoot).toBeTruthy();
+    expect(document.querySelector("aipagego-widget")?.shadowRoot).toBeTruthy();
   });
 
   it("is idempotent and can be unmounted", async () => {
     const { mountWidget } = await import("@/content/widget/mount");
     await mountWidget();
     await mountWidget();
-    expect(document.querySelectorAll("atwebpilot-widget")).toHaveLength(1);
+    expect(document.querySelectorAll("aipagego-widget")).toHaveLength(1);
     unmountWidget();
-    expect(document.querySelector("atwebpilot-widget")).toBeNull();
+    expect(document.querySelector("aipagego-widget")).toBeNull();
   });
 });

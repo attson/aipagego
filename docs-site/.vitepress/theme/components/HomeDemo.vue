@@ -13,8 +13,8 @@
   <div class="home-demo">
     <iframe
       class="home-demo-frame"
-      src="/atwebpilot/demo/index.html"
-      title="AtWebPilot 交互演示"
+      src="/aipagego/demo/index.html"
+      title="AIPageGo 交互演示"
       referrerpolicy="no-referrer"
     ></iframe>
     <p class="home-demo-note">

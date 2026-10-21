@@ -2,7 +2,7 @@ import "fake-indexeddb/auto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { _resetDBForTests } from "@/background/storage/db";
 import { materializePreset, listTools, deleteTool } from "@/background/storage/tools";
-import { PRESETS } from "@atwebpilot/shared/presets";
+import { PRESETS } from "@aipagego/shared/presets";
 
 describe("materializePreset", () => {
   beforeEach(() => {

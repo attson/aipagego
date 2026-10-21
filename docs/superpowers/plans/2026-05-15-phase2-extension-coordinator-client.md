@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Let the AtWebPilot extension act as a "worker" — connect to any coordinator that speaks our Phase 1 WS protocol, complete the HELLO handshake, receive EXEC messages, run tools using the existing rpc-handlers, and stream back RESULT. Pair/token UX is minimal (user pastes a URL + token); polished pair-code flow is Phase 3.
+**Goal:** Let the AIPageGo extension act as a "worker" — connect to any coordinator that speaks our Phase 1 WS protocol, complete the HELLO handshake, receive EXEC messages, run tools using the existing rpc-handlers, and stream back RESULT. Pair/token UX is minimal (user pastes a URL + token); polished pair-code flow is Phase 3.
 
 **Architecture:** A `CoordinatorClient` in the service worker owns a single WebSocket. State (worker_id, token, config) lives in `chrome.storage.local`. Heartbeat goes through `chrome.alarms` so MV3 doesn't kill the SW. EXEC messages are forwarded to existing `runOneStep` logic — zero changes to current sidepanel chat / tool library / per-tab session paths. A new sidepanel page lets the user paste a URL + token and watch connection status. An end-to-end test spins up a real `ws` server in vitest and verifies the protocol round-trip.
 
-**Tech Stack:** Native `WebSocket` (browser API); `ws` npm package for test-only server; `chrome.storage.local` + `chrome.alarms`; existing zod schemas from `@atwebpilot/shared/protocol`; React 18 for the settings page; vitest 2 + happy-dom (existing).
+**Tech Stack:** Native `WebSocket` (browser API); `ws` npm package for test-only server; `chrome.storage.local` + `chrome.alarms`; existing zod schemas from `@aipagego/shared/protocol`; React 18 for the settings page; vitest 2 + happy-dom (existing).
 
 **Phase 2 范围警告:** This plan does NOT implement /pair HTTP endpoint, 6-digit pair codes, daemon, MCP server, or anything in `packages/daemon/` (all Phase 3). It does NOT touch existing chat / tool library / per-tab session code. The sidepanel gets ONE new subpage; everything else is unchanged.
 
@@ -50,7 +50,7 @@ packages/extension/
 1. `CoordinatorClient` 是**单实例 + 单连接**——同一 SW 永远只持有一个 WS。设置页改 URL/token 触发 `disconnect() → connect()`。
 2. `coordinator-exec.ts` 调 `runOneStep`（从 `rpc-handlers.ts` export 出来）——绝不重写 step 执行逻辑。
 3. **不实现 catalog hash 校验**——Phase 2 worker 是被动接 EXEC，hash 校验是 coordinator 端职责（Phase 1 已落地）。
-4. `chrome.alarms` 心跳定时器名固定为 `atwebpilot-coordinator-heartbeat`，避免和其他 alarm 冲突。
+4. `chrome.alarms` 心跳定时器名固定为 `aipagego-coordinator-heartbeat`，避免和其他 alarm 冲突。
 5. **不写 nonce 防重放逻辑**——nonce 由 server 检测；client 只负责每条 message 带新 nonce。
 6. Settings page 暂用 `chrome.storage.local` 直接 await（不引 zustand store）——配置不频繁读，简单点。
 
@@ -66,7 +66,7 @@ packages/extension/
 Run from worktree root:
 
 ```bash
-pnpm --filter @atwebpilot/extension add -D ws @types/ws
+pnpm --filter @aipagego/extension add -D ws @types/ws
 ```
 
 Expected: `pnpm-lock.yaml` updated; `packages/extension/package.json` `devDependencies` has `ws` (latest, e.g. `^8.x`) + `@types/ws`.
@@ -183,7 +183,7 @@ describe("loadToken / saveToken / clearToken", () => {
 
 - [ ] **Step 2: Confirm RED**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-state.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-state.test.ts`
 Expected: FAIL — `Cannot find module ../../src/background/coordinator-state`.
 
 - [ ] **Step 3: 实现**
@@ -199,9 +199,9 @@ Create `packages/extension/src/background/coordinator-state.ts`:
  */
 
 const STORAGE_KEYS = {
-  worker_id: "atwebpilot.coordinator.worker_id",
-  token: "atwebpilot.coordinator.token",
-  config: "atwebpilot.coordinator.config"
+  worker_id: "aipagego.coordinator.worker_id",
+  token: "aipagego.coordinator.token",
+  config: "aipagego.coordinator.config"
 } as const;
 
 export interface CoordinatorConfig {
@@ -250,7 +250,7 @@ export async function clearToken(): Promise<void> {
 
 - [ ] **Step 4: Confirm GREEN**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-state.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-state.test.ts`
 Expected: All 6 tests pass.
 
 - [ ] **Step 5: Commit**
@@ -277,7 +277,7 @@ Create `packages/extension/tests/background/coordinator-hello.test.ts`:
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { buildHello } from "../../src/background/coordinator-hello";
-import { HelloSchema, PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import { HelloSchema, PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 function fakeChrome(tabs: { id: number; url: string; title: string }[] = []) {
   return {
@@ -364,7 +364,7 @@ describe("buildHello", () => {
 
 - [ ] **Step 2: Confirm RED**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-hello.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-hello.test.ts`
 Expected: FAIL (file missing).
 
 - [ ] **Step 3: 实现**
@@ -375,8 +375,8 @@ Create `packages/extension/src/background/coordinator-hello.ts`:
 import {
   PROTOCOL_VERSION,
   type Hello
-} from "@atwebpilot/shared/protocol";
-import { CAPABILITIES } from "@atwebpilot/shared/capability";
+} from "@aipagego/shared/protocol";
+import { CAPABILITIES } from "@aipagego/shared/capability";
 
 export interface BuildHelloInput {
   worker_id: string;
@@ -436,7 +436,7 @@ export async function buildHello(input: BuildHelloInput): Promise<Hello> {
 
 - [ ] **Step 4: Confirm GREEN**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-hello.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-hello.test.ts`
 Expected: 6 tests pass.
 
 - [ ] **Step 5: Commit**
@@ -480,8 +480,8 @@ Create `packages/extension/tests/background/coordinator-exec.test.ts`:
 ```ts
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { handleExec } from "../../src/background/coordinator-exec";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
-import type { Exec } from "@atwebpilot/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
+import type { Exec } from "@aipagego/shared/protocol";
 
 // Replace runOneStep with a stub for unit tests
 vi.mock("../../src/background/rpc-handlers", () => ({
@@ -562,7 +562,7 @@ describe("handleExec", () => {
 
 - [ ] **Step 3: Confirm RED**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-exec.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-exec.test.ts`
 Expected: FAIL — coordinator-exec module not found.
 
 - [ ] **Step 4: 实现**
@@ -570,8 +570,8 @@ Expected: FAIL — coordinator-exec module not found.
 Create `packages/extension/src/background/coordinator-exec.ts`:
 
 ```ts
-import { PROTOCOL_VERSION, type Exec, type Result, type ErrorBody } from "@atwebpilot/shared/protocol";
-import type { Step } from "@atwebpilot/shared/types";
+import { PROTOCOL_VERSION, type Exec, type Result, type ErrorBody } from "@aipagego/shared/protocol";
+import type { Step } from "@aipagego/shared/types";
 import { runOneStep } from "./rpc-handlers";
 
 function randomNonce(): string {
@@ -633,12 +633,12 @@ export async function handleExec(exec: Exec): Promise<Result> {
 
 - [ ] **Step 5: Confirm GREEN**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-exec.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-exec.test.ts`
 Expected: 5 tests pass.
 
 - [ ] **Step 6: Verify the runOneStep export change didn't break anything**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/rpc-handlers.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/rpc-handlers.test.ts`
 Expected: existing tests still pass.
 
 - [ ] **Step 7: Commit**
@@ -665,7 +665,7 @@ Create `packages/extension/tests/background/coordinator-client.test.ts`:
 ```ts
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { CoordinatorClient } from "../../src/background/coordinator-client";
-import { PROTOCOL_VERSION } from "@atwebpilot/shared/protocol";
+import { PROTOCOL_VERSION } from "@aipagego/shared/protocol";
 
 class FakeWS {
   static instances: FakeWS[] = [];
@@ -908,7 +908,7 @@ describe("CoordinatorClient.connect", () => {
 
 - [ ] **Step 2: Confirm RED**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-client.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-client.test.ts`
 Expected: FAIL.
 
 - [ ] **Step 3: 实现**
@@ -924,10 +924,10 @@ import {
   type Hello,
   type Result,
   type ServerToClient
-} from "@atwebpilot/shared/protocol";
+} from "@aipagego/shared/protocol";
 import { buildHello } from "./coordinator-hello";
 
-const HEARTBEAT_ALARM = "atwebpilot-coordinator-heartbeat";
+const HEARTBEAT_ALARM = "aipagego-coordinator-heartbeat";
 const RECONNECT_BASE_MS = 1_000;
 const RECONNECT_MAX_MS = 30_000;
 
@@ -1121,14 +1121,14 @@ export class CoordinatorClient {
 
 - [ ] **Step 4: Confirm GREEN**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-client.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-client.test.ts`
 Expected: 7 tests pass.
 
 If any test fails, do NOT silently weaken — the test specifies behavior the spec requires. Diagnose, fix, repeat.
 
 - [ ] **Step 5: typecheck**
 
-Run: `pnpm --filter @atwebpilot/extension typecheck`
+Run: `pnpm --filter @aipagego/extension typecheck`
 Expected: 0 errors.
 
 - [ ] **Step 6: Commit**
@@ -1162,12 +1162,12 @@ EOF
 Open `packages/extension/src/background/index.ts`. Currently:
 
 ```ts
-import { RpcRequest as RpcRequestSchema } from "@atwebpilot/shared/messages";
+import { RpcRequest as RpcRequestSchema } from "@aipagego/shared/messages";
 import { handleRpc } from "./rpc-handlers";
 import { installTabWatcher } from "./tab-watcher";
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("[atwebpilot] service worker installed");
+  console.info("[aipagego] service worker installed");
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -1177,7 +1177,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((e) => console.error("[atwebpilot] sidePanel setPanelBehavior", e));
+  .catch((e) => console.error("[aipagego] sidePanel setPanelBehavior", e));
 
 installTabWatcher();
 
@@ -1189,7 +1189,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 Add coordinator-client startup logic at the bottom of the file (after the existing listeners):
 
 ```ts
-import { RpcRequest as RpcRequestSchema } from "@atwebpilot/shared/messages";
+import { RpcRequest as RpcRequestSchema } from "@aipagego/shared/messages";
 import { handleRpc } from "./rpc-handlers";
 import { installTabWatcher } from "./tab-watcher";
 import { CoordinatorClient } from "./coordinator-client";
@@ -1198,7 +1198,7 @@ import { handleExec } from "./coordinator-exec";
 import { listTools as listSavedTools } from "./storage/tools";
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.info("[atwebpilot] service worker installed");
+  console.info("[aipagego] service worker installed");
 });
 
 chrome.action.onClicked.addListener(async (tab) => {
@@ -1208,7 +1208,7 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel
   .setPanelBehavior({ openPanelOnActionClick: true })
-  .catch((e) => console.error("[atwebpilot] sidePanel setPanelBehavior", e));
+  .catch((e) => console.error("[aipagego] sidePanel setPanelBehavior", e));
 
 installTabWatcher();
 
@@ -1245,7 +1245,7 @@ export async function startCoordinatorClient(): Promise<void> {
   if (!config?.enabled || !config.ws_url) return;
   const token = await loadToken();
   if (!token) {
-    console.warn("[atwebpilot] coordinator enabled but no token saved");
+    console.warn("[aipagego] coordinator enabled but no token saved");
     return;
   }
   const worker_id = await getOrCreateWorkerId();
@@ -1274,7 +1274,7 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (
     keys.some(
       (k) =>
-        k === "atwebpilot.coordinator.config" || k === "atwebpilot.coordinator.token"
+        k === "aipagego.coordinator.config" || k === "aipagego.coordinator.token"
     )
   ) {
     void (async () => {
@@ -1289,12 +1289,12 @@ If `listTools` is not the correct export name from `./storage/tools`, find the a
 
 - [ ] **Step 2: typecheck**
 
-Run: `pnpm --filter @atwebpilot/extension typecheck`
+Run: `pnpm --filter @aipagego/extension typecheck`
 Expected: 0 errors. If `listSavedTools` doesn't resolve, fix the import to the actual function name and re-run.
 
 - [ ] **Step 3: full test run on extension package**
 
-Run: `pnpm --filter @atwebpilot/extension test`
+Run: `pnpm --filter @aipagego/extension test`
 Expected: previous 215 tests + new ~22 from Tasks 2-5 = ~237 tests, all green.
 
 - [ ] **Step 4: Commit**
@@ -1380,13 +1380,13 @@ describe("CoordinatorSettingsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /连接/ }));
     await waitFor(() => {
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        "atwebpilot.coordinator.config": {
+        "aipagego.coordinator.config": {
           ws_url: "ws://localhost:7842/worker",
           enabled: true
         }
       });
       expect(chrome.storage.local.set).toHaveBeenCalledWith({
-        "atwebpilot.coordinator.token": "wpk_xyz"
+        "aipagego.coordinator.token": "wpk_xyz"
       });
     });
   });
@@ -1394,11 +1394,11 @@ describe("CoordinatorSettingsPage", () => {
   it("断开 button clears enabled flag", async () => {
     const chromeMock = fakeChromeStorage();
     chromeMock.storage.local.get = vi.fn(async () => ({
-      "atwebpilot.coordinator.config": {
+      "aipagego.coordinator.config": {
         ws_url: "ws://localhost:7842/worker",
         enabled: true
       },
-      "atwebpilot.coordinator.token": "wpk"
+      "aipagego.coordinator.token": "wpk"
     }));
     vi.stubGlobal("chrome", chromeMock);
     render(<CoordinatorSettingsPage />);
@@ -1406,7 +1406,7 @@ describe("CoordinatorSettingsPage", () => {
     fireEvent.click(screen.getByRole("button", { name: /断开/ }));
     await waitFor(() => {
       expect(chromeMock.storage.local.set).toHaveBeenCalledWith({
-        "atwebpilot.coordinator.config": {
+        "aipagego.coordinator.config": {
           ws_url: "ws://localhost:7842/worker",
           enabled: false
         }
@@ -1418,7 +1418,7 @@ describe("CoordinatorSettingsPage", () => {
 
 - [ ] **Step 2: Confirm RED**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/sidepanel/pages/coordinator-settings-page.test.tsx`
+Run: `pnpm --filter @aipagego/extension test tests/sidepanel/pages/coordinator-settings-page.test.tsx`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: 实现 page**
@@ -1593,8 +1593,8 @@ Find the route rendering block (where `route.name === "settings"` renders `<Sett
 
 Run:
 ```bash
-pnpm --filter @atwebpilot/extension test tests/sidepanel/pages/coordinator-settings-page.test.tsx
-pnpm --filter @atwebpilot/extension typecheck
+pnpm --filter @aipagego/extension test tests/sidepanel/pages/coordinator-settings-page.test.tsx
+pnpm --filter @aipagego/extension typecheck
 ```
 
 Expected: 3 page tests pass; typecheck 0 errors (the `Route` union expansion + new route case both type-check).
@@ -1632,7 +1632,7 @@ import {
   PROTOCOL_VERSION,
   ClientToServerSchema,
   type Hello
-} from "@atwebpilot/shared/protocol";
+} from "@aipagego/shared/protocol";
 
 function fakeChrome() {
   return {
@@ -1745,7 +1745,7 @@ describe("coordinator-client end-to-end with ws server", () => {
 
 - [ ] **Step 2: Confirm GREEN**
 
-Run: `pnpm --filter @atwebpilot/extension test tests/background/coordinator-e2e.test.ts`
+Run: `pnpm --filter @aipagego/extension test tests/background/coordinator-e2e.test.ts`
 Expected: 1 test pass within a couple seconds (the entire WS round trip).
 
 If `WebSocket` is not on globalThis in vitest's node env, the test will fail with a clear error — fix by ensuring the test imports `ws` and patches globalThis as shown.
@@ -1773,7 +1773,7 @@ test(extension): coordinator-client end-to-end with real ws server
 
 Spins up a WebSocketServer on a random port, walks the
 HELLO → WELCOME → EXEC → RESULT contract, and asserts the worker
-side parses + emits according to @atwebpilot/shared/protocol. Proves
+side parses + emits according to @aipagego/shared/protocol. Proves
 the wire works without needing Phase 3's daemon to exist yet.
 EOF
 )"

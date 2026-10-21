@@ -1,6 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import type { JsonSchema } from "@atwebpilot/shared/types";
+import type { JsonSchema } from "@aipagego/shared/types";
 import { CONTROL_TOOLS } from "./control-tools";
 import { DISCOVER_TOOL, handleDiscover } from "./discover-tool";
 import { BROWSER_CALL_TOOL } from "./browser-call";
@@ -22,8 +22,8 @@ import { createPairingPresenter, type OpenUrl } from "./pairing-presenter";
 export type ToolListEntry = { name: string; description: string; inputSchema: JsonSchema };
 
 export const MCP_INSTRUCTIONS =
-  "Use AtWebPilot for tasks that require inspecting, testing, debugging, screenshotting, reading, or interacting with a live web page in the user's existing Chrome, including localhost and authenticated pages. " +
-  "Start with browser_start. When AtWebPilot is available, use it before probing or launching Playwright, Puppeteer, or Chrome remote debugging. " +
+  "Use AIPageGo for tasks that require inspecting, testing, debugging, screenshotting, reading, or interacting with a live web page in the user's existing Chrome, including localhost and authenticated pages. " +
+  "Start with browser_start. When AIPageGo is available, use it before probing or launching Playwright, Puppeteer, or Chrome remote debugging. " +
   "Do not start the browser for pure code editing or static source analysis that does not require observing a live page.";
 
 export type ContentBlock =
@@ -246,7 +246,7 @@ export function createMcpServer(
   options: McpServerOptions = {}
 ): Server {
   const server = new Server(
-    { name: "atwebpilot-mcp", version: MCP_VERSION },
+    { name: "aipagego-mcp", version: MCP_VERSION },
     {
       capabilities: { tools: { listChanged: true }, logging: {} },
       instructions: MCP_INSTRUCTIONS
@@ -260,7 +260,7 @@ export function createMcpServer(
       try {
         await server.sendToolListChanged();
       } catch (error) {
-        console.error("[atwebpilot-mcp] failed to send tools/list_changed:", error instanceof Error ? error.message : String(error));
+        console.error("[aipagego-mcp] failed to send tools/list_changed:", error instanceof Error ? error.message : String(error));
       }
     };
     return dispatchCall(deps, req.params.name, args, state, onListChanged, presentPairing);

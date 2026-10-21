@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { _resetDBForTests, getDB } from "@/background/storage/db";
-import type { RunRecord } from "@atwebpilot/shared/types";
+import type { RunRecord } from "@aipagego/shared/types";
 import { createRun, finalizeRun, getRun, listRuns } from "@/background/storage/runs";
 
 describe("runs storage", () => {

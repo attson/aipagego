@@ -73,7 +73,7 @@ describe("SettingsDrawer tabs", () => {
     });
 
     expect(container.textContent).toContain("MCP 配置");
-    expect(container.textContent).toContain("@attson/atwebpilot-mcp");
+    expect(container.textContent).toContain("@attson/aipagego-mcp");
     expect(container.textContent).not.toContain("Provider");
   });
 });

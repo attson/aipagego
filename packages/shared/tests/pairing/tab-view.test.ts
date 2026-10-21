@@ -8,7 +8,7 @@ const tabs = [
 ];
 
 const owners = {
-  "1": { connectionId: "conn-a", label: "~/code/atwebpilot2" },
+  "1": { connectionId: "conn-a", label: "~/code/aipagego" },
   "2": { connectionId: "conn-b", label: "~/code/wanxin" }
 };
 

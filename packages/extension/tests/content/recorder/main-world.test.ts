@@ -4,8 +4,8 @@ import { install } from "@/content/recorder/main-world";
 type Rec = ReturnType<typeof install>;
 
 function fresh(): Rec {
-  const w = window as unknown as { __ATWEBPILOT_REC__?: unknown };
-  delete w.__ATWEBPILOT_REC__;
+  const w = window as unknown as { __AIPAGEGO_REC__?: unknown };
+  delete w.__AIPAGEGO_REC__;
   return install();
 }
 
@@ -112,7 +112,7 @@ describe("main-world recorder — lifecycle", () => {
     rec.uninstall();
     expect(console.log).not.toBe(patched);
     expect(rec.console.toArray()).toEqual([]);
-    expect(window.__ATWEBPILOT_REC__).toBeUndefined();
+    expect(window.__AIPAGEGO_REC__).toBeUndefined();
   });
 
   it("configure clears only the requested buffers", () => {
