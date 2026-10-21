@@ -9,6 +9,9 @@ import { stripBootstrapCss } from "./build/strip-bootstrap-css";
 const pkg = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8"));
 
 export default defineConfig({
+  // Content scripts execute in the host page, so root-relative chunk URLs
+  // would resolve against the website instead of the extension origin.
+  base: "./",
   resolve: {
     alias: { "@": path.resolve(__dirname, "src") }
   },
