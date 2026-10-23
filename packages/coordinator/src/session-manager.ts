@@ -13,6 +13,7 @@ export interface OpenSessionInput {
   tab_id: string;
   scope: ReadonlySet<Capability>;
   idle_timeout_ms?: number;
+  auto_reusable?: boolean;
 }
 
 export class SessionManager {
@@ -31,6 +32,8 @@ export class SessionManager {
       ai_client_fingerprint: input.ai_client_fingerprint,
       worker_id: input.worker_id,
       tab_id: input.tab_id,
+      tab_ids: [input.tab_id],
+      auto_reusable: input.auto_reusable ?? true,
       scope: input.scope,
       state: "active",
       created_at: now,
@@ -41,6 +44,82 @@ export class SessionManager {
     };
     this.sessions.set(id, s);
     return s;
+  }
+
+  findReusable(input: OpenSessionInput): Session | undefined {
+    const matches = [...this.sessions.values()].filter((session) =>
+      session.state === "active" &&
+      session.auto_reusable &&
+      session.ai_client_fingerprint === input.ai_client_fingerprint &&
+      session.worker_id === input.worker_id &&
+      session.tab_ids.includes(input.tab_id) &&
+      session.idle_timeout_ms === (input.idle_timeout_ms ?? SESSION_IDLE_TIMEOUT_MS) &&
+      sameSet(session.scope, input.scope)
+    );
+    return matches.sort((a, b) =>
+      b.last_activity_at - a.last_activity_at || b.created_at - a.created_at
+    )[0];
+  }
+
+  attachTab(id: string, worker_id: string, tab_id: string): { session: Session; attached: boolean } {
+    const session = this.sessions.get(id);
+    if (!session) throw new Error(`Session ${id} not found`);
+    if (session.state !== "active") throw new Error(`Session ${id} not active (state=${session.state})`);
+    if (session.worker_id !== worker_id) {
+      throw new Error(`Session ${id} belongs to worker ${session.worker_id}, not worker ${worker_id}`);
+    }
+    if (session.tab_ids.includes(tab_id)) return { session, attached: false };
+    const next = { ...session, tab_ids: [...session.tab_ids, tab_id] };
+    this.sessions.set(id, next);
+    return { session: next, attached: true };
+  }
+
+  detachTab(
+    id: string,
+    worker_id: string,
+    tab_id: string
+  ): { session: Session; detached: boolean; closed: boolean } {
+    const session = this.sessions.get(id);
+    if (!session) throw new Error(`Session ${id} not found`);
+    if (session.worker_id !== worker_id) {
+      throw new Error(`Session ${id} belongs to worker ${session.worker_id}, not worker ${worker_id}`);
+    }
+    if (!session.tab_ids.includes(tab_id)) {
+      return { session, detached: false, closed: session.state === "closed" };
+    }
+    if (session.state !== "active") {
+      throw new Error(`Session ${id} not active (state=${session.state})`);
+    }
+
+    const tab_ids = session.tab_ids.filter((candidate) => candidate !== tab_id);
+    const closed = tab_ids.length === 0;
+    const next: Session = {
+      ...session,
+      ...(closed ? {} : { tab_id: tab_ids[0] }),
+      tab_ids,
+      state: closed ? "closed" : "active"
+    };
+    this.sessions.set(id, next);
+    return { session: next, detached: true, closed };
+  }
+
+  reconcileWorkerTabs(
+    worker_id: string,
+    available: ReadonlySet<string>
+  ): { closed_session_ids: string[] } {
+    const closed_session_ids: string[] = [];
+    for (const session of this.sessions.values()) {
+      if (session.worker_id !== worker_id || session.state !== "active") continue;
+      const tab_ids = session.tab_ids.filter((tabId) => available.has(tabId));
+      if (tab_ids.length === session.tab_ids.length) continue;
+      if (tab_ids.length === 0) {
+        this.sessions.set(session.id, { ...session, state: "closed", tab_ids: [] });
+        closed_session_ids.push(session.id);
+        continue;
+      }
+      this.sessions.set(session.id, { ...session, tab_id: tab_ids[0], tab_ids });
+    }
+    return { closed_session_ids };
   }
 
   get(id: string): Session | undefined {
@@ -182,4 +261,8 @@ export class SessionManager {
     if (!s) return;
     this.sessions.set(id, { ...s, state: target });
   }
+}
+
+function sameSet<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
+  return left.size === right.size && [...left].every((value) => right.has(value));
 }

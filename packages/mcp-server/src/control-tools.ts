@@ -10,10 +10,12 @@ export const CONTROL_TOOLS: ControlTool[] = [
     inputSchema: {
       type: "object",
       properties: {
-        tab_id: { type: "string", description: "Exact id from browser_start/list_tabs" },
-        url: { type: "string", description: "Exact URL of an open tab" },
-        capabilities: { type: "array", items: { type: "string" }, description: "Optional capability scope" },
-        idle_timeout_min: { type: "number", description: "Optional idle timeout in minutes" }
+        tab_id: { type: "string" },
+        url: { type: "string" },
+        session_id: { type: "string" },
+        force_new: { type: "boolean" },
+        capabilities: { type: "array", items: { type: "string" } },
+        idle_timeout_min: { type: "number" }
       },
       additionalProperties: false
     } as JsonSchema
@@ -30,14 +32,16 @@ export const CONTROL_TOOLS: ControlTool[] = [
   },
   {
     name: "open_session",
-    description: "Open a session for a tab from list_tabs. Returns immediately with PAIRING_REQUIRED if the browser is not connected.",
+    description: "Open, reuse, or attach a tab session. Returns PAIRING_REQUIRED when disconnected.",
     inputSchema: {
       type: "object",
       required: ["tab_id"],
       properties: {
-        tab_id: { type: "string", description: "list_tabs 返回的 tab_id" },
-        capabilities: { type: "array", items: { type: "string" }, description: "能力域白名单；省略=全部" },
-        idle_timeout_min: { type: "number", description: "覆盖默认空闲超时（分钟）" }
+        tab_id: { type: "string" },
+        session_id: { type: "string" },
+        force_new: { type: "boolean" },
+        capabilities: { type: "array", items: { type: "string" } },
+        idle_timeout_min: { type: "number" }
       },
       additionalProperties: false
     } as JsonSchema

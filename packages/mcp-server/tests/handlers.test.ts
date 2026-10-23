@@ -232,6 +232,33 @@ describe("control-plane handlers", () => {
     expect(s.scope.has("submit:form")).toBe(true);
   });
 
+  it("open_session rejects a tab that is not currently available", async () => {
+    const { deps } = makeDeps(okResult);
+
+    await expect(handleOpenSession(deps, { tab_id: "missing" })).rejects.toThrow(
+      /InvalidArgs.*missing.*not available/
+    );
+    expect(deps.peek()!.coordinator.sessions.list()).toHaveLength(0);
+  });
+
+  it("open_session rejects malformed options instead of widening permissions", async () => {
+    const { deps } = makeDeps(okResult);
+
+    await expect(handleOpenSession(deps, {
+      tab_id: "42",
+      capabilities: ["read:dm"]
+    })).rejects.toThrow(/InvalidArgs.*unknown capability/);
+    await expect(handleOpenSession(deps, {
+      tab_id: "42",
+      idle_timeout_min: 0
+    })).rejects.toThrow(/InvalidArgs.*positive/);
+    await expect(handleBrowserStart(deps, {
+      tab_id: "42",
+      force_new: "yes"
+    })).rejects.toThrow(/InvalidArgs.*boolean/);
+    expect(deps.peek()!.coordinator.sessions.list()).toHaveLength(0);
+  });
+
   it("open_session fails immediately instead of waiting when pairing is required", async () => {
     const clock = new FakeClock(0);
     const coordinator = new Coordinator({

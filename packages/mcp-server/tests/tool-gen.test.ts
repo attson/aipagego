@@ -60,13 +60,22 @@ describe("generateBrowserTools", () => {
     }
   });
 
-  it("injects required session_id and strips inner tabId", () => {
+  it("injects required session_id and keeps optional tabId for multi-tab routing", () => {
     const click = tools.find((t) => t.name === "browser_click")!;
     const props = click.inputSchema.properties as Record<string, unknown>;
     expect(props.session_id).toBeTruthy();
-    expect(props.tabId).toBeUndefined();
+    expect(props.tabId).toMatchObject({ type: "integer" });
     expect((click.inputSchema.required as string[]).includes("session_id")).toBe(true);
     expect((click.inputSchema.required as string[]).includes("selector")).toBe(true);
+    expect((click.inputSchema.required as string[]).includes("tabId")).toBe(false);
+  });
+
+  it("makes tab commands targetable while defaulting to the primary tab", () => {
+    for (const name of ["browser_closeTab", "browser_switchToTab"]) {
+      const tool = tools.find((entry) => entry.name === name)!;
+      expect(tool.inputSchema.properties?.tabId).toMatchObject({ type: "integer" });
+      expect(tool.inputSchema.required).not.toContain("tabId");
+    }
   });
 
   it("records the underlying builtin tool name", () => {
@@ -121,7 +130,7 @@ describe("mcp descriptions", () => {
     const props = fill.inputSchema.properties as Record<string, { description?: string }>;
     expect(props.slowly.description).toBe("type char by char for controlled components");
     expect(props.selector.description).toBeUndefined();
-    expect(props.session_id.description).toBe("Session id from open_session");
+    expect(props.session_id.description).toBe("Session id");
   });
   it("never leaks CJK text into the MCP surface", () => {
     for (const t of tools) {

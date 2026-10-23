@@ -37,7 +37,10 @@ export function installWire(
         // available_tabs used to be frozen at HELLO time, so list_tabs
         // reported the browser as it stood when the extension connected.
         const w = coordinator.workers.get(worker_id);
-        if (w) w.available_tabs = msg.tabs.map((t) => ({ ...t }));
+        if (w) {
+          w.available_tabs = msg.tabs.map((t) => ({ ...t }));
+          coordinator.reconcileWorkerTabs(worker_id, new Set(msg.tabs.map((tab) => tab.tab_id)));
+        }
         break;
       }
       default: break;

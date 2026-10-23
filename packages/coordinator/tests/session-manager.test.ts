@@ -28,6 +28,87 @@ describe("SessionManager.open", () => {
     expect(s.state).toBe("active");
     expect(s.created_at).toBe(clock.now());
     expect(s.last_activity_at).toBe(clock.now());
+    expect(s.tab_ids).toEqual(["t1"]);
+  });
+
+  it("reuses the most recently active compatible session that already owns the tab", () => {
+    const { mgr, clock } = newMgr();
+    const first = mgr.open(baseOpen);
+    clock.tick(1);
+    const latest = mgr.open(baseOpen);
+    clock.tick(1);
+    const isolated = mgr.open({ ...baseOpen, auto_reusable: false });
+
+    expect(mgr.findReusable(baseOpen)?.id).toBe(latest.id);
+    expect(mgr.findReusable(baseOpen)?.id).not.toBe(isolated.id);
+    mgr.close(latest.id);
+    expect(mgr.findReusable(baseOpen)?.id).toBe(first.id);
+    expect(mgr.findReusable({ ...baseOpen, scope: new Set(["read:dom"]) })).toBeUndefined();
+    expect(mgr.findReusable({ ...baseOpen, idle_timeout_ms: 1_000 })).toBeUndefined();
+  });
+});
+
+describe("SessionManager multi-tab ownership", () => {
+  it("attaches tabs idempotently and promotes the oldest remaining tab when primary closes", () => {
+    const { mgr } = newMgr();
+    const session = mgr.open(baseOpen);
+
+    expect(mgr.attachTab(session.id, "w1", "t2")).toMatchObject({ attached: true });
+    expect(mgr.attachTab(session.id, "w1", "t2")).toMatchObject({ attached: false });
+    expect(mgr.get(session.id)?.tab_ids).toEqual(["t1", "t2"]);
+
+    const reconciled = mgr.reconcileWorkerTabs("w1", new Set(["t2"]));
+    expect(reconciled.closed_session_ids).toEqual([]);
+    expect(mgr.get(session.id)).toMatchObject({ tab_id: "t2", tab_ids: ["t2"], state: "active" });
+  });
+
+  it("closes a session when its last tab disappears", () => {
+    const { mgr } = newMgr();
+    const session = mgr.open(baseOpen);
+
+    const reconciled = mgr.reconcileWorkerTabs("w1", new Set());
+    expect(reconciled.closed_session_ids).toEqual([session.id]);
+    expect(mgr.get(session.id)?.state).toBe("closed");
+  });
+
+  it("detaches one tab, promotes the primary, and tolerates a repeated close notification", () => {
+    const { mgr } = newMgr();
+    const session = mgr.open(baseOpen);
+    mgr.attachTab(session.id, "w1", "t2");
+
+    expect(mgr.detachTab(session.id, "w1", "t1")).toMatchObject({
+      detached: true,
+      closed: false,
+      session: { tab_id: "t2", tab_ids: ["t2"], state: "active" }
+    });
+    expect(mgr.detachTab(session.id, "w1", "t1")).toMatchObject({
+      detached: false,
+      closed: false
+    });
+  });
+
+  it("closes when detach removes the final tab and stays idempotent afterward", () => {
+    const { mgr } = newMgr();
+    const session = mgr.open(baseOpen);
+
+    expect(mgr.detachTab(session.id, "w1", "t1")).toMatchObject({
+      detached: true,
+      closed: true,
+      session: { tab_ids: [], state: "closed" }
+    });
+    expect(mgr.detachTab(session.id, "w1", "t1")).toMatchObject({
+      detached: false,
+      closed: true
+    });
+  });
+
+  it("rejects attaching through the wrong worker or to a non-active session", () => {
+    const { mgr } = newMgr();
+    const session = mgr.open(baseOpen);
+
+    expect(() => mgr.attachTab(session.id, "w2", "t2")).toThrow(/worker/i);
+    mgr.close(session.id);
+    expect(() => mgr.attachTab(session.id, "w1", "t2")).toThrow(/active/i);
   });
 });
 

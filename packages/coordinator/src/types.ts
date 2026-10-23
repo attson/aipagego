@@ -8,7 +8,12 @@ export interface Session {
   id: string;
   ai_client_fingerprint: string;
   worker_id: string;
+  /** Current default target. For active sessions, always the first entry in tab_ids. */
   tab_id: string;
+  /** Tabs owned by this logical session, in attachment order. */
+  tab_ids: readonly string[];
+  /** False for force_new sessions, which require explicit session_id for later attachment. */
+  auto_reusable: boolean;
   scope: ReadonlySet<Capability>;
   state: SessionState;
   created_at: number;
