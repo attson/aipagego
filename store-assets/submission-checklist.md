@@ -39,6 +39,7 @@
 - 2026-10-24 本地验收 SHA-256：`abe6fb9d134e71ca1c6c17c1e9d5044be81e55e78ba666ce95e27df098a56ed1`
 - 2026-10-27 P4 release candidate（0.0.11）审计包 SHA-256：`7cb1fce6302acf4a9db20a9138c54306014e686a67fe28baa5bc53f26765f09d`；35 个 ZIP 条目，0 errors。
 - 2026-10-27 v0.1.2 release candidate 审计包 SHA-256：`4f5c28611a45d080317d6377fed51901c2d5b6b0b7357df8cf91114ca0802fb2`；35 个 ZIP 条目，0 errors。最终 tag artifact 以 CI 上传的审计报告为准。
+- 2026-10-27 GitHub Release `v0.1.2` 已发布：[`aipagego-0.1.2.zip`](https://github.com/attson/aipagego/releases/download/v0.1.2/aipagego-0.1.2.zip)，SHA-256 `15342272fa0bf10f1590f76916e29b7201d8fcb312dff233749494086902520b`。
 - 后续 tag 包的实际 SHA-256 以同次构建生成并随 artifact 上传的 `store-audit-report.json` 为准。
 - 2026-10-23 验收记录：[`smoke/2026-10-23-p0-smoke.md`](./smoke/2026-10-23-p0-smoke.md)
 - 2026-10-27 P4 连接器与安全分享自动化替代证据：[`smoke/2026-10-27-p4-smoke.md`](./smoke/2026-10-27-p4-smoke.md)
