@@ -10,11 +10,25 @@ export default defineManifest({
   description: "让 AI 帮你浏览、总结、操作网页，并把成功的对话固化为可复用工具",
   version: pkg.version,
   key: extensionKey,
-  action: { default_title: "AIPageGo" },
+  icons: {
+    16: "icons/icon-16.png",
+    32: "icons/icon-32.png",
+    48: "icons/icon-48.png",
+    128: "icons/icon-128.png"
+  },
+  action: {
+    default_title: "AIPageGo",
+    default_icon: {
+      16: "icons/icon-16.png",
+      32: "icons/icon-32.png",
+      48: "icons/icon-48.png",
+      128: "icons/icon-128.png"
+    }
+  },
   side_panel: { default_path: "src/sidepanel/index.html" },
   background: { service_worker: "src/background/index.ts", type: "module" },
-  optional_permissions: ["debugger"],
-  permissions: ["sidePanel", "storage", "scripting", "activeTab", "tabs", "tabGroups", "webNavigation", "contextMenus", "bookmarks", "history", "downloads"],
+  optional_permissions: ["debugger", "bookmarks", "history", "downloads", "notifications"],
+  permissions: ["sidePanel", "storage", "scripting", "activeTab", "tabs", "tabGroups", "webNavigation", "contextMenus", "alarms"],
   host_permissions: [
     "<all_urls>",
     "ws://127.0.0.1/*",

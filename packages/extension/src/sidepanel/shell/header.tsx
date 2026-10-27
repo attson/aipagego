@@ -1,6 +1,6 @@
 import { useUi, type DrawerKind } from "../chat/ui-store";
 import type { DebugBadge } from "../chat/session-store";
-import { Plus, History, Wrench, Settings, Bug, Eye, EyeOff, Layers } from "lucide-react";
+import { Plus, History, Wrench, Settings, Bug, Eye, EyeOff, Layers, TableProperties, Clock3, Cable } from "lucide-react";
 
 type Props = {
   debugBadge: DebugBadge;
@@ -39,6 +39,9 @@ export function Header({ debugBadge, onNewChat, chatMode, onToggleChatMode }: Pr
           <IconBtn label="新会话" onClick={onNewChat}><Plus size={14} /></IconBtn>
           <IconBtn label="历史" onClick={() => open("history")}><History size={14} /></IconBtn>
           <IconBtn label="场景库" onClick={() => open("scenarios")}><Layers size={14} /></IconBtn>
+          <IconBtn label="采集工作台" onClick={() => open("collect")}><TableProperties size={14} /></IconBtn>
+          <IconBtn label="持续任务" onClick={() => open("jobs")}><Clock3 size={14} /></IconBtn>
+          <IconBtn label="连接与安全分享" onClick={() => open("connectors")}><Cable size={14} /></IconBtn>
           <IconBtn label="工具库" onClick={() => open("tools")}><Wrench size={14} /></IconBtn>
           <IconBtn label="设置" onClick={() => open("settings")}><Settings size={14} /></IconBtn>
           <IconBtn label="调试" onClick={() => open("debug")} badge={dot}><Bug size={14} /></IconBtn>

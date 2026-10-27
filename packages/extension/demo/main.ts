@@ -1,5 +1,6 @@
 import { mountMockPage } from "./page";
 import { installHarness } from "./harness";
+import { parseDemoScene, sceneCaption } from "./scene-mode";
 import "./demo.css";
 
 /**
@@ -14,9 +15,13 @@ import "./demo.css";
 const pageRoot = document.getElementById("demo-page");
 const frame = document.getElementById("demo-panel") as HTMLIFrameElement | null;
 const replay = document.getElementById("demo-replay");
+const note = document.querySelector<HTMLElement>(".demo-note");
+const scene = parseDemoScene(location.search);
 
 if (pageRoot) mountMockPage(pageRoot);
 installHarness();
+if (frame) frame.src = `./panel.html?scene=${encodeURIComponent(scene)}`;
+if (note) note.textContent = sceneCaption(scene);
 
 replay?.addEventListener("click", () => {
   if (pageRoot) mountMockPage(pageRoot);

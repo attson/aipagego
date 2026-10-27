@@ -222,7 +222,13 @@ export const DISCOVERABLE_GROUPS: Record<DiscoverGroup, readonly string[]> = {
   network: ["browser_httpRequest", "browser_networkRequestDetail", "browser_recorderConfig", "browser_handleDialog"],
   storage: ["browser_storage"],
   "browser-data": ["browser_searchBookmarks", "browser_searchHistory"],
-  inspect: ["browser_inspectElement", "browser_highlight", "browser_getValue", "browser_extractFormState"],
+  inspect: [
+    "browser_inspectElement",
+    "browser_highlight",
+    "browser_getValue",
+    "browser_extractFormState",
+    "browser_collectStructuredData"
+  ],
   "legacy-dom": ["browser_snapshotDOM", "browser_querySelector", "browser_querySelectorAll", "browser_extractImages", "browser_focus"],
   form: ["browser_submitForm"],
   tabs: ["browser_switchToTab"]

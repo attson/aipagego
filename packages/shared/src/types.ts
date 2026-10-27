@@ -54,6 +54,8 @@ export type BuiltinTool =
   | "searchPageIndex"
   | "readPageBlock"
   | "extractPageFields"
+  // P1 Collect Studio — replay a validated local extraction recipe
+  | "collectStructuredData"
   // Plan 32 — playwright parity
   | "consoleMessages"
   | "networkRequests"
@@ -99,13 +101,28 @@ export type Step =
   | { kind: "tool"; tool: ReplayableTool; args: Json; bindResultTo?: string; timeoutMs?: number }
   | { kind: "js"; source: string; bindResultTo?: string; timeoutMs?: number };
 
+export type ToolParameterType = "string" | "number" | "boolean" | "json";
+
+export type ToolParameter = {
+  key: string;
+  label: string;
+  type: ToolParameterType;
+  required: boolean;
+  description?: string;
+  defaultValue?: Json;
+  sensitive?: boolean;
+};
+
 export type StepsToolVersion = {
   version: number;
   kind: "steps";
+  parameters: ToolParameter[];
   steps: Step[];
+  outputBinding?: string;
   outputSchema: JsonSchema;
   createdAt: number;
   note?: string;
+  basedOnVersion?: number;
 };
 
 export type PromptToolVersion = {
@@ -132,8 +149,7 @@ export type StepsTool = {
   name: string;
   urlPatterns: string[];
   description: string;
-  steps: Step[];
-  outputSchema: JsonSchema;
+  activeVersion: number;
   createdAt: number;
   updatedAt: number;
   versions: StepsToolVersion[];
@@ -162,7 +178,9 @@ export type StepsToolDraft = {
   name: string;
   urlPatterns: string[];
   description: string;
+  parameters?: ToolParameter[];
   steps: Step[];
+  outputBinding?: string;
   outputSchema: JsonSchema;
 };
 
@@ -176,17 +194,19 @@ export type PromptToolDraft = {
 
 export type ToolDraft = StepsToolDraft | PromptToolDraft;
 
+export type RedactedValue = { __redacted: true };
+
 export type RunStepLogEntry = {
   stepIndex: number;
   input: Json;
   output: Json;
   ms: number;
-  error?: string;
+  error?: string | RedactedValue;
 };
 
 export type RunStatus = "pending-approval" | "running" | "ok" | "error" | "aborted";
 
-export type RunSource = "user" | "coordinator";
+export type RunSource = "user" | "coordinator" | "job";
 
 export type RunRecord = {
   id: string;
@@ -199,6 +219,11 @@ export type RunRecord = {
   stepLog: RunStepLogEntry[];
   output?: Json;
   source: RunSource;
+  collection?: {
+    resultId: string;
+    tabId: number;
+    sourceUrl: string;
+  };
   healed?: {
     fromVersion: number;
     toVersion: number;
@@ -207,7 +232,7 @@ export type RunRecord = {
 };
 
 export type ExportBundle = {
-  schema: "aipagego.tools/v2";
+  schema: "aipagego.tools/v3";
   exportedAt: number;
   tools: Tool[];
 };

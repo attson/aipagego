@@ -1,21 +1,28 @@
-import { ToolSchema } from "@aipagego/shared/messages";
+import { CanonicalToolSchema, ToolSchema } from "@aipagego/shared/messages";
 import type { ExportBundle, Tool } from "@aipagego/shared/types";
 import { PRESETS } from "@aipagego/shared/presets";
+import { assertNoLiteralSecrets } from "@aipagego/shared/tool-package";
 import { getDB } from "./db";
 
-function parseTool(raw: unknown): Tool | undefined {
-  const parsed = ToolSchema.safeParse(raw);
-  return parsed.success ? (parsed.data as Tool) : undefined;
+function parseTool(raw: unknown, canonicalOnly = false): { tool?: Tool; error?: string } {
+  const parsed = (canonicalOnly ? CanonicalToolSchema : ToolSchema).safeParse(raw);
+  return parsed.success
+    ? { tool: parsed.data as Tool }
+    : { error: parsed.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("; ") };
 }
 
 export async function exportAll(): Promise<ExportBundle> {
   const db = await getDB();
-  const allTools = (await db.getAll("tools")).map(parseTool).filter((t): t is Tool => !!t);
+  const allTools = (await db.getAll("tools"))
+    .map((raw) => parseTool(raw).tool)
+    .filter((tool): tool is Tool => !!tool);
   // Gap Fix T8.5: exclude unmodified preset copies (origin.kind === "preset" && only 1 version)
   const tools = allTools.filter(
     (t) => !(t.origin?.kind === "preset" && t.versions.length === 1)
   );
-  return { schema: "aipagego.tools/v2", exportedAt: Date.now(), tools };
+  const bundle: ExportBundle = { schema: "aipagego.tools/v3", exportedAt: Date.now(), tools };
+  assertNoLiteralSecrets(bundle);
+  return bundle;
 }
 
 export type ConflictPolicy = "skip" | "overwrite" | "copy";
@@ -23,21 +30,30 @@ export type ConflictPolicy = "skip" | "overwrite" | "copy";
 export type ImportResult = {
   imported: number;
   skipped: number;
+  errors: Array<{ index: number; code: "invalid_tool"; message: string }>;
 };
 
 export async function importBundle(
-  raw: ExportBundle,
+  raw: unknown,
   opts: { onConflict: ConflictPolicy }
 ): Promise<ImportResult> {
-  if (!raw || raw.schema !== "aipagego.tools/v2" || !Array.isArray(raw.tools)) {
+  if (!raw || typeof raw !== "object") {
     throw new Error("invalid bundle: schema mismatch");
   }
+  const bundle = raw as { schema?: unknown; tools?: unknown };
+  if (
+    (bundle.schema !== "aipagego.tools/v2" && bundle.schema !== "aipagego.tools/v3") ||
+    !Array.isArray(bundle.tools)
+  ) throw new Error("invalid bundle: schema mismatch");
+  const canonicalOnly = bundle.schema === "aipagego.tools/v3";
   // Gap Fix T8.5: strip origin when the referenced preset id is not in current PRESETS
   const validPresetIds = new Set(PRESETS.map((p) => p.id));
   const db = await getDB();
   let imported = 0;
   let skipped = 0;
-  for (const rawCandidate of raw.tools) {
+  const errors: ImportResult["errors"] = [];
+  for (let index = 0; index < bundle.tools.length; index++) {
+    const rawCandidate = bundle.tools[index];
     // Sanitize unknown preset origins before parsing
     const candidate =
       rawCandidate &&
@@ -50,12 +66,14 @@ export async function importBundle(
       )
         ? { ...(rawCandidate as Record<string, unknown>), origin: undefined }
         : rawCandidate;
-    const incoming = parseTool(candidate);
+    const parsed = parseTool(candidate, canonicalOnly);
+    const incoming = parsed.tool;
     if (!incoming) {
       skipped++;
+      errors.push({ index, code: "invalid_tool", message: parsed.error ?? "invalid tool" });
       continue;
     }
-    const existing = parseTool(await db.get("tools", incoming.id));
+    const existing = parseTool(await db.get("tools", incoming.id)).tool;
     if (!existing) {
       await db.put("tools", incoming);
       imported++;
@@ -71,5 +89,5 @@ export async function importBundle(
       imported++;
     }
   }
-  return { imported, skipped };
+  return { imported, skipped, errors };
 }

@@ -1,8 +1,8 @@
-import type { Step, Tool, Json } from "@aipagego/shared/types";
+import type { Step, StepsTool, StepsToolVersion, Json } from "@aipagego/shared/types";
 import { classifyTool } from "@/sidepanel/chat/severity";
 
 export type HealContext = {
-  tool: Extract<Tool, { kind: "steps" }>;
+  tool: Pick<StepsTool, "id" | "kind" | "name" | "description" | "urlPatterns"> & StepsToolVersion;
   failedStepIndex: number;
   failedInput: Step;
   errorText: string;
@@ -16,7 +16,7 @@ export type HealResult =
   | { ok: false; reason:
       | "llm_error" | "budget_exceeded" | "invalid_output"
       | "static_scan_reject" | "step_still_fails"
-      | "no_sidepanel" | "no_api_key" };
+      | "no_sidepanel" | "no_api_key" | "self_heal_disabled" };
 
 export type HealDeps = {
   requestSidepanelLlm: (
@@ -25,7 +25,9 @@ export type HealDeps = {
   ) => Promise<{ patchedSteps: unknown; usage: { in: number; out: number } }>;
   snapshot: (tabId: number) => Promise<unknown>;
   staticScan: (steps: Step[]) => Array<"safe" | "caution" | "dangerous">;
+  classifyStep?: (step: Step) => "safe" | "caution" | "dangerous";
   parseSteps: (raw: unknown) => Step[] | null;
+  validatePatch?: (steps: Step[]) => boolean;
   now: () => number;
 };
 
@@ -52,6 +54,7 @@ export async function attemptHeal(
   } catch (e: any) {
     if (e?.message?.includes?.("no_sidepanel")) return { ok: false, reason: "no_sidepanel" };
     if (e?.message?.includes?.("no_api_key")) return { ok: false, reason: "no_api_key" };
+    if (e?.message?.includes?.("self_heal_disabled")) return { ok: false, reason: "self_heal_disabled" };
     return { ok: false, reason: "llm_error" };
   }
   if (resp.usage.out > cap) {
@@ -61,10 +64,14 @@ export async function attemptHeal(
   if (!parsed || parsed.length === 0) {
     return { ok: false, reason: "invalid_output" };
   }
+  if (deps.validatePatch && !deps.validatePatch(parsed)) {
+    return { ok: false, reason: "invalid_output" };
+  }
   // Per-step check: tool steps use classifyTool; js steps delegate to staticScan dep
   for (const step of parsed) {
     if (step.kind === "tool") {
-      if (classifyTool(step.tool, step.args as Json) === "dangerous") {
+      const severity = deps.classifyStep?.(step) ?? classifyTool(step.tool, step.args as Json);
+      if (severity === "dangerous") {
         return { ok: false, reason: "static_scan_reject" };
       }
     } else {

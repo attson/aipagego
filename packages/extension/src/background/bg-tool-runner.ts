@@ -14,6 +14,8 @@ export class BackgroundToolRunner implements ToolRunner {
     attachedTabIds: number[],
     bindings: Record<string, Json>
   ): Promise<Json> {
-    return runOneStep(step, tabId, attachedTabIds, bindings);
+    return runOneStep(step, tabId, attachedTabIds, bindings, {
+      source: "coordinator",
+    });
   }
 }

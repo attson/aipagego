@@ -49,3 +49,6 @@ pnpm build       # 产出 packages/extension/dist/
 
 - [配置](/guide/config) — 填 API Key、选模型、设权限模式
 - [第一条任务](/guide/first-task) — 走通 "总结此页"
+- [隐私政策](/privacy) — 了解本地存储、模型请求与数据边界
+- [权限说明](/permissions) — 查看每项 Chrome 权限的用途与授权时机
+- [获取支持](https://github.com/attson/aipagego/issues) — 报告问题或提出建议

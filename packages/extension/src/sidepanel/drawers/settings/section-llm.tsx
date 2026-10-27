@@ -3,6 +3,8 @@ import { Loader2, TestTube } from "lucide-react";
 import type { LlmProvider } from "@aipagego/shared/types";
 import { ANTHROPIC_MODELS, OPENAI_MODELS, useSettings } from "@/sidepanel/chat/settings-store";
 import { pickClient } from "@/sidepanel/llm/client";
+import { testLlmConnection } from "@/sidepanel/onboarding/connection-test";
+import { restartFirstRun } from "@/sidepanel/onboarding/first-run-state";
 
 type TestStatus =
   | { state: "idle" }
@@ -13,6 +15,7 @@ type TestStatus =
 export function SectionLlm() {
   const settings = useSettings();
   const [testStatus, setTestStatus] = useState<TestStatus>({ state: "idle" });
+  const [restartError, setRestartError] = useState<string | null>(null);
   const models = settings.provider === "anthropic" ? ANTHROPIC_MODELS : OPENAI_MODELS;
   const datalistId = `models-${settings.provider}`;
 
@@ -26,34 +29,22 @@ export function SectionLlm() {
       return;
     }
     setTestStatus({ state: "testing" });
+    const result = await testLlmConnection(settings, pickClient(settings.provider));
+    setTestStatus(
+      result.ok
+        ? { state: "ok", text: "连接正常" }
+        : { state: "error", text: result.message }
+    );
+  }
+
+  async function restartGuide() {
+    setRestartError(null);
     try {
-      const client = pickClient(settings.provider);
-      let sawResponse = false;
-      for await (const event of client.stream({
-        apiKey: settings.apiKey,
-        model: settings.model,
-        endpoint: settings.endpoint,
-        maxTokens: 16,
-        system: "You are testing whether this LLM configuration can answer.",
-        messages: [{ role: "user", content: "Reply with OK." }],
-        tools: []
-      })) {
-        if (event.type === "error") {
-          setTestStatus({ state: "error", text: event.error });
-          return;
-        }
-        if (event.type === "text_delta" || event.type === "message_end") {
-          sawResponse = true;
-          break;
-        }
-      }
-      setTestStatus(
-        sawResponse
-          ? { state: "ok", text: "连接正常" }
-          : { state: "error", text: "没有收到响应" }
+      await restartFirstRun();
+    } catch (error) {
+      setRestartError(
+        `无法重新打开首次引导：${error instanceof Error ? error.message : String(error)}`
       );
-    } catch (e) {
-      setTestStatus({ state: "error", text: e instanceof Error ? e.message : String(e) });
     }
   }
 
@@ -234,6 +225,17 @@ export function SectionLlm() {
         />
         <span className="text-zinc-400">tokens</span>
       </label>
+      <div className="border-t border-zinc-800 pt-2">
+        <button
+          type="button"
+          onClick={() => void restartGuide()}
+          className="rounded bg-zinc-800 px-2 py-1 text-zinc-200 hover:bg-zinc-700"
+        >
+          重新运行首次引导
+        </button>
+        <p className="mt-1 text-[10px] text-zinc-500">不会清除 API Key、会话或已保存工具。</p>
+        {restartError ? <p role="alert" className="mt-1 text-[10px] text-rose-400">{restartError}</p> : null}
+      </div>
     </section>
   );
 }

@@ -6,6 +6,7 @@ export async function createRun(input: {
   toolVersion: number | null;
   url: string;
   source?: RunSource;
+  collection?: RunRecord["collection"];
 }): Promise<RunRecord> {
   const db = await getDB();
   const run: RunRecord = {
@@ -16,7 +17,8 @@ export async function createRun(input: {
     startedAt: Date.now(),
     status: "running",
     stepLog: [],
-    source: input.source ?? "user"
+    source: input.source ?? "user",
+    ...(input.collection == null ? {} : { collection: input.collection })
   };
   await db.put("runs", run);
   return run;
@@ -24,7 +26,9 @@ export async function createRun(input: {
 
 function withSourceDefault(r: RunRecord | undefined): RunRecord | undefined {
   if (!r) return r;
-  return r.source === "user" || r.source === "coordinator" ? r : { ...r, source: "user" };
+  return r.source === "user" || r.source === "coordinator" || r.source === "job"
+    ? r
+    : { ...r, source: "user" };
 }
 
 export async function appendStepLog(id: string, entry: RunStepLogEntry): Promise<void> {
@@ -71,5 +75,5 @@ export async function setRunHealed(
 ): Promise<void> {
   const db = await getDB();
   const row = await db.get("runs", runId);
-  if (row) await db.put("runs", { ...row, healed });
+  if (row) await db.put("runs", { ...row, toolVersion: healed.toVersion, healed });
 }

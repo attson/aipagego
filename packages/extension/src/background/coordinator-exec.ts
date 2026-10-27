@@ -1,8 +1,10 @@
 import { PROTOCOL_VERSION, type Exec, type Result, type ErrorBody } from "@aipagego/shared/protocol";
 import type { Step, Json } from "@aipagego/shared/types";
 import { runOneStep } from "./rpc-handlers";
+import { parsePermissionRequired } from "@aipagego/shared/optional-permissions";
 
 const MAX_EXEC_STEP_TIMEOUT_MS = 25_000;
+const MAX_COLLECTION_EXEC_TIMEOUT_MS = 600_000;
 
 function randomNonce(): string {
   const bytes = new Uint8Array(8);
@@ -10,8 +12,13 @@ function randomNonce(): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function makeError(code: ErrorBody["code"], message: string, retryable = false): ErrorBody {
-  return { code, message, retryable };
+function makeError(
+  code: ErrorBody["code"],
+  message: string,
+  retryable = false,
+  hints?: Record<string, unknown>,
+): ErrorBody {
+  return { code, message, retryable, ...(hints ? { hints } : {}) };
 }
 
 function makeResult(req_id: string, ok: boolean, ret?: Json, error?: ErrorBody): Result {
@@ -48,14 +55,28 @@ export async function handleExec(exec: Exec): Promise<Result> {
   }
 
   try {
-    const requestedTimeout = exec.step.kind === "js" ? exec.step.timeoutMs : undefined;
-    const timeoutMs = Math.min(requestedTimeout ?? MAX_EXEC_STEP_TIMEOUT_MS, MAX_EXEC_STEP_TIMEOUT_MS);
+    const collectionStep = exec.step.kind === "tool" && exec.step.tool === "collectStructuredData";
+    const maxTimeout = collectionStep ? MAX_COLLECTION_EXEC_TIMEOUT_MS : MAX_EXEC_STEP_TIMEOUT_MS;
+    const timeoutMs = Math.min(exec.step.timeoutMs ?? maxTimeout, maxTimeout);
     const value = await withTimeout(
-      runOneStep(exec.step as Step, tabId, [], {}),
+      runOneStep(exec.step as Step, tabId, [], {}, { source: "coordinator" }),
       timeoutMs
     );
     return makeResult(exec.req_id, true, value);
   } catch (err) {
+    const required = parsePermissionRequired(err);
+    if (required) {
+      return makeResult(exec.req_id, false, undefined, makeError(
+        "PermissionDenied",
+        `${required.permission} permission is required for ${required.capability}`,
+        true,
+        {
+          reason: required.code,
+          permission: required.permission,
+          capability: required.capability,
+        },
+      ));
+    }
     const message = err instanceof Error ? err.message : String(err);
     return makeResult(exec.req_id, false, undefined, makeError(
       "PageScriptError",

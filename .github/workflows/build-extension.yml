@@ -65,11 +65,16 @@ jobs:
           cd packages/extension/dist
           zip -r "${{ github.workspace }}/${{ steps.package.outputs.zip_name }}" .
 
+      - name: Audit Chrome Web Store package
+        run: pnpm audit:store -- --report store-audit-report.json
+
       - name: Upload packaged extension
         uses: actions/upload-artifact@v4
         with:
           name: aipagego-extension-${{ steps.package.outputs.version }}
-          path: ${{ steps.package.outputs.zip_name }}
+          path: |
+            ${{ steps.package.outputs.zip_name }}
+            store-audit-report.json
           if-no-files-found: error
 
       - name: Publish GitHub Release

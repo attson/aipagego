@@ -1,5 +1,6 @@
 import type { LlmClient, LlmProvider, LlmStreamEvent } from "@aipagego/shared/llm";
-import { DEMO_ROUNDS, ROUND_DELAY_MS } from "./scenario";
+import { ROUND_DELAY_MS, roundsForScene } from "./scenario";
+import { parseDemoScene } from "./scene-mode";
 
 /**
  * Replaces `sidepanel/llm/client.ts` in the demo build via a Vite alias, so the
@@ -17,9 +18,10 @@ function reducedMotion(): boolean {
 
 class DemoLlmClient implements LlmClient {
   private i = 0;
+  private readonly rounds = roundsForScene(parseDemoScene(location.search));
 
   stream(_input?: Parameters<LlmClient["stream"]>[0]): AsyncIterable<LlmStreamEvent> {
-    const events: LlmStreamEvent[] = DEMO_ROUNDS[this.i++] ?? [
+    const events: LlmStreamEvent[] = this.rounds[this.i++] ?? [
       { type: "message_end", usage: { input_tokens: 0, output_tokens: 0 } }
     ];
     const delay = reducedMotion() ? 0 : ROUND_DELAY_MS;

@@ -26,7 +26,7 @@ describe("meta tool router", () => {
     for (const n of [
       "navigateBack", "navigateForward", "resize",
       "consoleMessages", "networkRequests", "networkRequestDetail",
-      "handleDialog", "recorderConfig"
+      "handleDialog", "recorderConfig", "collectStructuredData"
     ]) {
       expect(isMetaTool(n), n).toBe(true);
     }
@@ -85,7 +85,10 @@ describe("tab plane", () => {
 describe("downloads", () => {
   it("builds a data URL rather than a blob URL", async () => {
     const download = vi.fn(async () => 5);
-    fakeChrome({ downloads: { download } });
+    fakeChrome({
+      downloads: { download },
+      permissions: { contains: vi.fn(async () => true) },
+    });
     const out = (await META_TOOLS.downloadSpreadsheet(
       { filename: "a", sheets: [{ name: "S", rows: [["x"]] }] } as never,
       1

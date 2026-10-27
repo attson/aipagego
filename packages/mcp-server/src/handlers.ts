@@ -372,7 +372,12 @@ export async function prepareBrowserTool(
     worker_id: session.worker_id,
     tab_id,
     tool: toolName,
-    step: { kind: "tool", tool, args: toolArgs as Json },
+    step: {
+      kind: "tool",
+      tool,
+      args: toolArgs as Json,
+      ...(tool === "collectStructuredData" ? { timeoutMs: 600_000 } : {}),
+    },
     dangerous
   };
 }

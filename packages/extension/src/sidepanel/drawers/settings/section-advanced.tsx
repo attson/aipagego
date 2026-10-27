@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { rpc } from "@/sidepanel/rpc";
+import { useUi } from "@/sidepanel/chat/ui-store";
 import { DevJsonModal } from "./dev-json-modal";
 
 export function SectionAdvanced() {
+  const open = useUi((state) => state.open);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [devOpen, setDevOpen] = useState(false);
@@ -25,19 +27,6 @@ export function SectionAdvanced() {
     }
   }
 
-  async function doImport(file: File) {
-    setMsg(null);
-    setErr(null);
-    try {
-      const text = await file.text();
-      const bundle = JSON.parse(text);
-      const r = await rpc.importBundle(bundle);
-      setMsg(`已导入 ${r.imported} 个，跳过 ${r.skipped} 个`);
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    }
-  }
-
   return (
     <section className="bg-zinc-900 rounded p-3 space-y-3 text-xs">
       <h3 className="text-zinc-300">高级 / 调试</h3>
@@ -48,21 +37,12 @@ export function SectionAdvanced() {
           <button onClick={doExport} className="px-3 py-1 bg-zinc-700 rounded">
             导出工具库 JSON
           </button>
-          <label className="px-3 py-1 bg-zinc-700 rounded cursor-pointer">
-            导入 JSON
-            <input
-              type="file"
-              accept="application/json"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) void doImport(f);
-              }}
-            />
-          </label>
+          <button onClick={() => open("connectors", "packages")} className="px-3 py-1 bg-zinc-700 rounded">
+            安全导入工具 JSON
+          </button>
         </div>
         <p className="text-zinc-500 text-[10px]">
-          导出 / 导入只包含 tools。API Key、运行记录不在内。冲突默认 skip。
+          导出只包含 tools；导入会先审查 secret、能力、危险级别与冲突。API Key、运行记录不在内。
         </p>
       </div>
 

@@ -109,6 +109,17 @@ describe("CoordinatorChatHost.handle", () => {
     expect(approverDecision).toEqual({ kind: "run" });
   });
 
+  it("does not inject a browser permission requester into remote chat", async () => {
+    const fakeRun = vi.fn(async (args: { requestPermission?: unknown }) => {
+      expect(args.requestPermission).toBeUndefined();
+    });
+    const host = new CoordinatorChatHost({ runChatSession: fakeRun as never });
+
+    await host.handle(startMsg("remote-permission"), () => undefined);
+
+    expect(fakeRun).toHaveBeenCalledOnce();
+  });
+
   it("reports remote tab-group lifecycle and awaiting status", async () => {
     const onSessionStart = vi.fn();
     const onSessionStatus = vi.fn();

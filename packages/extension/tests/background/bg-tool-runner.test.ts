@@ -9,7 +9,13 @@ describe("BackgroundToolRunner", () => {
     const r = new BackgroundToolRunner();
     const step = { kind: "tool" as const, tool: "snapshotDOM" as ReplayableTool, args: { maxDepth: 2 } };
     const out = await r.runStep(step, 42, [43, 44], { binding: "v" });
-    expect(spy).toHaveBeenCalledWith(step, 42, [43, 44], { binding: "v" });
+    expect(spy).toHaveBeenCalledWith(
+      step,
+      42,
+      [43, 44],
+      { binding: "v" },
+      { source: "coordinator" },
+    );
     expect(out).toEqual({ ok: true });
     spy.mockRestore();
   });

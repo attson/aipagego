@@ -1,5 +1,9 @@
 // packages/shared/src/protocol/chat-event.ts
 import { z } from "zod";
+import {
+  OptionalCapabilityPermissionSchema,
+  PermissionCapabilitySchema,
+} from "../optional-permissions";
 
 export const ChatSessionStatusSchema = z.enum([
   "idle", "streaming", "awaiting", "running", "done", "error", "aborted"
@@ -64,8 +68,20 @@ export const ChatSessionEventSchema = z.discriminatedUnion("type", [
     reason: z.enum([
       "llm_error", "budget_exceeded", "invalid_output",
       "static_scan_reject", "step_still_fails",
-      "no_sidepanel", "no_api_key"
+      "no_sidepanel", "no_api_key", "self_heal_disabled"
     ])
+  }),
+  z.object({
+    type: z.literal("permission_required"),
+    toolUseId: z.string(),
+    permission: OptionalCapabilityPermissionSchema,
+    capability: PermissionCapabilitySchema
+  }),
+  z.object({
+    type: z.literal("permission_resolved"),
+    toolUseId: z.string(),
+    permission: OptionalCapabilityPermissionSchema,
+    granted: z.boolean()
   })
 ]);
 export type ChatSessionEvent = z.infer<typeof ChatSessionEventSchema>;

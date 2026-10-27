@@ -1,5 +1,6 @@
 import type { LlmStreamEvent } from "@aipagego/shared/llm";
 import type { Json } from "@aipagego/shared/types";
+import type { DemoScene } from "./scene-mode";
 
 /**
  * The scripted run the homepage demo replays through MockLlmClient.
@@ -55,6 +56,17 @@ export const DEMO_ROUNDS: LlmStreamEvent[][] = [
       "这段对话可以一键存成按 URL 匹配的工具，下次同类页面直接重放。"
   )
 ];
+
+export const APPROVAL_DEMO_ROUNDS: LlmStreamEvent[][] = [
+  [
+    { type: "text_delta", text: "购买会提交页面表单，属于危险操作。我会先展示完整参数并等待你的明确确认。\n" },
+    ...call("approval-submit", "submitForm", { selector: "#demo-purchase-form" }),
+  ],
+];
+
+export function roundsForScene(scene: DemoScene): LlmStreamEvent[][] {
+  return scene === "approval" ? APPROVAL_DEMO_ROUNDS : DEMO_ROUNDS;
+}
 
 /** Derived, never hand-listed — a hand-written copy would drift from the script. */
 export const DEMO_TOOL_NAMES: string[] = DEMO_ROUNDS.flatMap((round) =>

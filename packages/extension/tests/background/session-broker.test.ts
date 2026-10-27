@@ -12,6 +12,9 @@ const listeners: Array<(msg: any, sender: any, respond: any) => void> = [];
   },
   tabs: {
     sendMessage: vi.fn().mockResolvedValue(undefined)
+  },
+  storage: {
+    session: { remove: vi.fn().mockResolvedValue(undefined) }
   }
 };
 
@@ -37,6 +40,24 @@ describe("installSessionBroker", () => {
     );
     expect(onSnapshot).toHaveBeenCalledWith(7, { _rev: 3 });
   });
+
+  it.each(["approval.decision", "permission.decision"])(
+    "relays %s from the sidepanel to the widget content script",
+    async (type) => {
+      const { installSessionBroker } = await import("@/background/session-broker");
+      installSessionBroker();
+      const message = { type, tabId: 7, toolUseId: "tool-1" };
+
+      listeners[0](message, { id: "sidepanel-instance" }, () => {});
+
+      expect(chrome.tabs.sendMessage).toHaveBeenCalledWith(7, message);
+      if (type === "permission.decision") {
+        expect(chrome.storage.session.remove).toHaveBeenCalledWith(
+          "aipagego.pendingPermission.7.tool-1"
+        );
+      }
+    }
+  );
 
   it("ignores unrelated messages", async () => {
     const { installSessionBroker } = await import("@/background/session-broker");

@@ -64,6 +64,10 @@ describe("classifyTool", () => {
     expect(classifyTool("downloadSpreadsheet", { sheets: [] })).toBe("caution");
   });
 
+  it("classifies structured collection replay as caution", () => {
+    expect(classifyTool("collectStructuredData", { recipe: {} })).toBe("caution");
+  });
+
   it("classifies writeStorage as dangerous", () => {
     expect(classifyTool("writeStorage", { store: "local", key: "k", value: "v" })).toBe("dangerous");
   });

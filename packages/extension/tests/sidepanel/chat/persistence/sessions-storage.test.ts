@@ -1,6 +1,6 @@
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
-import { _resetDBForTests } from "@/background/storage/db";
+import { _resetDBForTests, getDB } from "@/background/storage/db";
 import * as ss from "@/sidepanel/chat/persistence/sessions-storage";
 import type { PersistedSession, PersistedSessionData } from "@aipagego/shared/types";
 
@@ -145,5 +145,56 @@ describe("sessions-storage", () => {
     expect(runIds.sort()).toEqual(["run-1", "run-2"]);
     expect(await ss.listArchivedByUrl(URL)).toEqual([]);
     expect(await ss.getById("c")).toBeDefined();
+  });
+
+  it("cascadeDeleteRuns removes an owned collection result with its run metadata", async () => {
+    const db = await getDB();
+    await db.put("runs", {
+      id: "collection-run",
+      toolId: null,
+      toolVersion: null,
+      url: URL,
+      startedAt: 1,
+      status: "ok",
+      stepLog: [],
+      source: "user",
+      collection: {
+        resultId: "collection-result",
+        tabId: 1,
+        sourceUrl: URL,
+      },
+    });
+    await db.put("collection_results", {
+      resultId: "collection-result",
+      runId: "collection-run",
+      tabId: 1,
+      sourceUrl: URL,
+      recipe: {
+        version: 1,
+        mode: "single",
+        fields: [{ id: "title", name: "标题", selector: "h1", valueMode: "text", required: true }],
+        pagination: { kind: "single" },
+        dedupeBy: [],
+        maxRows: 2_000,
+        maxBytes: 5 * 1024 * 1024,
+      },
+      rows: [{ title: "A" }],
+      status: "completed",
+      phase: "completed",
+      rowCount: 1,
+      byteSize: 15,
+      pageCount: 1,
+      duplicateCount: 0,
+      missingRequiredCount: 0,
+      startedAt: 1,
+      finishedAt: 2,
+      stopReason: "completed",
+      lastAccessedAt: 2,
+    });
+
+    await ss.cascadeDeleteRuns(["collection-run"]);
+
+    expect(await db.get("runs", "collection-run")).toBeUndefined();
+    expect(await db.get("collection_results", "collection-result")).toBeUndefined();
   });
 });

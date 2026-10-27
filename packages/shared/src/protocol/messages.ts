@@ -7,7 +7,8 @@ export const ProtocolStepSchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("tool"),
     tool: z.string(),
-    args: z.unknown()
+    args: z.unknown(),
+    timeoutMs: z.number().int().positive().optional()
   }),
   z.object({
     kind: z.literal("js"),

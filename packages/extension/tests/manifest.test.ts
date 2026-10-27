@@ -60,3 +60,24 @@ describe("Plan 32 — recorder and CDP opt-in", () => {
     expect(entry?.matches).toContain("<all_urls>");
   });
 });
+
+describe("P0 — browser data permissions are requested on demand", () => {
+  it.each(["bookmarks", "history", "downloads"])(
+    "does not request %s at install time",
+    (permission) => {
+      expect(m.permissions).not.toContain(permission);
+      expect(m.optional_permissions).toContain(permission);
+    },
+  );
+});
+
+describe("P3 — local Job scheduling", () => {
+  it("declares alarms for MV3 wakeups", () => {
+    expect(m.permissions).toContain("alarms");
+  });
+
+  it("requests notifications only when the user enables Job notifications", () => {
+    expect(m.permissions).not.toContain("notifications");
+    expect(m.optional_permissions).toContain("notifications");
+  });
+});

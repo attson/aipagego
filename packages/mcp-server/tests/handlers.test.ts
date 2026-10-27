@@ -300,6 +300,29 @@ describe("control-plane handlers", () => {
 });
 
 describe("handleBrowserTool", () => {
+  it("sends structured collection as a bounded long-running EXEC step", async () => {
+    const { deps, calls } = makeDeps(okResult);
+    const { session_id } = await handleOpenSession(deps, { tab_id: "42" });
+    const gen = {
+      name: "browser_collectStructuredData",
+      builtinTool: "collectStructuredData",
+      builtinTools: ["collectStructuredData"],
+      description: "",
+      resultKind: "json" as const,
+      stepKind: "tool" as const,
+      inputSchema: {} as any,
+    };
+
+    await handleBrowserTool(deps, gen, { session_id, recipe: { version: 1 } });
+
+    expect(calls[0].params.step).toEqual({
+      kind: "tool",
+      tool: "collectStructuredData",
+      args: { recipe: { version: 1 } },
+      timeoutMs: 600_000,
+    });
+  });
+
   it("validates, records quota, sends EXEC, returns RESULT.return", async () => {
     const { deps, calls } = makeDeps(okResult);
     const { session_id } = await handleOpenSession(deps, { tab_id: "42" });

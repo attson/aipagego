@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runDemoStep } from "../../demo/harness";
 import { COMMENTS_ID, EXPAND_BUTTON_ID, mountMockPage } from "../../demo/page";
 
@@ -47,5 +47,91 @@ describe("demo harness", () => {
     await expect(
       runDemoStep({ kind: "tool", tool: "click", args: { selector: "#nope" } })
     ).rejects.toThrow();
+  });
+
+  it("runs collection previews with the production extractor", async () => {
+    const out = await runDemoStep({
+      kind: "collectionPreview",
+      recipe: {
+        version: 1,
+        mode: "single",
+        fields: [{
+          id: "title",
+          name: "标题",
+          selector: ".demo-title",
+          valueMode: "text",
+          required: true,
+        }],
+        pagination: { kind: "single" },
+        dedupeBy: [],
+        maxRows: 2_000,
+        maxBytes: 5 * 1024 * 1024,
+      },
+    });
+
+    expect(out).toMatchObject({
+      returnedCount: 1,
+      rows: [{ values: { title: "人体工学办公椅 Pro" } }],
+    });
+  });
+
+  it("runs full single-page collection extraction with the production extractor", async () => {
+    const out = await runDemoStep({
+      kind: "collectionExtractPage",
+      recipe: {
+        version: 1,
+        mode: "single",
+        fields: [{
+          id: "title",
+          name: "标题",
+          selector: "h1",
+          valueMode: "text",
+          required: true,
+        }],
+        pagination: { kind: "single" },
+        dedupeBy: [],
+        maxRows: 2_000,
+        maxBytes: 5 * 1024 * 1024,
+      },
+    });
+
+    expect(out).toMatchObject({
+      matchedCount: 1,
+      rows: [{ values: { title: "人体工学办公椅 Pro" } }],
+      truncatedBy: null,
+    });
+  });
+
+  it("advances a next control with the production pagination primitive", async () => {
+    document.body.insertAdjacentHTML("beforeend", '<button class="demo-next">下一页</button>');
+    const click = document.querySelector<HTMLButtonElement>(".demo-next")!;
+    let clicked = false;
+    click.addEventListener("click", () => { clicked = true; });
+
+    expect(await runDemoStep({
+      kind: "collectionAdvanceNext",
+      selector: ".demo-next",
+    })).toEqual({ status: "clicked" });
+    expect(clicked).toBe(true);
+  });
+
+  it("advances load-more and infinite-scroll with production primitives", async () => {
+    document.body.insertAdjacentHTML("beforeend", '<button class="demo-more">加载更多</button>');
+    const button = document.querySelector<HTMLButtonElement>(".demo-more")!;
+    const click = vi.spyOn(button, "click");
+
+    expect(await runDemoStep({
+      kind: "collectionAdvanceDynamic",
+      action: { kind: "loadMore", selector: ".demo-more" },
+    })).toEqual({ status: "clicked" });
+    expect(click).toHaveBeenCalledOnce();
+
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    expect(await runDemoStep({
+      kind: "collectionAdvanceDynamic",
+      action: { kind: "infiniteScroll" },
+    })).toEqual({ status: "scrolled" });
+    expect(scrollTo).toHaveBeenCalledOnce();
   });
 });

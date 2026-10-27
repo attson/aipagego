@@ -4,6 +4,7 @@ import { FAB } from "./fab";
 import { Panel } from "./panel";
 import { startWidgetStoreSync } from "./store";
 import { installApprovalListener } from "@/sidepanel/chat/approval";
+import { installPermissionDecisionListener } from "@/sidepanel/chat/permission-request";
 import { useSettings, installSettingsSyncListener } from "@/sidepanel/chat/settings-store";
 
 function WidgetApp() {
@@ -13,7 +14,12 @@ function WidgetApp() {
   // forwarded into the widget's local approversByTab map (and vice-versa
   // via WidgetApprover.resolve → broadcastApprovalDecision).
   useEffect(() => {
-    return installApprovalListener();
+    const disposeApproval = installApprovalListener();
+    const disposePermission = installPermissionDecisionListener();
+    return () => {
+      disposePermission();
+      disposeApproval();
+    };
   }, []);
 
   return (

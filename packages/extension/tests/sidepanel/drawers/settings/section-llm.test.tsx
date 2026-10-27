@@ -7,9 +7,16 @@ import { useSettings } from "@/sidepanel/chat/settings-store";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const streamMock = vi.fn();
+const { restartFirstRunMock } = vi.hoisted(() => ({
+  restartFirstRunMock: vi.fn(async () => undefined),
+}));
 
 vi.mock("@/sidepanel/llm/client", () => ({
   pickClient: vi.fn(() => ({ stream: streamMock }))
+}));
+
+vi.mock("@/sidepanel/onboarding/first-run-state", () => ({
+  restartFirstRun: restartFirstRunMock,
 }));
 
 async function* okStream() {
@@ -81,6 +88,34 @@ describe("SectionLlm", () => {
     );
     expect(container.textContent).toContain("连接正常");
     expect(container.textContent).not.toContain("启用页内浮窗");
+  });
+
+  it("lets the user restart the first-run guide without clearing LLM settings", async () => {
+    await act(async () => {
+      root.render(<SectionLlm />);
+    });
+
+    const restart = Array.from(container.querySelectorAll("button")).find((b) =>
+      (b.textContent ?? "").includes("重新运行首次引导")
+    ) as HTMLButtonElement;
+    await act(async () => restart.click());
+
+    expect(restartFirstRunMock).toHaveBeenCalledOnce();
+    expect(useSettings.getState().apiKey).toBe("sk-test");
+  });
+
+  it("surfaces a storage error when the first-run guide cannot be restarted", async () => {
+    restartFirstRunMock.mockRejectedValueOnce(new Error("storage unavailable"));
+    await act(async () => {
+      root.render(<SectionLlm />);
+    });
+
+    const restart = Array.from(container.querySelectorAll("button")).find((b) =>
+      (b.textContent ?? "").includes("重新运行首次引导")
+    ) as HTMLButtonElement;
+    await act(async () => restart.click());
+
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("storage unavailable");
   });
 
 });

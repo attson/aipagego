@@ -46,6 +46,11 @@ describe("runs storage", () => {
     expect(run.source).toBe("coordinator");
   });
 
+  it("createRun preserves the job source", async () => {
+    const run = await createRun({ toolId: "tool", toolVersion: 3, url: "u", source: "job" });
+    expect(run.source).toBe("job");
+  });
+
   it("getRun backfills source on a raw record that lacks the field", async () => {
     const db = await getDB();
     const raw = {

@@ -5,20 +5,35 @@ import {
   StepSchema,
   type RpcRequest
 } from "@aipagego/shared/messages";
+import { connectorService } from "./connectors/service";
+import { deliveryService } from "./connectors/delivery-service";
 import { runStaticScan } from "@aipagego/shared/static-scan";
-import type { Json, RunRecord, Step, ToolDraft } from "@aipagego/shared/types";
+import type {
+  Json,
+  RedactedValue,
+  RunRecord,
+  RunSource,
+  Step,
+  StepsTool,
+  ToolDraft,
+  ToolParameter,
+} from "@aipagego/shared/types";
 import { fetchAsBase64, httpRequest } from "./http-proxy";
 import { attemptHeal } from "./self-heal";
 import { requestSidepanelLlm } from "./self-heal-bridge";
-import { exportAll, importBundle } from "./storage/export-import";
+import { exportAll } from "./storage/export-import";
+import { exportToolSharePackage } from "./tool-share-export";
+import { commitToolImport, previewToolImport } from "./tool-import-review";
 import { appendStepLog, createRun, finalizeRun, getRun, listRuns, setRunHealed } from "./storage/runs";
 import {
+  activateWorkflowVersion,
   appendVersion,
   deleteTool as deleteToolDb,
   getTool,
   listTools,
   matchingTools,
   materializePreset,
+  publishWorkflow,
   recordRunStat,
   saveDraft
 } from "./storage/tools";
@@ -31,6 +46,22 @@ import { injectionModeRank } from "@aipagego/shared";
 import type { InjectionMode } from "@aipagego/shared/types";
 import { DRAIN_SOURCE } from "@/content/recorder/drain";
 import { evaluateWithCdp } from "./recorder/cdp";
+import { pendingPermissionStorageKey } from "@/permissions/optional-permissions";
+import { CollectionOrchestrator } from "./collection-orchestrator";
+import { readCollectionResult } from "./storage/collection-results";
+import { advanceCollectionNextPage } from "./collection-next";
+import { advanceCollectionDynamicPage } from "./collection-dynamic";
+import { registerCollectionRunner } from "./bg-tools/collection";
+import { CollectionRecipeSchema, type CollectionRecipeV1 } from "@aipagego/shared/collection";
+import {
+  analyzeWorkflow,
+  getActiveStepsVersion,
+  prepareWorkflowInputs,
+  resolveWorkflowValue,
+} from "@aipagego/shared/workflow";
+import { JobService } from "./jobs/service";
+import { requestJobReconcile } from "./jobs/runtime";
+import { notifyJobTerminal } from "./jobs/notifications";
 
 // Wired here rather than imported by the host to avoid a circular import.
 registerInjectMain((tabId, source, args) => injectMainWorld(tabId, source, args));
@@ -39,20 +70,80 @@ registerCaptureDeps({
     runOneStep(step, tabId, attachedTabIds ?? [], bindings ?? {})
 });
 
-async function readLlmSettings(): Promise<{
-  selfHealEnabled: boolean;
-  maxSelfHealOutputTokens: number;
-  apiKey: string;
-}> {
-  const KEY = "aipagego.llm";
-  const raw = (await chrome.storage.local.get([KEY]))[KEY] ?? {};
-  const session = (await chrome.storage.session?.get([KEY]))?.[KEY] ?? {};
-  const apiKey = (raw as Record<string, string>).apiKey || (session as Record<string, string>).apiKey || "";
-  return {
-    selfHealEnabled: (raw as Record<string, unknown>).selfHealEnabled !== false, // default true
-    maxSelfHealOutputTokens: ((raw as Record<string, unknown>).maxSelfHealOutputTokens as number | undefined) ?? 4096,
-    apiKey
-  };
+const collectionOrchestrator = new CollectionOrchestrator({
+  getTab: (tabId) => chrome.tabs.get(tabId),
+  extractPage: extractCollectionPageFromTab,
+  advanceNext: (input) => advanceCollectionNextPage(input, {
+    clickNext: async (tabId, selector) => {
+      const request = ContentRequestSchema.parse({
+        type: "content.collectionAdvanceNext",
+        selector,
+      });
+      return z.object({
+        status: z.enum(["clicked", "missing", "disabled"]),
+      }).parse(await sendContentRequest(tabId, request, "collection next control")).status;
+    },
+    readTab: (tabId) => chrome.tabs.get(tabId),
+    extractPage: extractCollectionPageFromTab,
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    now: Date.now,
+  }),
+  advanceDynamic: (input) => advanceCollectionDynamicPage(input, {
+    advance: async (tabId, action) => {
+      const request = ContentRequestSchema.parse({
+        type: "content.collectionAdvanceDynamic",
+        action,
+      });
+      return z.object({
+        status: z.enum(["clicked", "scrolled", "missing", "disabled"]),
+      }).parse(await sendContentRequest(tabId, request, "collection dynamic pagination")).status;
+    },
+    extractPage: extractCollectionPageFromTab,
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    now: Date.now,
+  }),
+  broadcast: (progress) => {
+    void Promise.resolve(chrome.runtime.sendMessage(progress)).catch(() => undefined);
+  },
+});
+
+export const jobService = new JobService(({ toolId, toolVersion, tabId, inputs }) =>
+  runTool(
+    {
+      type: "runs.start",
+      target: { kind: "tool", id: toolId, version: toolVersion },
+      tabId,
+      inputs,
+    },
+    { source: "job", allowSelfHeal: false },
+  ),
+  {
+    readWatchText: async (tabId, selector) => {
+      const result = await runOneStep(
+        { kind: "tool", tool: "extractText", args: { selector } },
+        tabId,
+        [],
+        {},
+        { source: "job" },
+      );
+      if (!Array.isArray(result) || !result.every((value) => typeof value === "string")) {
+        throw new Error("watch_reader_invalid_response");
+      }
+      return result;
+    },
+    notifyTerminal: notifyJobTerminal,
+  },
+);
+registerCollectionRunner(collectionOrchestrator);
+
+const REDACTED_WORKFLOW_VALUE: RedactedValue = { __redacted: true };
+
+async function extractCollectionPageFromTab(tabId: number, recipe: CollectionRecipeV1) {
+  const request = ContentRequestSchema.parse({
+    type: "content.collectionExtractPage",
+    recipe,
+  });
+  return sendContentRequest(tabId, request, "collection page extraction");
 }
 
 function broadcastSessionEvent(ev: unknown): void {
@@ -71,9 +162,18 @@ async function collectPrevSteps(runId: string): Promise<{ input: Json | string; 
     .map((e) => ({ input: e.input, output: e.output as Json }));
 }
 
-export async function handleRpc(raw: unknown): Promise<{ ok: true; data: Json } | { ok: false; error: string }> {
+export async function handleRpc(
+  raw: unknown,
+  context: { source?: "extension" | "content" } = {},
+): Promise<{ ok: true; data: Json } | { ok: false; error: string }> {
   const parsed = RpcRequestSchema.safeParse(raw);
   if (!parsed.success) return { ok: false, error: "invalid request: " + parsed.error.message };
+  if (
+    (parsed.data.type.startsWith("connectors.") || parsed.data.type.startsWith("deliveries."))
+    && context.source === "content"
+  ) {
+    return { ok: false, error: "connector_sidepanel_required" };
+  }
   try {
     const data = await dispatch(parsed.data);
     return { ok: true, data };
@@ -97,18 +197,106 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
       return (await matchingTools(req.url)) as unknown as Json;
     case "tools.export":
       return (await exportAll()) as unknown as Json;
-    case "tools.import": {
-      const result = await importBundle(req.bundle as Parameters<typeof importBundle>[0], {
-        onConflict: "skip"
-      });
-      return result as unknown as Json;
-    }
+    case "tools.share.export":
+      return (await exportToolSharePackage({
+        toolIds: req.toolIds,
+        name: req.name,
+        ...(req.description === undefined ? {} : { description: req.description }),
+      })) as unknown as Json;
+    case "tools.import":
+      throw new Error("import_preview_required");
+    case "tools.import.preview":
+      return (await previewToolImport(req.bundle)) as unknown as Json;
+    case "tools.import.commit":
+      return (await commitToolImport({
+        bundle: req.bundle,
+        digest: req.digest,
+        decisions: req.decisions,
+        approveDangerous: req.approveDangerous,
+      })) as unknown as Json;
+    case "workflows.publish":
+      return (await publishWorkflow(req.id, {
+        basedOnVersion: req.basedOnVersion,
+        parameters: req.parameters as ToolParameter[],
+        steps: req.steps as Step[],
+        outputBinding: req.outputBinding,
+        outputSchema: req.outputSchema as Json,
+        note: req.note
+      })) as unknown as Json;
+    case "workflows.activate":
+      return (await activateWorkflowVersion(req.id, req.version)) as unknown as Json;
     case "runs.start":
       return (await runTool(req)) as unknown as Json;
     case "runs.list":
       return (await listRuns({ toolId: req.toolId })) as unknown as Json;
     case "runs.get":
       return ((await getRun(req.id)) ?? null) as unknown as Json;
+    case "jobs.list":
+      return (await jobService.list()) as unknown as Json;
+    case "jobs.get":
+      return ((await jobService.get(req.id)) ?? null) as unknown as Json;
+    case "jobs.save": {
+      const job = await jobService.save(
+        req.draft,
+        req.id,
+        req.acknowledgeCaution ?? false,
+      );
+      requestJobReconcile();
+      return job as unknown as Json;
+    }
+    case "jobs.delete":
+      await jobService.delete(req.id);
+      requestJobReconcile();
+      return null;
+    case "jobs.runNow": {
+      const run = await jobService.runNow(
+        req.id,
+        (req.inputs ?? {}) as Record<string, Json>,
+        req.approveDangerousOnce ?? false,
+      );
+      requestJobReconcile();
+      return run as unknown as Json;
+    }
+    case "jobRuns.list":
+      return (await jobService.listRuns(req.jobId, req.cursor, req.limit)) as unknown as Json;
+    case "jobRuns.get":
+      return ((await jobService.getRun(req.id)) ?? null) as unknown as Json;
+    case "jobs.pause": {
+      const job = await jobService.pause(req.id);
+      requestJobReconcile();
+      return job as unknown as Json;
+    }
+    case "jobs.resume": {
+      const job = await jobService.resume(req.id);
+      requestJobReconcile();
+      return job as unknown as Json;
+    }
+    case "jobs.upgrade": {
+      const job = await jobService.upgrade(
+        req.id,
+        req.toolVersion,
+        req.acknowledgeCaution ?? false,
+      );
+      requestJobReconcile();
+      return job as unknown as Json;
+    }
+    case "connectors.list":
+      return (await connectorService.list()) as unknown as Json;
+    case "connectors.get":
+      return ((await connectorService.get(req.id)) ?? null) as unknown as Json;
+    case "connectors.save":
+      return (await connectorService.save(req.draft, req.id)) as unknown as Json;
+    case "connectors.delete":
+      await connectorService.delete(req.id);
+      return null;
+    case "connectors.test":
+      return (await connectorService.test(req.id)) as unknown as Json;
+    case "deliveries.create":
+      return (await deliveryService.create(req.connectorId, req.source)) as unknown as Json;
+    case "deliveries.list":
+      return (await deliveryService.list(req.connectorId)) as unknown as Json;
+    case "deliveries.retry":
+      return (await deliveryService.retry(req.id, req.confirmUnknownCommit ?? false)) as unknown as Json;
     case "http.request":
       return (await httpRequest({
         url: req.url,
@@ -169,6 +357,39 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
       await startElementCapture(req.tabId);
       return null;
     }
+    case "collections.preview": {
+      const policy = await readPolicyForTab(req.tabId);
+      if (injectionModeRank(policy.injectionMode) < injectionModeRank("read")) {
+        throw new Error(
+          `站点注入策略为「${modeLabel(policy.injectionMode)}」，采集预览需要「只读」或更高级别`
+        );
+      }
+      const contentReq = ContentRequestSchema.parse({
+        type: "content.collectionPreview",
+        recipe: req.recipe
+      });
+      return await sendContentRequest(req.tabId, contentReq, "collection preview");
+    }
+    case "collections.start": {
+      const policy = await readPolicyForTab(req.tabId);
+      const requiredMode = req.recipe.pagination.kind === "single" ? "read" : "operate";
+      if (injectionModeRank(policy.injectionMode) < injectionModeRank(requiredMode)) {
+        throw new Error(
+          `站点注入策略为「${modeLabel(policy.injectionMode)}」，采集运行需要「${modeLabel(requiredMode)}」或更高级别`
+        );
+      }
+      return (await collectionOrchestrator.start({
+        tabId: req.tabId,
+        recipe: req.recipe,
+      })) as unknown as Json;
+    }
+    case "collections.runs.get":
+      return ((await collectionOrchestrator.get(req.runId)) ?? null) as unknown as Json;
+    case "collections.cancel":
+      collectionOrchestrator.cancel(req.runId);
+      return null;
+    case "collections.results.read":
+      return (await readCollectionResult(req.resultId, req.offset, req.limit)) as unknown as Json;
     case "presets.list": {
       const { PRESETS } = await import("@aipagego/shared/presets");
       return PRESETS as unknown as Json;
@@ -177,7 +398,6 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
       return (await materializePreset(req.presetId)) as unknown as Json;
     }
     case "widget.openSidepanel": {
-      await chrome.sidePanel.open({ tabId: req.tabId });
       if (req.pendingApprovalId) {
         await chrome.storage.session.set({
           "aipagego.pendingApproval": {
@@ -186,6 +406,30 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
             ts: Date.now()
           }
         });
+      }
+      if (req.pendingPermission) {
+        const storageKey = pendingPermissionStorageKey(
+          req.tabId,
+          req.pendingPermission.toolUseId,
+        );
+        await chrome.storage.session.set({
+          [storageKey]: {
+            tabId: req.tabId,
+            ...req.pendingPermission,
+            ts: Date.now(),
+          }
+        });
+      }
+      await chrome.sidePanel.open({ tabId: req.tabId });
+      if (req.pendingPermission) {
+        await Promise.resolve(chrome.runtime.sendMessage({
+          type: "permission.pending.available",
+          tabId: req.tabId,
+          storageKey: pendingPermissionStorageKey(
+            req.tabId,
+            req.pendingPermission.toolUseId,
+          ),
+        })).catch(() => undefined);
       }
       return null;
     }
@@ -212,11 +456,15 @@ export async function runOneStep(
   step: Step,
   rpcTabId: number,
   attachedTabIds: number[],
-  bindings: Record<string, Json>
+  bindings: Record<string, Json>,
+  execution: { source?: RunSource } = {},
 ): Promise<Json> {
+  const resolvedStep: Step = step.kind === "tool"
+    ? { ...step, args: resolveWorkflowValue(step.args, bindings) }
+    : step;
   let targetTabId = rpcTabId;
-  if (step.kind === "tool") {
-    const argsObj = (step.args ?? {}) as Record<string, Json>;
+  if (resolvedStep.kind === "tool") {
+    const argsObj = (resolvedStep.args ?? {}) as Record<string, Json>;
     const declared = argsObj.tabId;
     // 模型常把 tabId 误填为 0/null 表示"当前 tab"——视为未传，用会话 tab。
     if (typeof declared === "number" && declared > 0) targetTabId = declared;
@@ -226,10 +474,10 @@ export async function runOneStep(
   }
 
   const policy = await readPolicyForTab(targetTabId);
-  const requiredMode = minimumModeForStep(step);
+  const requiredMode = minimumModeForStep(resolvedStep);
   if (injectionModeRank(policy.injectionMode) < injectionModeRank(requiredMode)) {
     throw new Error(
-      `站点注入策略为「${modeLabel(policy.injectionMode)}」，${step.kind === "tool" ? step.tool : "runJS"} 需要「${modeLabel(requiredMode)}」或更高级别`
+      `站点注入策略为「${modeLabel(policy.injectionMode)}」，${resolvedStep.kind === "tool" ? resolvedStep.tool : "runJS"} 需要「${modeLabel(requiredMode)}」或更高级别`
     );
   }
 
@@ -238,34 +486,49 @@ export async function runOneStep(
   // Meta tools run here in the service worker. Dispatching before the content
   // script hop is what lets the coordinator / MCP EXEC path reach them; the
   // side panel used to be the only caller that could.
-  if (step.kind === "tool" && isMetaTool(step.tool)) {
+  if (resolvedStep.kind === "tool" && isMetaTool(resolvedStep.tool)) {
     const metaArgs = {
-      ...((step.args ?? {}) as Record<string, Json>),
+      ...((resolvedStep.args ?? {}) as Record<string, Json>),
       allowedTabIds: [rpcTabId, ...attachedTabIds]
     } as unknown as Json;
-    return META_TOOLS[step.tool](metaArgs, targetTabId);
+    return META_TOOLS[resolvedStep.tool](metaArgs, targetTabId, {
+      ...(resolvedStep.timeoutMs == null ? {} : { timeoutMs: resolvedStep.timeoutMs }),
+      source: execution.source ?? "user",
+    });
   }
 
   const stepReq = ContentRequestSchema.parse({
     type: "content.runStep",
-    step,
+    step: resolvedStep,
     bindings
   });
+  return sendContentRequest(
+    targetTabId,
+    stepReq,
+    resolvedStep.kind === "tool" ? resolvedStep.tool : "runJS"
+  );
+}
+
+async function sendContentRequest(
+  tabId: number,
+  request: unknown,
+  label: string
+): Promise<Json> {
   let res: { ok: true; data: Json } | { ok: false; error: string } | undefined;
   try {
-    res = (await chrome.tabs.sendMessage(targetTabId, stepReq)) as typeof res;
+    res = (await chrome.tabs.sendMessage(tabId, request)) as typeof res;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (!isReceiverMissing(msg)) throw e;
     // content script 还没在该 tab 上加载——尝试动态注入
-    const injected = await injectContentScript(targetTabId);
+    const injected = await injectContentScript(tabId);
     if (!injected) {
       throw new Error(
         "Content script 无法注入到此页面（可能是 chrome:// 或受限页面）。请在普通网页上重试。"
       );
     }
     // 注入完成后 listener 注册可能还需要几百 ms（@crxjs ESM loader 异步）
-    res = await retryUntilReady(targetTabId, stepReq);
+    res = await retryUntilReady(tabId, request);
   }
   // Defensive: chrome.tabs.sendMessage resolves to undefined if the content
   // script's listener closes the channel without sending a response (e.g.
@@ -273,7 +536,7 @@ export async function runOneStep(
   // clear error rather than letting `res.ok` blow up.
   if (res == null) {
     throw new Error(
-      `content script returned no response for ${step.kind === "tool" ? step.tool : "runJS"} — likely an unknown tool name or stale content script. Try reloading the tab.`
+      `content script returned no response for ${label} — likely an unknown request or stale content script. Try reloading the tab.`
     );
   }
   if (!res.ok) throw new Error(res.error);
@@ -303,6 +566,10 @@ const DIAGNOSTIC_TOOLS = new Set([
 
 function minimumModeForStep(step: Step): InjectionMode {
   if (step.kind === "js") return "operate";
+  if (step.tool === "collectStructuredData") {
+    const input = z.object({ recipe: CollectionRecipeSchema }).safeParse(step.args);
+    return input.success && input.data.recipe.pagination.kind === "single" ? "read" : "operate";
+  }
   if (NO_INJECTION_TOOLS.has(step.tool)) return "disabled";
   if (DIAGNOSTIC_TOOLS.has(step.tool)) return "diagnostic";
   if (READ_TOOLS.has(step.tool)) return "read";
@@ -393,49 +660,88 @@ async function retryUntilReady(
   );
 }
 
-async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promise<RunRecord> {
+export async function runTool(
+  req: Extract<RpcRequest, { type: "runs.start" }>,
+  execution: { source?: RunSource; allowSelfHeal?: boolean } = {},
+): Promise<RunRecord> {
   let steps: Step[];
+  let parameters: ToolParameter[];
+  let outputBinding: string | undefined;
+  let versionOutputSchema: Json = null;
+  let persistedTool: StepsTool | null = null;
   let toolId: string | null = null;
   let toolVersion: number | null = null;
   if (req.target.kind === "draft") {
     if (req.target.draft.kind !== "steps") throw new Error("draft runs require steps tools");
     steps = req.target.draft.steps as Step[];
+    parameters = (req.target.draft.parameters ?? []) as ToolParameter[];
+    outputBinding = req.target.draft.outputBinding;
+    versionOutputSchema = req.target.draft.outputSchema as Json;
   } else {
     const tool = await getTool(req.target.id);
     if (!tool) throw new Error("tool not found");
     if (tool.kind !== "steps") throw new Error("prompt tools run in chat, not background runner");
-    steps = tool.steps;
+    const requestedVersion = req.target.version;
+    const selectedSnapshot = requestedVersion == null
+      ? getActiveStepsVersion(tool)
+      : tool.versions.find((snapshot) => snapshot.version === requestedVersion);
+    if (!selectedSnapshot) throw new Error("workflow_version_not_found");
+    steps = [...selectedSnapshot.steps];
+    parameters = selectedSnapshot.parameters;
+    outputBinding = selectedSnapshot.outputBinding;
+    versionOutputSchema = selectedSnapshot.outputSchema;
+    persistedTool = tool;
     toolId = tool.id;
-    toolVersion = tool.versions.at(-1)?.version ?? 1;
+    toolVersion = selectedSnapshot.version;
   }
+
+  let analysis = analyzeWorkflow({ parameters, steps, outputBinding });
+  if (analysis.issues.length > 0) {
+    throw new Error(`invalid_workflow: ${JSON.stringify(analysis.issues)}`);
+  }
+  const preparedInputs = prepareWorkflowInputs(parameters, req.inputs ?? {});
+  let taintedStepIndexes = new Set(analysis.taintedStepIndexes);
 
   const tab = await chrome.tabs.get(req.tabId);
   const url = tab.url ?? "";
-  const run = await createRun({ toolId, toolVersion, url });
+  const run = await createRun({
+    toolId,
+    toolVersion,
+    url,
+    source: execution.source ?? "user",
+  });
 
-  const bindings: Record<string, Json> = {};
+  const bindings: Record<string, Json> = { ...preparedInputs.bindings };
   let lastOutput: Json = null;
 
-  // Self-heal is only available for persisted tools (not drafts) with LLM configured.
-  const settings = await readLlmSettings();
-  const allowHeal =
-    req.target.kind === "tool" &&
-    settings.selfHealEnabled &&
-    (settings.apiKey?.length ?? 0) > 0;
+  // The background never reads LLM settings or the API key. Persisted tools
+  // may ask the sidepanel host to heal; that host owns enablement, key, and
+  // token-budget checks and returns a stable rejection reason when unavailable.
+  const allowHeal = req.target.kind === "tool" && execution.allowSelfHeal !== false;
   let healApplied = false;
 
   try {
     for (let i = 0; i < steps.length; i++) {
       const step = steps[i];
+      const isTainted = taintedStepIndexes.has(i);
+      const resolvedInput = step.kind === "tool"
+        ? resolveWorkflowValue(step.args, bindings)
+        : step.source;
+      const persistedInput = isTainted ? REDACTED_WORKFLOW_VALUE : resolvedInput;
       const start = Date.now();
-      const stepReq = ContentRequestSchema.parse({
-        type: "content.runStep",
-        step,
-        bindings
-      });
-      const res = (await chrome.tabs.sendMessage(req.tabId, stepReq)) as
+      let res:
         | { ok: true; data: Json }
         | { ok: false; error: string };
+      try {
+        res = {
+          ok: true,
+          data: await runOneStep(step, req.tabId, [], bindings, {
+            source: execution.source ?? "user",
+          }),
+        };
+      } catch (error) {
+        res = { ok: false, error: error instanceof Error ? error.message : String(error) };
+      }
 
       if (!res.ok) {
         // Decide whether to attempt self-heal.
@@ -443,7 +749,8 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
           allowHeal &&
           !healApplied &&
           step.kind === "tool" &&
-          classifyTool(step.tool, step.args as Json) !== "dangerous";
+          step.tool !== "collectStructuredData" &&
+          classifyTool(step.tool, resolvedInput) !== "dangerous";
 
         if (!canHeal) {
           // If we already applied a heal and the re-run step also failed,
@@ -457,10 +764,10 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
           }
           await appendStepLog(run.id, {
             stepIndex: i,
-            input: step.kind === "tool" ? (step.args as Json) : step.source,
-            output: null,
+            input: persistedInput,
+            output: isTainted ? REDACTED_WORKFLOW_VALUE : null,
             ms: Date.now() - start,
-            error: res.error
+            error: isTainted ? REDACTED_WORKFLOW_VALUE : res.error
           });
           await finalizeRun(run.id, { status: "error" });
           if (toolId) await recordRunStat(toolId, false);
@@ -475,21 +782,35 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
           failedStepIndex: i
         });
 
-        const domSnapshot = await runOneStep(
-          { kind: "tool", tool: "snapshotDOM", args: {} } as Step,
-          req.tabId,
-          [],
-          {}
-        ).catch(() => ({} as Json));
+        const domSnapshot = isTainted
+          ? REDACTED_WORKFLOW_VALUE
+          : await runOneStep(
+              { kind: "tool", tool: "snapshotDOM", args: {} } as Step,
+              req.tabId,
+              [],
+              {}
+            ).catch(() => ({} as Json));
 
         const prevSteps = await collectPrevSteps(run.id);
 
         const heal = await attemptHeal(
           {
-            tool: (await getTool(toolId!))! as Extract<Awaited<ReturnType<typeof getTool>>, { kind: "steps" }>,
+            tool: {
+              id: persistedTool!.id,
+              kind: "steps",
+              name: persistedTool!.name,
+              description: persistedTool!.description,
+              urlPatterns: persistedTool!.urlPatterns,
+              version: toolVersion!,
+              parameters,
+              steps: [...steps],
+              outputBinding,
+              outputSchema: versionOutputSchema,
+              createdAt: getActiveStepsVersion(persistedTool!).createdAt,
+            },
             failedStepIndex: i,
             failedInput: step,
-            errorText: res.error,
+            errorText: isTainted ? JSON.stringify(REDACTED_WORKFLOW_VALUE) : res.error,
             prevSteps,
             domSnapshot,
             url
@@ -501,24 +822,45 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
               steps.flatMap((s) =>
                 s.kind === "js" ? runStaticScan(s.source).map((f) => f.severity as "safe" | "caution" | "dangerous") : []
               ),
+            classifyStep: (patchedStep) => {
+              if (patchedStep.kind !== "tool") return "dangerous";
+              try {
+                return classifyTool(
+                  patchedStep.tool,
+                  resolveWorkflowValue(patchedStep.args, bindings),
+                );
+              } catch {
+                // Autonomous patches must be provably non-dangerous with the
+                // bindings available at the failed step. A future/dynamic
+                // value cannot pass the strict gate by looking harmless as a
+                // raw `${binding}` string.
+                return "dangerous";
+              }
+            },
             parseSteps: (raw) => {
               const parsed = z.array(StepSchema).safeParse(raw);
               return parsed.success ? (parsed.data as Step[]) : null;
             },
+            validatePatch: (patchedSteps) => analyzeWorkflow({
+              parameters,
+              steps: [...steps.slice(0, i), ...patchedSteps],
+              outputBinding,
+            }).issues.length === 0,
             now: Date.now
           },
-          { maxOutputTokens: settings.maxSelfHealOutputTokens }
+          { maxOutputTokens: 8192 }
         );
 
         if (!heal.ok) {
           broadcastSessionEvent({ type: "self_heal_failed", toolId: toolId!, reason: heal.reason });
           await appendStepLog(run.id, {
             stepIndex: i,
-            // At this point step is always a tool step (canHeal check above requires step.kind === "tool")
-            input: (step as Extract<Step, { kind: "tool" }>).args as Json,
-            output: null,
+            input: persistedInput,
+            output: isTainted ? REDACTED_WORKFLOW_VALUE : null,
             ms: Date.now() - start,
-            error: `${res.error} · heal:${heal.reason}`
+            error: isTainted
+              ? REDACTED_WORKFLOW_VALUE
+              : `${res.error} · heal:${heal.reason}`
           });
           await finalizeRun(run.id, { status: "error" });
           if (toolId) await recordRunStat(toolId, false);
@@ -527,20 +869,29 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
 
         // Splice in patched steps from position i onward.
         steps.splice(i, steps.length - i, ...heal.patchedSteps);
+        analysis = analyzeWorkflow({ parameters, steps, outputBinding });
+        taintedStepIndexes = new Set(analysis.taintedStepIndexes);
         const prevVer = toolVersion ?? 1;
-        const newVer = prevVer + 1;
-        const currentTool = (await getTool(toolId!))!;
-        await appendVersion(toolId!, {
+        const appended = await appendVersion(toolId!, {
+          basedOnVersion: prevVer,
+          parameters,
           steps,
-          outputSchema: (currentTool.kind === "steps" ? currentTool.outputSchema : {}) as import("@aipagego/shared/types").JsonSchema,
+          outputBinding,
+          outputSchema: versionOutputSchema,
           note: `自愈修复 step ${i}`
         });
+        if (appended.kind !== "steps" || appended.activeVersion == null) {
+          throw new Error("self_heal_version_append_failed");
+        }
+        const newVer = appended.activeVersion;
+        toolVersion = newVer;
+        persistedTool = appended;
         healApplied = true;
         await setRunHealed(run.id, {
           fromVersion: prevVer,
           toVersion: newVer,
           fixedStepIndex: i
-        }).catch(() => {});
+        });
 
         broadcastSessionEvent({
           type: "self_heal_completed",
@@ -555,14 +906,22 @@ async function runTool(req: Extract<RpcRequest, { type: "runs.start" }>): Promis
 
       await appendStepLog(run.id, {
         stepIndex: i,
-        input: step.kind === "tool" ? (step.args as Json) : step.source,
-        output: res.data,
+        input: persistedInput,
+        output: isTainted ? REDACTED_WORKFLOW_VALUE : res.data,
         ms: Date.now() - start
       });
       if (step.bindResultTo) bindings[step.bindResultTo] = res.data;
       lastOutput = res.data;
     }
-    await finalizeRun(run.id, { status: "ok", output: lastOutput });
+    const finalOutputIsTainted = outputBinding === undefined
+      ? taintedStepIndexes.has(steps.length - 1)
+      : analysis.taintedBindings.includes(outputBinding);
+    const finalOutput = finalOutputIsTainted
+      ? REDACTED_WORKFLOW_VALUE
+      : outputBinding === undefined
+        ? lastOutput
+        : bindings[outputBinding];
+    await finalizeRun(run.id, { status: "ok", output: finalOutput });
     if (toolId) await recordRunStat(toolId, true);
     return (await getRun(run.id)) as RunRecord;
   } catch (e) {

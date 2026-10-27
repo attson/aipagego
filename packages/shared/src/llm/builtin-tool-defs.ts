@@ -641,6 +641,51 @@ export const TOOL_DEFS: LlmTool[] = [
     },
   },
   {
+    name: "collectStructuredData",
+    description:
+      "[COLLECT·REPLAY] 使用已经确认的本地采集配方运行结构化采集。返回有界 CollectionRunSummary（含 resultId 和最多 5 行预览），完整结果保存在本地，不需要 LLM。",
+    mcp: {
+      description: "Run a validated Collect Studio recipe locally and return its bounded summary/resultId without an LLM round-trip.",
+      params: { recipe: "CollectionRecipeV1 saved by Collect Studio" }
+    },
+    input_schema: {
+      type: "object",
+      properties: {
+        recipe: {
+          type: "object",
+          properties: {
+            version: { type: "integer", enum: [1] },
+            mode: { type: "string", enum: ["single", "list"] },
+            itemSelector: { type: "string" },
+            fields: {
+              type: "array",
+              maxItems: 20,
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "string" },
+                  name: { type: "string" },
+                  selector: { type: "string" },
+                  valueMode: { type: "string", enum: ["text", "href", "src", "attribute"] },
+                  attribute: { type: "string" },
+                  required: { type: "boolean" }
+                },
+                required: ["id", "name", "selector", "valueMode", "required"]
+              }
+            },
+            pagination: { type: "object" },
+            dedupeBy: { type: "array", items: { type: "string" } },
+            maxRows: { type: "integer", minimum: 1, maximum: 2000 },
+            maxBytes: { type: "integer", minimum: 1, maximum: 5242880 }
+          },
+          required: ["version", "mode", "fields", "pagination", "dedupeBy", "maxRows", "maxBytes"]
+        },
+        tabId: TAB_ID_FIELD
+      },
+      required: ["recipe"]
+    }
+  },
+  {
     name: "downloadSpreadsheet",
     description:
       "[ACT] 生成并下载真正的 .xlsx Excel 文件（Chrome Downloads）。适合把采集/抽取结果导出为表格。" +

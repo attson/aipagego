@@ -37,7 +37,11 @@ describe("Plan 32 parity tool defs", () => {
       expect(byName.has(name), name).toBe(true);
     }
     expect(TOOL_DEFS.length).toBe(new Set(TOOL_DEFS.map((t) => t.name)).size);
-    expect(TOOL_DEFS.length).toBe(58);
+    expect(TOOL_DEFS.length).toBe(59);
+    const collectionSchema = byName.get("collectStructuredData")?.input_schema as {
+      required?: string[];
+    } | undefined;
+    expect(collectionSchema?.required).toEqual(["recipe"]);
   });
 
   it("documents the dialog policy caveat", () => {

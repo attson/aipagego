@@ -1,5 +1,5 @@
 import { RpcRequest as RpcRequestSchema } from "@aipagego/shared/messages";
-import { handleRpc, setRecorderPolicy } from "./rpc-handlers";
+import { handleRpc, jobService, setRecorderPolicy } from "./rpc-handlers";
 import { installTabWatcher } from "./tab-watcher";
 import { installTabCloseArchiver } from "./tab-close-archiver";
 import {
@@ -27,6 +27,15 @@ import type { PairPayload } from "@aipagego/shared/pairing";
 import { readPolicyForTab } from "@/injection-policy";
 import { TabSessionGroupManager } from "./tab-session-groups";
 import { LocalSessionGroupSync } from "./local-session-groups";
+import { JobScheduler } from "./jobs/scheduler";
+import { installJobSchedulerListener } from "./jobs/runtime";
+import { registerJobTabBusyCheck } from "./jobs/tab-manager";
+import { listJobs, putJob, putJobRun } from "./storage/jobs";
+import { installJobNotificationClickHandler, notifyJobTerminal } from "./jobs/notifications";
+import { recoverRunningDeliveries } from "./storage/connector-deliveries";
+import { deliveryService } from "./connectors/delivery-service";
+
+const JOBS_TIME_ZONE_KEY = "aipagego.jobs.timeZone";
 
 // Idempotent; only takes effect once the user grants the optional debugger
 // permission and enables the CDP backend in settings.
@@ -130,7 +139,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     req = { ...parsed.data, tabId: sender.tab.id };
   }
 
-  handleRpc(req).then(sendResponse);
+  handleRpc(req, { source: sender.tab == null ? "extension" : "content" }).then(sendResponse);
   return true;
 });
 
@@ -153,6 +162,37 @@ async function buildSavedToolsMetadata(): Promise<
 
 let pool: CoordinatorPool | null = null;
 const tabOwnership = new TabOwnership();
+registerJobTabBusyCheck((tabId) => tabOwnership.ownerOf(String(tabId)) != null);
+const deliveryRecovery = recoverRunningDeliveries();
+deliveryService.configureRecovery(deliveryRecovery);
+const jobsStartup = deliveryRecovery.then(() => jobService.reconcileDeliveries());
+void jobsStartup.catch(() => {
+  console.error("[aipagego] delivery recovery failed");
+});
+const jobScheduler = new JobScheduler({
+  now: Date.now,
+  uuid: () => crypto.randomUUID(),
+  listJobs,
+  putJob,
+  putJobRun,
+  runDue: (jobId, cause) => jobService.runAutomatic(jobId, cause),
+  onRunError: (jobId, error) => console.error(`[aipagego] Job ${jobId} dispatch failed`, error),
+  createAlarm: (name, info) => chrome.alarms.create(name, info),
+  clearAlarm: (name) => chrome.alarms.clear(name),
+  getTimeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+  loadTimeZone: async () => {
+    const stored = await chrome.storage.local.get(JOBS_TIME_ZONE_KEY);
+    return typeof stored[JOBS_TIME_ZONE_KEY] === "string"
+      ? stored[JOBS_TIME_ZONE_KEY]
+      : undefined;
+  },
+  saveTimeZone: async (timeZone) => {
+    await chrome.storage.local.set({ [JOBS_TIME_ZONE_KEY]: timeZone });
+  },
+  notifyTerminal: notifyJobTerminal,
+});
+installJobSchedulerListener(jobScheduler, chrome.alarms.onAlarm, jobsStartup);
+installJobNotificationClickHandler();
 let stopTabsBroadcast: (() => void) | null = null;
 
 function ensurePool(): CoordinatorPool {

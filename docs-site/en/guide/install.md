@@ -50,3 +50,6 @@ Then back to Option 1 steps 2–5.
 
 - [Configuration](/en/guide/config)
 - [First task](/en/guide/first-task)
+- [Privacy policy](/en/privacy) — local storage, model requests, and data boundaries
+- [Permission disclosure](/en/permissions) — why each Chrome permission is used
+- [Support](https://github.com/attson/aipagego/issues) — report a problem or request a feature

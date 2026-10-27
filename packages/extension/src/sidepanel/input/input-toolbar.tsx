@@ -10,6 +10,7 @@ import { AboveInputTabs } from "./above-input-tabs";
 import { InputBox } from "./input-box";
 import {
   MentionPicker,
+  type BookmarkPermissionState,
   type MentionTabOption,
   type MentionToolOption,
   type MentionBookmarkOption,
@@ -33,6 +34,8 @@ type Props = {
   pickableTabs: MentionTabOption[];
   pickableTools: MentionToolOption[];
   pickableBookmarks: MentionBookmarkOption[];
+  bookmarkPermission: BookmarkPermissionState;
+  onRequestBookmarkPermission: () => void;
   onAttachTab: (opt: MentionTabOption) => void;
   onMentionTool: (opt: MentionToolOption) => void;
   onMentionBookmark: (opt: MentionBookmarkOption) => void;
@@ -244,6 +247,8 @@ export function InputToolbar(props: Props) {
                 tabs={props.pickableTabs}
                 tools={props.pickableTools}
                 bookmarks={props.pickableBookmarks}
+                bookmarkPermission={props.bookmarkPermission}
+                onRequestBookmarkPermission={props.onRequestBookmarkPermission}
                 onPickTab={(opt) => {
                   setMentionOpen(false);
                   props.onAttachTab(opt);

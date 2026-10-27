@@ -64,6 +64,23 @@ describe("autoplay", () => {
     vi.useRealTimers();
   });
 
+  it("does not mistake a quick-action prompt for the exact send button", async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = `
+      <textarea></textarea>
+      <button aria-label="发送提示：翻译网页">翻译网页</button>
+      <button aria-label="发送" type="button">↑</button>`;
+    const clicked: string[] = [];
+    for (const button of document.querySelectorAll("button")) {
+      button.addEventListener("click", () => clicked.push(button.getAttribute("aria-label") ?? ""));
+    }
+    startAutoplay("采集商品信息");
+    await tick(400);
+    expect(clicked).toEqual(["发送"]);
+    expect(document.querySelector("textarea")!.value).toBe("采集商品信息");
+    vi.useRealTimers();
+  });
+
   it("skips a disabled send button", async () => {
     vi.useFakeTimers();
     document.body.innerHTML =

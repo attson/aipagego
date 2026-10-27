@@ -3,6 +3,8 @@ import type { RunRecord, Tool } from "@aipagego/shared/types";
 import { ResultView } from "@/sidepanel/components/result-view";
 import { StepList } from "@/sidepanel/components/step-list";
 import { currentTabId, rpc } from "@/sidepanel/rpc";
+import { useUi } from "@/sidepanel/chat/ui-store";
+import { getActiveStepsVersion } from "@aipagego/shared/workflow";
 
 type Props = {
   id: string;
@@ -15,6 +17,7 @@ type Props = {
  * the parent Drawer's onBack handles that.
  */
 export function ToolDetailPane({ id, onRunPromptTool, onFixWithAi }: Props) {
+  const openDrawer = useUi((state) => state.open);
   const [tool, setTool] = useState<Tool | null>(null);
   const [run, setRun] = useState<RunRecord | null>(null);
   const [busy, setBusy] = useState(false);
@@ -40,8 +43,9 @@ export function ToolDetailPane({ id, onRunPromptTool, onFixWithAi }: Props) {
 
   function onFix() {
     if (!run || !tool || tool.kind !== "steps" || !onFixWithAi) return;
+    const active = getActiveStepsVersion(tool);
     const failedEntry = run.stepLog.find((e) => e.error);
-    const initialPrompt = `工具「${tool.name} v${tool.versions.at(-1)?.version}」第 ${
+    const initialPrompt = `工具「${tool.name} v${active.version}」第 ${
       failedEntry?.stepIndex ?? "?"
     } 步失败：\n- step: ${JSON.stringify(failedEntry?.input)}\n- 错误: ${
       failedEntry?.error ?? "(未知)"
@@ -50,7 +54,7 @@ export function ToolDetailPane({ id, onRunPromptTool, onFixWithAi }: Props) {
       ? `\n\n> 自动自愈已尝试并失败 · from v${run.healed.fromVersion} 至 v${run.healed.toVersion} · fixedStep=${run.healed.fixedStepIndex}\n`
       : "";
     const initialContext =
-      `# 工具「${tool.name}」原 steps:\n\`\`\`json\n${JSON.stringify(tool.steps, null, 2)}\n\`\`\`\n` +
+      `# 工具「${tool.name}」原 steps:\n\`\`\`json\n${JSON.stringify(active.steps, null, 2)}\n\`\`\`\n` +
       `# 当前 URL: ${run.url}${healedNote}`;
     onFixWithAi({ initialPrompt, initialContext });
   }
@@ -85,6 +89,7 @@ export function ToolDetailPane({ id, onRunPromptTool, onFixWithAi }: Props) {
   }
 
   const failed = run && run.status === "error";
+  const active = getActiveStepsVersion(tool);
   return (
     <div className="h-full overflow-auto p-3 flex flex-col gap-3 text-xs">
       <h2 className="text-base font-medium">{tool.name}</h2>
@@ -99,6 +104,20 @@ export function ToolDetailPane({ id, onRunPromptTool, onFixWithAi }: Props) {
           {busy ? "执行中…" : "在当前 tab 运行"}
         </button>
         {busy && <span className="text-zinc-400">step 在 BG 顺序执行，结束后会显示结果…</span>}
+        <button
+          type="button"
+          onClick={() => openDrawer("workflow", tool.id)}
+          className="px-3 py-1 bg-sky-700 rounded"
+        >
+          编辑工作流
+        </button>
+        <button
+          type="button"
+          onClick={() => openDrawer("jobs", tool.id)}
+          className="px-3 py-1 bg-violet-700 rounded"
+        >
+          创建 Job
+        </button>
       </div>
       {run && (
         <section className="bg-zinc-900 rounded p-2 border border-emerald-900/40">
@@ -113,10 +132,10 @@ export function ToolDetailPane({ id, onRunPromptTool, onFixWithAi }: Props) {
       )}
       <details className="bg-zinc-900/40 rounded">
         <summary className="cursor-pointer p-2 text-zinc-300">
-          步骤定义（v{tool.versions.at(-1)?.version}） · {tool.steps.length} 条
+          步骤定义（v{active.version}） · {active.steps.length} 条
         </summary>
         <div className="p-2 pt-0">
-          <StepList steps={tool.steps} />
+          <StepList steps={active.steps} />
         </div>
       </details>
     </div>

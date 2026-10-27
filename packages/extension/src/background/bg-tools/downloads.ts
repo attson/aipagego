@@ -1,5 +1,6 @@
 import type { Json } from "@aipagego/shared/types";
 import { XLSX_MIME, buildXlsxBytes, type SpreadsheetInput } from "@/sidepanel/lib/xlsx";
+import { requireOptionalPermission } from "@/permissions/optional-permissions";
 
 function asObj(raw: Json): Record<string, unknown> {
   return (raw ?? {}) as Record<string, unknown>;
@@ -8,6 +9,7 @@ function asObj(raw: Json): Record<string, unknown> {
 export async function downloadImage(raw: Json): Promise<Json> {
   const { url, filename } = asObj(raw) as { url?: string; filename?: string };
   if (typeof url !== "string") throw new Error("downloadImage: url required");
+  await requireOptionalPermission("downloads", "downloadImage");
   if (!chrome.downloads?.download) throw new Error("downloadImage: downloads API unavailable");
   const id = await chrome.downloads.download({
     url,
@@ -22,6 +24,7 @@ export async function downloadSpreadsheet(raw: Json): Promise<Json> {
   if (!Array.isArray(input.sheets) || input.sheets.length === 0) {
     throw new Error("downloadSpreadsheet: sheets required");
   }
+  await requireOptionalPermission("downloads", "downloadSpreadsheet");
   if (!chrome.downloads?.download) {
     throw new Error("downloadSpreadsheet: downloads API unavailable");
   }
