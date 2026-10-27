@@ -131,9 +131,13 @@ describe("Chrome Web Store package audit", () => {
   it("derives local audit inputs from the repository when flags are omitted", () => {
     const fixture = makeFixture();
     const report = path.join(fixture.root, "audit-report.json");
+    const env = { ...process.env };
+    delete env.GITHUB_REF_TYPE;
+    delete env.GITHUB_REF_NAME;
     const result = spawnSync(process.execPath, [auditScript, "--", "--report", report], {
       cwd: fixture.root,
       encoding: "utf8",
+      env,
     });
     expect(result.status, result.stderr).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({
