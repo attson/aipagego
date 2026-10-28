@@ -61,6 +61,17 @@ describe("FAB", () => {
     expect(btn).toBeTruthy();
   });
 
+  it("keeps its size fixed when the host page uses a large root font size", async () => {
+    document.documentElement.style.fontSize = "100px";
+    await act(async () => {
+      root.render(<FAB onToggle={() => {}} active={false} />);
+    });
+    const btn = container.querySelector("[aria-label='AIPageGo 助手']") as HTMLElement;
+    expect(btn.style.width).toBe("48px");
+    expect(btn.style.height).toBe("48px");
+    document.documentElement.style.removeProperty("font-size");
+  });
+
   it("applies active class when active=true", async () => {
     await act(async () => {
       root.render(<FAB onToggle={() => {}} active={true} />);
