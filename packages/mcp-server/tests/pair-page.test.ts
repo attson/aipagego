@@ -46,6 +46,19 @@ describe("renderPairPage", () => {
     expect(renderPairPage(payload)).toContain("扩展");
   });
 
+  it("shows live pairing elapsed time beside the status", () => {
+    const html = renderPairPage(payload);
+    expect(html).toContain('id="aipagego-elapsed"');
+    expect(html).toContain("已等待");
+    expect(html).toContain("配对耗时");
+    expect(html).toContain("setInterval(updateElapsed");
+  });
+
+  it("reports when the extension relay has answered", () => {
+    const html = renderPairPage(payload);
+    expect(html).toContain("扩展已响应，等待授权");
+  });
+
   it("distinguishes connection failure from explicit denial", () => {
     const html = renderPairPage(payload);
     expect(html).toContain('e.data.reason === "denied"');
@@ -85,6 +98,7 @@ describe("renderPairPage — install ordering", () => {
   it("gives up eventually and says why", () => {
     expect(html).toContain("clearInterval");
     expect(html).toContain("没有联系上扩展");
+    expect(html).toContain("tries > 90");
   });
 
   it("stops announcing once a result arrives", () => {

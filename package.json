@@ -1,7 +1,7 @@
 {
   "name": "aipagego-monorepo",
   "private": true,
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "AIPageGo — AI 网页助手（侧边面板）monorepo root",
   "type": "module",
   "scripts": {
