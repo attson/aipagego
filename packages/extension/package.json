@@ -1,6 +1,6 @@
 {
   "name": "@aipagego/extension",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "type": "module",
   "description": "AIPageGo — AI 网页助手（侧边面板）",
