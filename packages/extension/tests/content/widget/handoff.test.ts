@@ -45,4 +45,19 @@ describe("handOffToSidepanel", () => {
 
     expect(mockAppendHealNote).toHaveBeenCalledWith(42, expect.stringContaining("扩展面板"));
   });
+
+  it("returns false when an optional-permission handoff cannot open the sidepanel", async () => {
+    mockWidgetOpenSidepanel.mockRejectedValue(new Error("panel unavailable"));
+    const { handOffPermissionToSidepanel } = await import("@/content/widget/handoff");
+
+    await expect(handOffPermissionToSidepanel(42, {
+      code: "permission_required",
+      permission: "downloads",
+      capability: "downloadImage",
+      requestable: true,
+      toolUseId: "download-1",
+    })).resolves.toBe(false);
+
+    expect(mockAppendHealNote).toHaveBeenCalledWith(42, expect.stringContaining("本次操作已取消"));
+  });
 });

@@ -22,6 +22,7 @@ import {
 } from "@aipagego/shared/pairing";
 
 const HEARTBEAT_ALARM = "aipagego-coordinator-heartbeat";
+const HEARTBEAT_INTERVAL_MS = 15_000;
 
 export type ClientStatus = "disconnected" | "connecting" | "connected" | "error";
 
@@ -62,6 +63,7 @@ export class CoordinatorClient {
   /** When the next attempt is due; the alarm must not jump the queue. */
   private nextAttemptAt = 0;
   private alarmListener: ((alarm: { name: string }) => void) | null = null;
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private intentionallyClosed = false;
 
   constructor(private opts: CoordinatorClientOptions) {}
@@ -101,6 +103,7 @@ export class CoordinatorClient {
 
   async connect(): Promise<void> {
     this.intentionallyClosed = false;
+    this.stopHeartbeat();
     this.setStatus("connecting");
     const protocols = this.opts.token
       ? [`bearer.${this.opts.token}`, `proto.${PROTOCOL_VERSION}`]
@@ -115,6 +118,7 @@ export class CoordinatorClient {
 
   async disconnect(): Promise<void> {
     this.intentionallyClosed = true;
+    this.stopHeartbeat();
     this.uninstallAlarm();
     this.ws?.close();
     this.ws = null;
@@ -122,6 +126,7 @@ export class CoordinatorClient {
   }
 
   private async handleOpen(): Promise<void> {
+    this.startHeartbeat();
     try {
       const saved_tools = await this.opts.savedToolsProvider();
       const labels = await this.opts.labelsProvider();
@@ -183,6 +188,19 @@ export class CoordinatorClient {
           this.send(execResult);
         } catch (err) {
           console.error("[coordinator-client] onExec threw", err);
+          this.send({
+            type: "RESULT",
+            nonce: randomNonce(),
+            ts: Date.now(),
+            protocol_version: PROTOCOL_VERSION,
+            req_id: msg.req_id,
+            ok: false,
+            error: {
+              code: "PageScriptError",
+              message: err instanceof Error ? err.message : String(err),
+              retryable: false
+            }
+          });
         }
         return;
       case "SESSION_OPENED":
@@ -228,6 +246,7 @@ export class CoordinatorClient {
   }
 
   private handleClose(ev?: { code?: number }): void {
+    this.stopHeartbeat();
     if (this.intentionallyClosed) {
       this.uninstallAlarm();
       this.setStatus("disconnected");
@@ -276,7 +295,10 @@ export class CoordinatorClient {
 
   private installAlarm(): void {
     if (!chrome.alarms || this.alarmListener) return;
-    chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 0.25 }); // 15s
+    // Chrome 120+ clamps repeating alarms to at least 30 seconds. The alarm is
+    // a service-worker wake/reconnect fallback; the active socket heartbeat is
+    // handled by the 15-second interval below.
+    chrome.alarms.create(HEARTBEAT_ALARM, { periodInMinutes: 0.5 });
     this.alarmListener = (alarm) => {
       if (alarm.name !== HEARTBEAT_ALARM) return;
       if (this.intentionallyClosed) return;
@@ -305,6 +327,25 @@ export class CoordinatorClient {
       void this.connect();
     };
     chrome.alarms.onAlarm.addListener(this.alarmListener);
+  }
+
+  private startHeartbeat(): void {
+    this.stopHeartbeat();
+    this.heartbeatTimer = setInterval(() => {
+      if (this.ws?.readyState !== 1) return;
+      this.send({
+        type: "PING",
+        nonce: randomNonce(),
+        ts: Date.now(),
+        protocol_version: PROTOCOL_VERSION
+      });
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHeartbeat(): void {
+    if (this.heartbeatTimer === null) return;
+    clearInterval(this.heartbeatTimer);
+    this.heartbeatTimer = null;
   }
 
   private uninstallAlarm(): void {

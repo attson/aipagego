@@ -70,7 +70,16 @@ describe("buildToolList", () => {
       type: "object",
       properties: {
         tab_id: { type: "string" },
-        url: { type: "string" }
+        url: { type: "string" },
+        session_id: { type: "string" },
+        force_new: { type: "boolean" }
+      }
+    });
+    const open = buildToolList().find((tool) => tool.name === "open_session");
+    expect(open?.inputSchema).toMatchObject({
+      properties: {
+        session_id: { type: "string" },
+        force_new: { type: "boolean" }
       }
     });
   });
@@ -423,6 +432,160 @@ describe("dispatchCall", () => {
       status: "ready",
       tab: { tab_id: "42" }
     });
+  });
+  it("reuses a compatible active session unless force_new is requested", async () => {
+    const d = deps();
+    const first = JSON.parse(textOf(await dispatchCall(d, "browser_start", {})));
+    const reused = JSON.parse(textOf(await dispatchCall(d, "browser_start", {})));
+    const isolated = JSON.parse(textOf(await dispatchCall(d, "browser_start", { force_new: true })));
+    const reusedAfterIsolation = JSON.parse(textOf(await dispatchCall(d, "browser_start", {})));
+    const otherScope = JSON.parse(textOf(await dispatchCall(d, "browser_start", {
+      capabilities: ["read:dom"]
+    })));
+    const otherTimeout = JSON.parse(textOf(await dispatchCall(d, "browser_start", {
+      idle_timeout_min: 1
+    })));
+
+    expect(reused.session_id).toBe(first.session_id);
+    expect(isolated.session_id).not.toBe(first.session_id);
+    expect(reusedAfterIsolation.session_id).toBe(first.session_id);
+    expect(otherScope.session_id).not.toBe(first.session_id);
+    expect(otherTimeout.session_id).not.toBe(first.session_id);
+  });
+
+  it("lets browser_start attach its selected tab to an existing session", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      available_tabs: [
+        { tab_id: "42", url: "https://example.org" },
+        { tab_id: "43", url: "https://second.example.org" }
+      ]
+    });
+    const d = staticDeps(coordinator, { exec: async () => okResult } as any);
+    const first = JSON.parse(textOf(await dispatchCall(d, "browser_start", { tab_id: "42" })));
+    const attached = JSON.parse(textOf(await dispatchCall(d, "browser_start", {
+      tab_id: "43",
+      session_id: first.session_id
+    })));
+
+    expect(attached.session_id).toBe(first.session_id);
+    expect(coordinator.sessions.get(first.session_id)?.tab_ids).toEqual(["42", "43"]);
+  });
+
+  it("attaches an existing tab and routes tools by tabId", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      available_tabs: [
+        { tab_id: "42", url: "https://example.org" },
+        { tab_id: "43", url: "https://second.example.org" }
+      ]
+    });
+    const calls: Array<{ session_id: string; tab_id: string }> = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: { session_id: string; tab_id: string }) => {
+        calls.push(params);
+        return okResult;
+      }
+    } as any);
+    const opened = JSON.parse(textOf(await dispatchCall(d, "open_session", { tab_id: "42" })));
+    const attached = JSON.parse(textOf(await dispatchCall(d, "open_session", {
+      tab_id: "43",
+      session_id: opened.session_id
+    })));
+
+    expect(attached.session_id).toBe(opened.session_id);
+    expect(coordinator.sessions.get(opened.session_id)?.tab_ids).toEqual(["42", "43"]);
+    const routed = await dispatchCall(d, "browser_getPageInfo", {
+      session_id: opened.session_id,
+      tabId: 43
+    });
+    expect(routed.isError).toBeFalsy();
+    expect(calls.at(-1)?.tab_id).toBe("43");
+
+    const denied = await dispatchCall(d, "browser_getPageInfo", {
+      session_id: opened.session_id,
+      tabId: 99
+    });
+    expect(denied.isError).toBe(true);
+    expect(textOf(denied)).toMatch(/not attached|does not own/i);
+  });
+
+  it("automatically attaches a tab returned by browser_openTab", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker(fakeWorker());
+    const calls: Array<{ tab_id: string; step: { tool?: string } }> = [];
+    const d = staticDeps(coordinator, {
+      exec: async (_workerId: string, params: { tab_id: string; step: { tool?: string } }) => {
+        calls.push(params);
+        return params.step.tool === "openTab"
+          ? { ...okResult, return: { tabId: 43, url: "https://second.example.org" } }
+          : okResult;
+      }
+    } as any);
+    const opened = JSON.parse(textOf(await dispatchCall(d, "open_session", { tab_id: "42" })));
+
+    const newTab = await dispatchCall(d, "browser_openTab", {
+      session_id: opened.session_id,
+      url: "https://second.example.org"
+    });
+    expect(newTab.isError).toBeFalsy();
+    expect(coordinator.sessions.get(opened.session_id)?.tab_ids).toEqual(["42", "43"]);
+
+    await dispatchCall(d, "browser_getPageInfo", { session_id: opened.session_id, tabId: 43 });
+    expect(calls.at(-1)?.tab_id).toBe("43");
+  });
+
+  it("promotes the oldest attached tab when browser_closeTab closes the primary", async () => {
+    const coordinator = new Coordinator({
+      hub: { send: async () => undefined } as any,
+      clock: new FakeClock(0),
+      idGen: new FakeIdGen()
+    });
+    coordinator.registerWorker({
+      ...fakeWorker(),
+      available_tabs: [
+        { tab_id: "42", url: "https://example.org" },
+        { tab_id: "43", url: "https://second.example.org" }
+      ]
+    });
+    const d = staticDeps(coordinator, { exec: async () => okResult } as any);
+    const opened = JSON.parse(textOf(await dispatchCall(d, "open_session", { tab_id: "42" })));
+    await dispatchCall(d, "open_session", { session_id: opened.session_id, tab_id: "43" });
+
+    const closed = await dispatchCall(d, "browser_closeTab", { session_id: opened.session_id });
+
+    expect(closed.isError).toBeFalsy();
+    expect(coordinator.sessions.get(opened.session_id)).toMatchObject({
+      state: "active",
+      tab_id: "43",
+      tab_ids: ["43"]
+    });
+  });
+
+  it("rejects combining session_id with force_new", async () => {
+    const d = deps();
+    const opened = JSON.parse(textOf(await dispatchCall(d, "open_session", { tab_id: "42" })));
+    const result = await dispatchCall(d, "open_session", {
+      tab_id: "42",
+      session_id: opened.session_id,
+      force_new: true
+    });
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toMatch(/InvalidArgs/);
   });
   it("returns isError for unknown tool", async () => {
     const r = await dispatchCall(deps(), "no_such_tool", {});

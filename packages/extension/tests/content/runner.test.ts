@@ -79,6 +79,24 @@ describe("Step Runner", () => {
     expect(captured).toEqual({ selectors: ["X", { wrap: "X" }] });
   });
 
+  it("resolves nested object and array paths from prior outputs", async () => {
+    const steps: Step[] = [
+      { kind: "tool", tool: "extractText", args: { selector: "h1" }, bindResultTo: "page" },
+      { kind: "tool", tool: "extractText", args: { selector: "${page.rows.0.title}" } }
+    ];
+    const calls: unknown[] = [];
+    const result = await runSteps(steps, {
+      runTool: async (_, args, index) => {
+        calls.push(args);
+        return index === 0 ? { rows: [{ title: "耳机" }] } : "done";
+      },
+      runJs: async () => null
+    });
+
+    expect(result.status).toBe("ok");
+    expect(calls[1]).toEqual({ selector: "耳机" });
+  });
+
   it("calls runJs for js steps", async () => {
     const steps: Step[] = [{ kind: "js", source: "return 1+1" }];
     const result = await runSteps(steps, {

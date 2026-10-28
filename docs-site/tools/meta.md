@@ -5,6 +5,23 @@
 
 跨 tab、书签、历史、下载、截图、视觉高亮、征询用户。用于任务编排。
 
+## `inspectElement`  🔴 dangerous
+
+[FAST·READ·LAYOUT] 读取元素的运行时布局真相：computed style、viewport/document rect、可见性、祖先链与 shadow root 信息。
+调试 display/box-sizing/position/overflow/z-index、弹窗挂载点或父级布局时优先用它，不要为这些只读信息调用 runJS。
+
+**参数：**
+
+| 字段 | 类型 | 说明 | 必填 |
+|---|---|---|---|
+| `selector` | string | CSS selector；与 uid 二选一 | 否 |
+| `uid` | string | takeSnapshot/findElements 返回的 uid；与 selector 二选一 | 否 |
+| `ancestorDepth` | integer |  | 否 |
+| `styleProperties` | array | 要读取的 CSS 属性；省略时返回常用布局属性 | 否 |
+| `tabId` | integer | 目标 tab。要操作主会话 tab 时整个字段不要带（不要 0 / null）；要操作其它 tab 时它必须先在 attachedTabs（用 attachTab 申请） | 否 |
+
+---
+
 ## `createPageIndex`  🔴 dangerous
 
 [PAGE-INDEX][FIRST·READ] 在内容脚本本地构建/刷新页面索引，返回小型页面地图、blockId、kinds、truncation 元数据。
@@ -223,6 +240,19 @@
 |---|---|---|---|
 | `url` | string |  | 是 |
 | `filename` | string | 可选：建议的文件名（含后缀） | 否 |
+
+---
+
+## `collectStructuredData`  🔴 dangerous
+
+[COLLECT·REPLAY] 使用已经确认的本地采集配方运行结构化采集。返回有界 CollectionRunSummary（含 resultId 和最多 5 行预览），完整结果保存在本地，不需要 LLM。
+
+**参数：**
+
+| 字段 | 类型 | 说明 | 必填 |
+|---|---|---|---|
+| `recipe` | object |  | 是 |
+| `tabId` | integer | 目标 tab。要操作主会话 tab 时整个字段不要带（不要 0 / null）；要操作其它 tab 时它必须先在 attachedTabs（用 attachTab 申请） | 否 |
 
 ---
 

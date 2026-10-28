@@ -57,7 +57,7 @@ export type GeneratedTool = {
 
 const SESSION_ID_FIELD: JsonSchema = {
   type: "string",
-  description: "Session id from open_session"
+  description: "Session id"
 } as JsonSchema;
 
 /**
@@ -92,11 +92,13 @@ function rebuildSchema(src: JsonSchema, params: Record<string, string>): Generat
   const s = src as { type?: string; properties?: Record<string, JsonSchema>; required?: string[] };
   const properties: Record<string, JsonSchema> = {};
   for (const [key, prop] of Object.entries(s.properties ?? {})) {
-    if (key === "tabId") continue; // target tab is decided by the session, not the caller
     const stripped = stripDescriptions(prop) as Record<string, unknown>;
     properties[key] = (params[key] ? { ...stripped, description: params[key] } : stripped) as JsonSchema;
   }
   properties.session_id = SESSION_ID_FIELD;
+  if (!properties.tabId) {
+    properties.tabId = { type: "integer" } as JsonSchema;
+  }
   const required = [...new Set([...(s.required ?? []).filter((r) => r !== "tabId"), "session_id"])];
   return { type: "object", properties, required };
 }
@@ -220,7 +222,13 @@ export const DISCOVERABLE_GROUPS: Record<DiscoverGroup, readonly string[]> = {
   network: ["browser_httpRequest", "browser_networkRequestDetail", "browser_recorderConfig", "browser_handleDialog"],
   storage: ["browser_storage"],
   "browser-data": ["browser_searchBookmarks", "browser_searchHistory"],
-  inspect: ["browser_inspectElement", "browser_highlight", "browser_getValue", "browser_extractFormState"],
+  inspect: [
+    "browser_inspectElement",
+    "browser_highlight",
+    "browser_getValue",
+    "browser_extractFormState",
+    "browser_collectStructuredData"
+  ],
   "legacy-dom": ["browser_snapshotDOM", "browser_querySelector", "browser_querySelectorAll", "browser_extractImages", "browser_focus"],
   form: ["browser_submitForm"],
   tabs: ["browser_switchToTab"]

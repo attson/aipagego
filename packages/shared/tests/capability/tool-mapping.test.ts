@@ -37,6 +37,7 @@ describe("capabilityForTool", () => {
     expect(capabilityForTool("fillInput")).toBe("interact:form");
     expect(capabilityForTool("setCheckbox")).toBe("interact:form");
     expect(capabilityForTool("selectOption")).toBe("interact:form");
+    expect(capabilityForTool("collectStructuredData")).toBe("interact:form");
   });
   it("submit:form for submitForm", () => {
     expect(capabilityForTool("submitForm")).toBe("submit:form");

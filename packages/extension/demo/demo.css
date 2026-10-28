@@ -17,6 +17,8 @@ body {
   font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
+.demo-shell { min-height: 100vh; }
+
 .demo-browser {
   border: 0;
   border-radius: 0;
@@ -50,8 +52,9 @@ body {
 .demo-body {
   display: grid;
   /* 面板固定宽度，页面吃掉剩下的 —— 和真实侧边栏的比例一致 */
-  grid-template-columns: minmax(0, 1fr) 340px;
-  height: 430px;
+  grid-template-columns: minmax(0, 1fr) 430px;
+  height: calc(100vh - 85px);
+  min-height: 600px;
 }
 
 .demo-page {

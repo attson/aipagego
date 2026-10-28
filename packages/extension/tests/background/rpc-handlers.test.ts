@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { handleRpc, setRecorderPolicy } from "@/background/rpc-handlers";
+import { META_TOOLS } from "@/background/meta-tool-router";
 import { detachCdp } from "@/background/recorder/cdp";
-import { _resetDBForTests } from "@/background/storage/db";
-import { saveDraft } from "@/background/storage/tools";
+import { _resetDBForTests, getDB } from "@/background/storage/db";
+import { appendVersion, getTool, saveDraft } from "@/background/storage/tools";
 
 vi.stubGlobal("chrome", {
   tabs: {
@@ -47,6 +48,483 @@ describe("rpc handlers tool kinds", () => {
 
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toContain("prompt tools run in chat");
+  });
+});
+
+describe("parameterized workflow runs", () => {
+  beforeEach(() => {
+    _resetDBForTests();
+    indexedDB = new IDBFactory();
+    vi.clearAllMocks();
+  });
+
+  function workflowChrome() {
+    const sendMessage = vi.fn(async (
+      _tabId: number,
+      _request: unknown
+    ): Promise<{ ok: true; data: unknown } | { ok: false; error: string }> => ({
+      ok: true,
+      data: null
+    }));
+    return {
+      storage: {
+        local: {
+          get: vi.fn(async () => ({
+            "aipagego.llm": {
+              defaultInjectionMode: "operate",
+              defaultAssistantEnabled: false,
+              siteInjectionRules: [],
+              selfHealEnabled: false
+            }
+          }))
+        },
+        session: { get: vi.fn(async () => ({})) }
+      },
+      tabs: {
+        get: vi.fn(async () => ({ id: 1, url: "https://example.com/" })),
+        sendMessage
+      },
+      runtime: { sendMessage: vi.fn() }
+    };
+  }
+
+  it("rejects missing required inputs before the first page action", async () => {
+    const fake = workflowChrome();
+    vi.stubGlobal("chrome", fake);
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: {
+        kind: "draft",
+        draft: {
+          kind: "steps",
+          name: "Search",
+          description: "",
+          urlPatterns: ["https://example.com/**"],
+          parameters: [
+            { key: "query", label: "Query", type: "string", required: true }
+          ],
+          steps: [
+            { kind: "tool", tool: "fillInput", args: { selector: "#q", value: "${query}" } }
+          ],
+          outputSchema: null
+        }
+      },
+      tabId: 1,
+      inputs: {}
+    });
+
+    expect(res).toEqual({ ok: false, error: "missing_required_input: query" });
+    expect(fake.tabs.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      label: "unknown input",
+      inputs: { query: "ok", extra: true },
+      error: "unknown_input: extra"
+    },
+    {
+      label: "wrong input type",
+      inputs: { query: 42 },
+      error: "input_type_mismatch: query"
+    }
+  ])("rejects $label before the first page action", async ({ inputs, error }) => {
+    const fake = workflowChrome();
+    vi.stubGlobal("chrome", fake);
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: {
+        kind: "draft",
+        draft: {
+          kind: "steps",
+          name: "Validated Search",
+          description: "",
+          urlPatterns: ["https://example.com/**"],
+          parameters: [
+            { key: "query", label: "Query", type: "string", required: true }
+          ],
+          steps: [
+            { kind: "tool", tool: "fillInput", args: { selector: "#q", value: "${query}" } }
+          ],
+          outputSchema: null
+        }
+      },
+      tabId: 1,
+      inputs
+    });
+
+    expect(res).toEqual({ ok: false, error });
+    expect(fake.tabs.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("rejects an unknown binding before the first page action", async () => {
+    const fake = workflowChrome();
+    vi.stubGlobal("chrome", fake);
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: {
+        kind: "draft",
+        draft: {
+          kind: "steps",
+          name: "Invalid Workflow",
+          description: "",
+          urlPatterns: ["https://example.com/**"],
+          steps: [
+            { kind: "tool", tool: "fillInput", args: { selector: "#q", value: "${future}" } }
+          ],
+          outputSchema: null
+        }
+      },
+      tabId: 1
+    });
+
+    expect(res).toMatchObject({
+      ok: false,
+      error: expect.stringContaining('"code":"unknown_binding"')
+    });
+    expect(fake.tabs.sendMessage).not.toHaveBeenCalled();
+  });
+
+  it("runs the active snapshot with its defaults and records its real version", async () => {
+    const fake = workflowChrome();
+    fake.tabs.sendMessage.mockResolvedValue({ ok: true, data: "done" });
+    vi.stubGlobal("chrome", fake);
+    const tool = await saveDraft({
+      kind: "steps",
+      name: "Versioned Search",
+      description: "",
+      urlPatterns: ["https://example.com/**"],
+      parameters: [
+        {
+          key: "query",
+          label: "Query",
+          type: "string",
+          required: false,
+          defaultValue: "from-v1"
+        }
+      ],
+      steps: [
+        { kind: "tool", tool: "fillInput", args: { selector: "#q", value: "${query}" } }
+      ],
+      outputSchema: null
+    });
+    const v2 = await appendVersion(tool.id, {
+      steps: [
+        { kind: "tool", tool: "fillInput", args: { selector: "#q", value: "from-v2" } }
+      ],
+      outputSchema: null
+    });
+    if (v2.kind !== "steps") throw new Error("expected steps tool");
+    const db = await getDB();
+    await db.put("tools", { ...v2, activeVersion: 1 });
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: { kind: "tool", id: tool.id },
+      tabId: 1
+    });
+
+    expect(res).toMatchObject({
+      ok: true,
+      data: { status: "ok", toolVersion: 1, output: "done" }
+    });
+    expect(fake.tabs.sendMessage).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        type: "content.runStep",
+        step: expect.objectContaining({
+          args: { selector: "#q", value: "from-v1" }
+        })
+      })
+    );
+  });
+
+  it("runs an activated historical version and switches back without appending history", async () => {
+    const fake = workflowChrome();
+    fake.tabs.sendMessage.mockResolvedValue({ ok: true, data: "done" });
+    vi.stubGlobal("chrome", fake);
+    const tool = await saveDraft({
+      kind: "steps",
+      name: "Switchable",
+      description: "",
+      urlPatterns: ["https://example.com/**"],
+      steps: [{ kind: "tool", tool: "extractText", args: { selector: "h1" } }],
+      outputSchema: null,
+    });
+    await appendVersion(tool.id, {
+      steps: [{ kind: "tool", tool: "extractText", args: { selector: "h2" } }],
+      outputSchema: null,
+    });
+
+    await handleRpc({ type: "workflows.activate", id: tool.id, version: 1 });
+    const oldRun = await handleRpc({
+      type: "runs.start",
+      target: { kind: "tool", id: tool.id },
+      tabId: 1,
+    });
+    await handleRpc({ type: "workflows.activate", id: tool.id, version: 2 });
+    const latestRun = await handleRpc({
+      type: "runs.start",
+      target: { kind: "tool", id: tool.id },
+      tabId: 1,
+    });
+
+    expect(oldRun).toMatchObject({ ok: true, data: { toolVersion: 1 } });
+    expect(latestRun).toMatchObject({ ok: true, data: { toolVersion: 2 } });
+    expect((await getTool(tool.id))?.versions).toHaveLength(2);
+  });
+
+  it("returns the configured output binding instead of the last step output", async () => {
+    const fake = workflowChrome();
+    fake.tabs.sendMessage.mockImplementation(async (_tabId, request) => {
+      const selector = (request as { step: { args: { selector: string } } }).step.args.selector;
+      return selector === "#first"
+        ? { ok: true, data: { rows: [{ title: "chosen" }] } }
+        : { ok: true, data: "last-step" };
+    });
+    vi.stubGlobal("chrome", fake);
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: {
+        kind: "draft",
+        draft: {
+          kind: "steps",
+          name: "Selected Output",
+          description: "",
+          urlPatterns: ["https://example.com/**"],
+          steps: [
+            {
+              kind: "tool",
+              tool: "extractText",
+              args: { selector: "#first" },
+              bindResultTo: "selected"
+            },
+            {
+              kind: "tool",
+              tool: "extractText",
+              args: { selector: "${selected.rows.0.title}" }
+            }
+          ],
+          outputBinding: "selected",
+          outputSchema: null
+        }
+      },
+      tabId: 1
+    });
+
+    expect(res).toMatchObject({
+      ok: true,
+      data: {
+        status: "ok",
+        output: { rows: [{ title: "chosen" }] }
+      }
+    });
+    expect(fake.tabs.sendMessage).toHaveBeenLastCalledWith(
+      1,
+      expect.objectContaining({
+        step: expect.objectContaining({ args: { selector: "chosen" } })
+      })
+    );
+  });
+
+  it("executes with sensitive values in memory but redacts tainted persisted results", async () => {
+    const fake = workflowChrome();
+    const executedValues: unknown[] = [];
+    fake.tabs.sendMessage.mockImplementation(async (_tabId, request) => {
+      const value = (request as { step: { args: { value: unknown } } }).step.args.value;
+      executedValues.push(value);
+      return { ok: true, data: value };
+    });
+    vi.stubGlobal("chrome", fake);
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: {
+        kind: "draft",
+        draft: {
+          kind: "steps",
+          name: "Sensitive Flow",
+          description: "",
+          urlPatterns: ["https://example.com/**"],
+          parameters: [
+            {
+              key: "secret",
+              label: "Secret",
+              type: "string",
+              required: true,
+              sensitive: true
+            }
+          ],
+          steps: [
+            {
+              kind: "tool",
+              tool: "fillInput",
+              args: { selector: "#token", value: "${secret}" },
+              bindResultTo: "echo"
+            },
+            {
+              kind: "tool",
+              tool: "fillInput",
+              args: { selector: "#confirm", value: "${echo}" },
+              bindResultTo: "final"
+            }
+          ],
+          outputBinding: "final",
+          outputSchema: null
+        }
+      },
+      tabId: 1,
+      inputs: { secret: "sk-private" }
+    });
+
+    expect(executedValues).toEqual(["sk-private", "sk-private"]);
+    expect(res).toMatchObject({
+      ok: true,
+      data: {
+        status: "ok",
+        stepLog: [
+          { input: { __redacted: true }, output: { __redacted: true } },
+          { input: { __redacted: true }, output: { __redacted: true } }
+        ],
+        output: { __redacted: true }
+      }
+    });
+    expect(JSON.stringify(res)).not.toContain("sk-private");
+  });
+
+  it("redacts error details emitted by a tainted step", async () => {
+    const fake = workflowChrome();
+    fake.tabs.sendMessage.mockResolvedValue({
+      ok: false,
+      error: "page rejected sk-private"
+    });
+    vi.stubGlobal("chrome", fake);
+
+    const res = await handleRpc({
+      type: "runs.start",
+      target: {
+        kind: "draft",
+        draft: {
+          kind: "steps",
+          name: "Sensitive Failure",
+          description: "",
+          urlPatterns: ["https://example.com/**"],
+          parameters: [
+            {
+              key: "secret",
+              label: "Secret",
+              type: "string",
+              required: true,
+              sensitive: true
+            }
+          ],
+          steps: [
+            {
+              kind: "tool",
+              tool: "fillInput",
+              args: { selector: "#token", value: "${secret}" }
+            }
+          ],
+          outputSchema: null
+        }
+      },
+      tabId: 1,
+      inputs: { secret: "sk-private" }
+    });
+
+    expect(res).toMatchObject({
+      ok: true,
+      data: {
+        status: "error",
+        stepLog: [{
+          input: { __redacted: true },
+          output: { __redacted: true },
+          error: { __redacted: true }
+        }]
+      }
+    });
+    expect(JSON.stringify(res)).not.toContain("sk-private");
+  });
+});
+
+describe("workflow publishing RPC", () => {
+  beforeEach(() => {
+    _resetDBForTests();
+    indexedDB = new IDBFactory();
+    vi.clearAllMocks();
+  });
+
+  it("publishes and activates a validated workflow snapshot", async () => {
+    const tool = await saveDraft({
+      kind: "steps",
+      name: "Studio RPC",
+      description: "",
+      urlPatterns: ["https://example.com/**"],
+      steps: [{ kind: "tool", tool: "snapshotDOM", args: {} }],
+      outputSchema: null
+    });
+
+    const res = await handleRpc({
+      type: "workflows.publish",
+      id: tool.id,
+      basedOnVersion: 1,
+      parameters: [
+        { key: "selector", label: "Selector", type: "string", required: true }
+      ],
+      steps: [
+        {
+          kind: "tool",
+          tool: "extractText",
+          args: { selector: "${selector}" },
+          bindResultTo: "result"
+        }
+      ],
+      outputBinding: "result",
+      outputSchema: { type: "string" },
+      note: "edited in studio"
+    });
+
+    expect(res).toMatchObject({
+      ok: true,
+      data: {
+        kind: "steps",
+        activeVersion: 2,
+        versions: [
+          { version: 1 },
+          { version: 2, basedOnVersion: 1, note: "edited in studio" }
+        ]
+      }
+    });
+  });
+
+  it("activates a historical workflow snapshot without appending a version", async () => {
+    const tool = await saveDraft({
+      kind: "steps",
+      name: "Activation RPC",
+      description: "",
+      urlPatterns: ["https://example.com/**"],
+      steps: [{ kind: "tool", tool: "snapshotDOM", args: {} }],
+      outputSchema: null,
+    });
+    await appendVersion(tool.id, {
+      steps: [{ kind: "tool", tool: "extractText", args: { selector: "h1" } }],
+      outputSchema: { type: "string" },
+    });
+
+    const res = await handleRpc({
+      type: "workflows.activate",
+      id: tool.id,
+      version: 1,
+    });
+
+    expect(res).toMatchObject({
+      ok: true,
+      data: { activeVersion: 1, versions: [{ version: 1 }, { version: 2 }] },
+    });
   });
 });
 
@@ -304,9 +782,97 @@ describe("tabs.open", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toMatch(/scheme/i);
   });
+
+  it("forwards incognito and windowId to the tab opener", async () => {
+    const create = vi.fn(async (info: chrome.tabs.CreateProperties) => ({
+      id: 43,
+      windowId: info.windowId,
+      url: info.url ?? "",
+      title: "",
+      incognito: true
+    }));
+    vi.stubGlobal("chrome", {
+      extension: {
+        isAllowedIncognitoAccess: vi.fn((callback: (allowed: boolean) => void) => callback(true))
+      },
+      runtime: {},
+      tabs: {
+        get: vi.fn(),
+        sendMessage: vi.fn(),
+        create
+      },
+      windows: {
+        getAll: vi.fn(async () => [{ id: 22, type: "normal", incognito: true }]),
+        create: vi.fn()
+      }
+    });
+
+    const res = await handleRpc({
+      type: "tabs.open",
+      url: "https://x.com",
+      incognito: true,
+      windowId: 22
+    });
+
+    expect(res.ok).toBe(true);
+    expect(create).toHaveBeenCalledWith({ url: "https://x.com", active: false, windowId: 22 });
+  });
 });
 
 describe("runs.runOneStep tabId gate", () => {
+  it("resolves nested bindings before dispatching a background meta tool", async () => {
+    const original = META_TOOLS.collectStructuredData;
+    META_TOOLS.collectStructuredData = vi.fn(async (args) => args);
+    vi.stubGlobal("chrome", {
+      storage: { local: { get: vi.fn(async () => ({
+        "aipagego.llm": {
+          defaultInjectionMode: "operate",
+          defaultAssistantEnabled: false,
+          siteInjectionRules: []
+        }
+      })) } },
+      tabs: {
+        get: vi.fn(async (tabId: number) => ({ id: tabId, url: "https://example.com/" })),
+        sendMessage: vi.fn()
+      }
+    });
+
+    try {
+      const res = await handleRpc({
+        type: "runs.runOneStep",
+        step: {
+          kind: "tool",
+          tool: "collectStructuredData",
+          args: { recipe: "${workflow.recipe}" }
+        },
+        tabId: 1,
+        attachedTabIds: [],
+        bindings: {
+          workflow: {
+            recipe: {
+              version: 1,
+              name: "Products",
+              fields: [{ key: "title", label: "Title", selector: "h2", value: "text" }],
+              pagination: { kind: "single" }
+            }
+          }
+        }
+      });
+
+      expect(res).toMatchObject({
+        ok: true,
+        data: {
+          recipe: {
+            name: "Products",
+            pagination: { kind: "single" }
+          }
+        }
+      });
+    } finally {
+      META_TOOLS.collectStructuredData = original;
+    }
+  });
+
   it("rejects tabId not in attachedTabIds and not equal to RPC.tabId", async () => {
     const res = await handleRpc({
       type: "runs.runOneStep",

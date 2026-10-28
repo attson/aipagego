@@ -45,6 +45,7 @@ export function capabilityForTool(
     case "fillInput":
     case "setCheckbox":
     case "selectOption":
+    case "collectStructuredData":
       return "interact:form";
     case "submitForm":
       return "submit:form";

@@ -26,4 +26,23 @@ describe("SaveAsToolCard", () => {
     expect(onSave).toHaveBeenCalledTimes(1);
     cleanup();
   });
+
+  it("offers the collection-studio handoff for a completed collection conversation", () => {
+    const onContinueCollection = vi.fn();
+    const { c, cleanup } = mount(
+      <SaveAsToolCard
+        stepCount={3}
+        onSave={vi.fn()}
+        onContinueCollection={onContinueCollection}
+      />
+    );
+
+    const button = Array.from(c.querySelectorAll("button")).find((item) =>
+      item.textContent?.includes("在采集工作台继续")
+    ) as HTMLButtonElement | undefined;
+    expect(button).toBeTruthy();
+    act(() => button?.click());
+    expect(onContinueCollection).toHaveBeenCalledTimes(1);
+    cleanup();
+  });
 });

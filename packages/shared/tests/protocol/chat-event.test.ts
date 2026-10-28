@@ -56,3 +56,24 @@ describe("self_heal_* SessionEvents", () => {
     });
   }
 });
+
+describe("permission_* SessionEvents", () => {
+  const cases = [
+    {
+      type: "permission_required",
+      toolUseId: "t1",
+      permission: "bookmarks",
+      capability: "searchBookmarks",
+    },
+    {
+      type: "permission_resolved",
+      toolUseId: "t1",
+      permission: "bookmarks",
+      granted: false,
+    },
+  ];
+
+  it.each(cases)("round-trips $type", (event) => {
+    expect(ChatSessionEventSchema.parse(event)).toEqual(event);
+  });
+});

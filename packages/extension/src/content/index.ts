@@ -2,6 +2,12 @@ import { ContentRequest } from "@aipagego/shared/messages";
 import type { Json } from "@aipagego/shared/types";
 import { injectMain } from "./inject-main";
 import { callTool } from "./tools";
+import { extractCollectionPage, extractCollectionPreview } from "./collection-preview";
+import {
+  advanceCollectionInfiniteScroll,
+  advanceCollectionLoadMore,
+  advanceCollectionNext,
+} from "./collection-pagination";
 let installed = false;
 
 const listener: Parameters<typeof chrome.runtime.onMessage.addListener>[0] = (msg, _sender, sendResponse) => {
@@ -40,33 +46,23 @@ async function handle(req: import("@aipagego/shared/messages").ContentRequest): 
   if (req.type === "content.runStep") {
     const { step, bindings } = req;
     if (step.kind === "tool") {
-      return callTool(step.tool, resolve(step.args, bindings));
+      return callTool(step.tool, step.args as Json);
     }
     return injectMain(step.source, bindings as unknown as Json);
   }
+  if (req.type === "content.collectionPreview") {
+    return extractCollectionPreview(req.recipe) as unknown as Json;
+  }
+  if (req.type === "content.collectionExtractPage") {
+    return extractCollectionPage(req.recipe) as unknown as Json;
+  }
+  if (req.type === "content.collectionAdvanceNext") {
+    return advanceCollectionNext(req.selector) as unknown as Json;
+  }
+  if (req.type === "content.collectionAdvanceDynamic") {
+    return req.action.kind === "loadMore"
+      ? advanceCollectionLoadMore(req.action.selector) as unknown as Json
+      : advanceCollectionInfiniteScroll() as unknown as Json;
+  }
   throw new Error(`unhandled content request: ${(req as { type: string }).type}`);
-}
-
-function resolve(value: unknown, bindings: Record<string, unknown>): Json {
-  if (typeof value === "string") {
-    const exact = value.match(/^\$\{([^}]+)\}$/);
-    if (exact) {
-      const key = exact[1];
-      return (key in bindings ? bindings[key] : value) as Json;
-    }
-    return value.replace(/\$\{([^}]+)\}/g, (_, key) => {
-      const v = bindings[key];
-      if (v == null) return "";
-      return typeof v === "string" ? v : JSON.stringify(v);
-    });
-  }
-  if (Array.isArray(value)) return value.map((v) => resolve(v, bindings));
-  if (value && typeof value === "object") {
-    const out: Record<string, Json> = {};
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      out[k] = resolve(v, bindings);
-    }
-    return out;
-  }
-  return value as Json;
 }

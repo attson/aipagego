@@ -25,6 +25,14 @@ import { renderPairPage } from "./pair-page";
 
 const HEARTBEAT_INTERVAL_MS = 20000;
 const DEFAULT_KEEPALIVE_INTERVAL_MS = 15000;
+const MAX_COLLECTION_EXEC_TIMEOUT_MS = 600_000;
+const EXEC_TRANSPORT_GRACE_MS = 5_000;
+
+export function execTimeoutForStep(step: Exec["step"], defaultTimeoutMs: number): number {
+  if (step.kind !== "tool" || step.tool !== "collectStructuredData") return defaultTimeoutMs;
+  const requested = Math.min(step.timeoutMs ?? MAX_COLLECTION_EXEC_TIMEOUT_MS, MAX_COLLECTION_EXEC_TIMEOUT_MS);
+  return Math.max(defaultTimeoutMs, requested + EXEC_TRANSPORT_GRACE_MS);
+}
 
 export interface LoopbackWSHubOpts {
   port: number;
@@ -369,13 +377,14 @@ export class LoopbackWSHub implements WSHub {
     if (!socket)
       return Promise.reject(new Error(`worker ${worker_id} not connected`));
     const req_id = this.opts.idGen.next("req");
+    const execTimeoutMs = execTimeoutForStep(params.step, this.execTimeoutMs);
     return new Promise<Result>((resolve, reject) => {
       const timer = setTimeout(() => {
         this.pending.delete(req_id);
         reject(
-          new Error(`EXEC ${req_id} timeout after ${this.execTimeoutMs}ms`)
+          new Error(`EXEC ${req_id} timeout after ${execTimeoutMs}ms`)
         );
-      }, this.execTimeoutMs);
+      }, execTimeoutMs);
       this.pending.set(req_id, { resolve, reject, timer, worker_id });
       this.rawSend(socket, {
         type: "EXEC",

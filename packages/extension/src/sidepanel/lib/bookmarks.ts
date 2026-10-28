@@ -1,19 +1,17 @@
 import type { MentionBookmarkOption } from "@/sidepanel/input/mention-picker";
+import { requireOptionalPermission } from "@/permissions/optional-permissions";
 
 /**
  * Walks chrome.bookmarks tree and returns leaf nodes (those with a `url`).
  * Folder nodes are skipped. Limited to `cap` entries for picker performance.
  */
 export async function loadBookmarks(cap = 500): Promise<MentionBookmarkOption[]> {
-  try {
-    if (!chrome.bookmarks?.getTree) return [];
-    const trees = await chrome.bookmarks.getTree();
-    const out: MentionBookmarkOption[] = [];
-    walk(trees, out, cap);
-    return out;
-  } catch {
-    return [];
-  }
+  await requireOptionalPermission("bookmarks", "bookmarkMention");
+  if (!chrome.bookmarks?.getTree) throw new Error("bookmarks API unavailable");
+  const trees = await chrome.bookmarks.getTree();
+  const out: MentionBookmarkOption[] = [];
+  walk(trees, out, cap);
+  return out;
 }
 
 function walk(nodes: chrome.bookmarks.BookmarkTreeNode[], out: MentionBookmarkOption[], cap: number): void {

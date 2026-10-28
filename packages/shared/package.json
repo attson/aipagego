@@ -18,7 +18,13 @@
     "./llm": "./src/llm/index.ts",
     "./preset": "./src/preset.ts",
     "./presets": "./src/presets/index.ts",
-    "./match-presets": "./src/match-presets.ts"
+    "./match-presets": "./src/match-presets.ts",
+    "./optional-permissions": "./src/optional-permissions.ts",
+    "./collection": "./src/collection.ts",
+    "./workflow": "./src/workflow.ts",
+    "./jobs": "./src/jobs.ts",
+    "./connectors": "./src/connectors.ts",
+    "./tool-package": "./src/tool-package.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -8,14 +8,22 @@ import {
   groupOf,
   readToolMode
 } from "../src/tool-gen";
+import { CONTROL_PLANE_TOOL_NAMES } from "@aipagego/shared/mcp-tools";
 
 describe("generateBrowserTools", () => {
+  it("does not expose connector credential, CRUD, or delivery entry points", () => {
+    const names = [
+      ...CONTROL_PLANE_TOOL_NAMES,
+      ...generateBrowserTools("full").map((tool) => tool.name),
+    ];
+    expect(names.filter((name) => /connector|credential|delivery|webhook|feishu/i.test(name))).toEqual([]);
+  });
   const tools = generateBrowserTools("full");
 
   it("exposes every tool except the block-list", () => {
     const names = tools.map((t) => t.builtinTool);
-    // 58 TOOL_DEFS minus three blocked, minus six merged into two.
-    expect(names).toHaveLength(51);
+    // 59 TOOL_DEFS minus three blocked, minus six merged into two.
+    expect(names).toHaveLength(52);
     for (const b of BLOCKED_TOOLS) expect(names).not.toContain(b);
     expect(new Set(names).size).toBe(names.length);
   });
@@ -30,7 +38,8 @@ describe("generateBrowserTools", () => {
       "browser_clickByUid",
       "browser_screenshot",
       "browser_downloadSpreadsheet",
-      "browser_createPageIndex"
+      "browser_createPageIndex",
+      "browser_collectStructuredData"
     ]) {
       expect(names.has(n), n).toBe(true);
     }
@@ -60,13 +69,22 @@ describe("generateBrowserTools", () => {
     }
   });
 
-  it("injects required session_id and strips inner tabId", () => {
+  it("injects required session_id and keeps optional tabId for multi-tab routing", () => {
     const click = tools.find((t) => t.name === "browser_click")!;
     const props = click.inputSchema.properties as Record<string, unknown>;
     expect(props.session_id).toBeTruthy();
-    expect(props.tabId).toBeUndefined();
+    expect(props.tabId).toMatchObject({ type: "integer" });
     expect((click.inputSchema.required as string[]).includes("session_id")).toBe(true);
     expect((click.inputSchema.required as string[]).includes("selector")).toBe(true);
+    expect((click.inputSchema.required as string[]).includes("tabId")).toBe(false);
+  });
+
+  it("makes tab commands targetable while defaulting to the primary tab", () => {
+    for (const name of ["browser_closeTab", "browser_switchToTab"]) {
+      const tool = tools.find((entry) => entry.name === name)!;
+      expect(tool.inputSchema.properties?.tabId).toMatchObject({ type: "integer" });
+      expect(tool.inputSchema.required).not.toContain("tabId");
+    }
   });
 
   it("records the underlying builtin tool name", () => {
@@ -121,7 +139,7 @@ describe("mcp descriptions", () => {
     const props = fill.inputSchema.properties as Record<string, { description?: string }>;
     expect(props.slowly.description).toBe("type char by char for controlled components");
     expect(props.selector.description).toBeUndefined();
-    expect(props.session_id.description).toBe("Session id from open_session");
+    expect(props.session_id.description).toBe("Session id");
   });
   it("never leaks CJK text into the MCP surface", () => {
     for (const t of tools) {
@@ -177,8 +195,8 @@ describe("merged tools", () => {
     expect(click.resolve).toBeUndefined();
   });
 
-  it("full mode has 58 - 3 blocked - 6 merged-away + 2 merged = 51 browser tools", () => {
-    expect(full.length).toBe(51);
+  it("full mode has 59 - 3 blocked - 6 merged-away + 2 merged = 52 browser tools", () => {
+    expect(full.length).toBe(52);
   });
 });
 

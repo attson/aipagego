@@ -14,6 +14,10 @@ import type { ToolRunner } from "./tool-runner";
 import { Approver, type Decision } from "./approval";
 import { classifyTool, evaluateAutoApproval, type PermissionMode } from "./severity";
 import type { UserMessageContent } from "./context-manager";
+import {
+  parsePermissionRequired,
+  type PermissionRequired,
+} from "@aipagego/shared/optional-permissions";
 
 export type SessionRpc = {
   startSession: (input: { url: string }) => Promise<{ id: string }>;
@@ -38,7 +42,12 @@ export type CrossTabRpc = {
   listTabs: (
     windowId?: number
   ) => Promise<{ tabs: Array<{ tabId: number; windowId: number; url: string; title: string }> }>;
-  openTab: (url: string, active?: boolean) => Promise<{ tabId: number; url: string; title: string }>;
+  openTab: (input: {
+    url: string;
+    active?: boolean;
+    incognito?: boolean;
+    windowId?: number;
+  }) => Promise<{ tabId: number; url: string; title: string }>;
 };
 
 export type RunSessionInput = {
@@ -66,7 +75,19 @@ export type SessionEvent =
   | { type: "session_end"; status: "done" | "aborted" | "max_rounds" | "error"; lastOutput: Json; reason?: string }
   | { type: "self_heal_started"; toolId: string; toolName: string; failedStepIndex: number }
   | { type: "self_heal_completed"; toolId: string; newVersion: number; fixedStepIndex: number }
-  | { type: "self_heal_failed"; toolId: string; reason: "llm_error" | "budget_exceeded" | "invalid_output" | "static_scan_reject" | "step_still_fails" | "no_sidepanel" | "no_api_key" };
+  | { type: "self_heal_failed"; toolId: string; reason: "llm_error" | "budget_exceeded" | "invalid_output" | "static_scan_reject" | "step_still_fails" | "no_sidepanel" | "no_api_key" | "self_heal_disabled" }
+  | {
+      type: "permission_required";
+      toolUseId: string;
+      permission: PermissionRequired["permission"];
+      capability: PermissionRequired["capability"];
+    }
+  | {
+      type: "permission_resolved";
+      toolUseId: string;
+      permission: PermissionRequired["permission"];
+      granted: boolean;
+    };
 
 export type RunSessionArgs = {
   client: LlmClient;
@@ -88,6 +109,9 @@ export type RunSessionArgs = {
   /** Sidepanel-side handlers for meta-plane tools (closeTab / switchToTab /
    *  searchBookmarks / searchHistory / downloadImage). Keyed by tool name. */
   metaTools?: Record<string, (input: unknown) => Promise<unknown>>;
+  requestPermission?: (
+    required: PermissionRequired & { toolUseId: string },
+  ) => Promise<{ granted: true } | { granted: false; reason: "user_denied" }>;
   abortSignal?: AbortSignal;
   onEvent?: (e: SessionEvent) => void;
   initialMessages?: ChatMessage[];
@@ -444,7 +468,33 @@ export async function runChatSession(args: RunSessionArgs): Promise<RunSessionRe
         const start = Date.now();
         try {
           const handler = args.metaTools[tu.name];
-          const out = (await handler(tu.input)) as Json;
+          let out: Json;
+          try {
+            out = (await handler(tu.input)) as Json;
+          } catch (error) {
+            const required = parsePermissionRequired(error);
+            if (!required || !args.requestPermission) throw error;
+            args.onEvent?.({
+              type: "permission_required",
+              toolUseId: tu.id,
+              permission: required.permission,
+              capability: required.capability,
+            });
+            const resolution = await args.requestPermission({ ...required, toolUseId: tu.id });
+            args.onEvent?.({
+              type: "permission_resolved",
+              toolUseId: tu.id,
+              permission: required.permission,
+              granted: resolution.granted,
+            });
+            if (!resolution.granted) {
+              throw new Error(`${required.permission} 未授权，因此未执行 ${required.capability}`);
+            }
+            // Permission was granted from an explicit user gesture. Retry the
+            // exact same tool use once; any second failure follows the normal
+            // tool-error path and never requests again.
+            out = (await handler(tu.input)) as Json;
+          }
           const ms = Date.now() - start;
           await args.rpc.appendStepLog(runRecordId, {
             stepIndex: stepIndexGlobal++,
@@ -456,7 +506,10 @@ export async function runChatSession(args: RunSessionArgs): Promise<RunSessionRe
           lastOutput = out;
           args.onEvent?.({ type: "tool_done", id: tu.id, output: out, ms });
         } catch (e) {
-          const errMsg = e instanceof Error ? e.message : String(e);
+          const repeatedPermission = parsePermissionRequired(e);
+          const errMsg = repeatedPermission
+            ? `${repeatedPermission.permission} 权限授权后仍不可用，未再次申请 ${repeatedPermission.capability}`
+            : e instanceof Error ? e.message : String(e);
           await args.rpc.appendStepLog(runRecordId, {
             stepIndex: stepIndexGlobal++,
             input: tu.input,
@@ -530,10 +583,18 @@ export async function runChatSession(args: RunSessionArgs): Promise<RunSessionRe
             }
             case "openTab": {
               if (!args.tabsRpc) throw new Error("openTab: tabsRpc not provided");
-              const r = await args.tabsRpc.openTab(
-                (tu.input as { url: string }).url,
-                (tu.input as { active?: boolean }).active
-              );
+              const input = tu.input as {
+                url: string;
+                active?: boolean;
+                incognito?: boolean;
+                windowId?: number;
+              };
+              const r = await args.tabsRpc.openTab({
+                url: input.url,
+                active: input.active,
+                incognito: input.incognito,
+                windowId: input.windowId
+              });
               out = r as unknown as Json;
               args.onCrossTabResult?.({
                 kind: "opened",
@@ -598,7 +659,35 @@ export async function runChatSession(args: RunSessionArgs): Promise<RunSessionRe
 
       const start = Date.now();
       try {
-        const out = await args.runner.runStep(step, args.input.tabId, args.getAttachedTabIds?.() ?? [], {});
+        const runStep = () =>
+          args.runner.runStep(step, args.input.tabId, args.getAttachedTabIds?.() ?? [], {});
+        let out: Json;
+        try {
+          out = await runStep();
+        } catch (error) {
+          const required = parsePermissionRequired(error);
+          if (!required) throw error;
+          if (!args.requestPermission) {
+            throw new Error(`${required.permission} 未授权，因此未执行 ${required.capability}`);
+          }
+          args.onEvent?.({
+            type: "permission_required",
+            toolUseId: tu.id,
+            permission: required.permission,
+            capability: required.capability,
+          });
+          const resolution = await args.requestPermission({ ...required, toolUseId: tu.id });
+          args.onEvent?.({
+            type: "permission_resolved",
+            toolUseId: tu.id,
+            permission: required.permission,
+            granted: resolution.granted,
+          });
+          if (!resolution.granted) {
+            throw new Error(`${required.permission} 未授权，因此未执行 ${required.capability}`);
+          }
+          out = await runStep();
+        }
         const ms = Date.now() - start;
         await args.rpc.appendStepLog(runRecordId, {
           stepIndex: stepIndexGlobal++,
@@ -616,7 +705,10 @@ export async function runChatSession(args: RunSessionArgs): Promise<RunSessionRe
         args.onEvent?.({ type: "tool_done", id: tu.id, output: out, ms });
       } catch (e) {
         const ms = Date.now() - start;
-        const errStr = e instanceof Error ? e.message : String(e);
+        const repeatedPermission = parsePermissionRequired(e);
+        const errStr = repeatedPermission
+          ? `${repeatedPermission.permission} 权限授权后仍不可用，未再次申请 ${repeatedPermission.capability}`
+          : e instanceof Error ? e.message : String(e);
         await args.rpc.appendStepLog(runRecordId, {
           stepIndex: stepIndexGlobal++,
           input: tu.input,

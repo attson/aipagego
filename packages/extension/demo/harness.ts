@@ -1,4 +1,11 @@
 import type { Json } from "@aipagego/shared/types";
+import { CollectionRecipeSchema, type CollectionRecipeV1 } from "@aipagego/shared/collection";
+import { extractCollectionPage, extractCollectionPreview } from "@/content/collection-preview";
+import {
+  advanceCollectionInfiniteScroll,
+  advanceCollectionLoadMore,
+  advanceCollectionNext,
+} from "@/content/collection-pagination";
 import { callTool } from "@/content/tools";
 import { serveBridge } from "./bridge";
 
@@ -14,6 +21,13 @@ import { serveBridge } from "./bridge";
 type Step =
   | { kind: "tool"; tool: string; args?: Json }
   | { kind: "js"; source: string }
+  | { kind: "collectionPreview"; recipe: CollectionRecipeV1 }
+  | { kind: "collectionExtractPage"; recipe: CollectionRecipeV1 }
+  | { kind: "collectionAdvanceNext"; selector: string }
+  | {
+      kind: "collectionAdvanceDynamic";
+      action: { kind: "loadMore"; selector: string } | { kind: "infiniteScroll" };
+    }
   | Record<string, unknown>;
 
 /**
@@ -39,6 +53,27 @@ export async function runDemoStep(step: unknown): Promise<Json> {
   if ("kind" in s && s.kind === "js") {
     // Arbitrary JS has no place in a demo that anyone can load.
     return { ok: false, reason: "runJS is disabled in the demo" } as unknown as Json;
+  }
+
+  if ("kind" in s && s.kind === "collectionPreview") {
+    return extractCollectionPreview(CollectionRecipeSchema.parse(s.recipe)) as unknown as Json;
+  }
+
+  if ("kind" in s && s.kind === "collectionExtractPage") {
+    return extractCollectionPage(CollectionRecipeSchema.parse(s.recipe)) as unknown as Json;
+  }
+
+  if ("kind" in s && s.kind === "collectionAdvanceNext") {
+    return advanceCollectionNext(String(s.selector)) as unknown as Json;
+  }
+
+  if ("kind" in s && s.kind === "collectionAdvanceDynamic") {
+    const action = (s as {
+      action: { kind: "loadMore"; selector: string } | { kind: "infiniteScroll" };
+    }).action;
+    return action.kind === "loadMore"
+      ? advanceCollectionLoadMore(action.selector) as unknown as Json
+      : advanceCollectionInfiniteScroll() as unknown as Json;
   }
 
   const tool = "tool" in s ? String((s as { tool: string }).tool) : "";

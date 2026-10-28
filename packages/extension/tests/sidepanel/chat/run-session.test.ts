@@ -4,6 +4,7 @@ import { Approver } from "@/sidepanel/chat/approval";
 import type { LlmClient, LlmStreamEvent } from "@/sidepanel/llm/types";
 import type { ToolRunner } from "@/sidepanel/chat/tool-runner";
 import type { ChatMessage, ImagePart, Json, Step } from "@aipagego/shared/types";
+import { PermissionRequiredError } from "@aipagego/shared/optional-permissions";
 
 function streamFrom(events: LlmStreamEvent[]): AsyncIterable<LlmStreamEvent> {
   return (async function* () {
@@ -412,8 +413,8 @@ describe("runChatSession", () => {
       const client = makeClient([
         [
           { type: "tool_use_start", id: "u2", name: "openTab" },
-          { type: "tool_use_input_delta", id: "u2", partial_json: '{"url":"https://new"}' },
-          { type: "tool_use_end", id: "u2", input: { url: "https://new" } },
+          { type: "tool_use_input_delta", id: "u2", partial_json: '{"url":"https://new","incognito":true,"windowId":12}' },
+          { type: "tool_use_end", id: "u2", input: { url: "https://new", incognito: true, windowId: 12 } },
           { type: "message_end" }
         ],
         [
@@ -456,7 +457,12 @@ describe("runChatSession", () => {
         onCrossTabResult: (r) => events.push(r)
       });
 
-      expect(tabsRpc.openTab).toHaveBeenCalledWith("https://new", undefined);
+      expect(tabsRpc.openTab).toHaveBeenCalledWith({
+        url: "https://new",
+        active: undefined,
+        incognito: true,
+        windowId: 12
+      });
       expect(events).toContainEqual({ kind: "opened", tabId: 99, url: "https://new", title: "" });
     });
   });
@@ -790,6 +796,310 @@ describe("runChatSession", () => {
       const args = step.args;
       return Boolean(args && typeof args === "object" && !Array.isArray(args) && args.selector === "body");
     })).toBe(false);
+  });
+
+  it("requests a missing bookmark permission and retries the same tool exactly once", async () => {
+    const client = makeClient([
+      [
+        { type: "tool_use_start", id: "bookmark-1", name: "searchBookmarks" },
+        { type: "tool_use_end", id: "bookmark-1", input: { query: "docs" } },
+        { type: "message_end" },
+      ],
+      [{ type: "text_delta", text: "found" }, { type: "message_end" }],
+    ]);
+    const events: SessionEvent[] = [];
+    let calls = 0;
+    const searchBookmarks = vi.fn(async () => {
+      calls++;
+      if (calls === 1) {
+        throw new PermissionRequiredError({
+          code: "permission_required",
+          permission: "bookmarks",
+          capability: "searchBookmarks",
+          requestable: true,
+        });
+      }
+      return [{ id: "b1", title: "Docs", url: "https://docs.example" }];
+    });
+
+    const result = await runChatSession({
+      client,
+      runner: makeRunner(async () => null),
+      approver: new Approver(),
+      rpc: {
+        startSession: vi.fn().mockResolvedValue({ id: "r" }),
+        appendStepLog: vi.fn().mockResolvedValue(null),
+        finalizeSession: vi.fn().mockResolvedValue(null),
+      },
+      input: { userPrompt: "find bookmark", tabId: 1, url: "u" },
+      settings: { provider: "anthropic", model: "m", apiKey: "k", apiKeyMode: "session", maxRounds: 3, trustedDangerTools: [], defaultPermissionMode: "default", theme: "dark", selfHealEnabled: true, maxSelfHealOutputTokens: 4096, defaultInjectionMode: "operate" as const, defaultAssistantEnabled: true, siteInjectionRules: [] },
+      systemPrompt: "sys",
+      tools: [],
+      permissionMode: "default",
+      metaTools: { searchBookmarks },
+      requestPermission: vi.fn(async () => ({ granted: true as const })),
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(result.status).toBe("done");
+    expect(searchBookmarks).toHaveBeenCalledTimes(2);
+    expect(events).toContainEqual({
+      type: "permission_required",
+      toolUseId: "bookmark-1",
+      permission: "bookmarks",
+      capability: "searchBookmarks",
+    });
+    expect(events).toContainEqual({
+      type: "permission_resolved",
+      toolUseId: "bookmark-1",
+      permission: "bookmarks",
+      granted: true,
+    });
+  });
+
+  it("records denial as a tool error without retrying or aborting the chat", async () => {
+    const client = makeClient([
+      [
+        { type: "tool_use_start", id: "bookmark-denied", name: "searchBookmarks" },
+        { type: "tool_use_end", id: "bookmark-denied", input: { query: "docs" } },
+        { type: "message_end" },
+      ],
+      [{ type: "text_delta", text: "permission was denied" }, { type: "message_end" }],
+    ]);
+    const events: SessionEvent[] = [];
+    const searchBookmarks = vi.fn(async () => {
+      throw new PermissionRequiredError({
+        code: "permission_required",
+        permission: "bookmarks",
+        capability: "searchBookmarks",
+        requestable: true,
+      });
+    });
+
+    const result = await runChatSession({
+      client,
+      runner: makeRunner(async () => null),
+      approver: new Approver(),
+      rpc: {
+        startSession: vi.fn().mockResolvedValue({ id: "r" }),
+        appendStepLog: vi.fn().mockResolvedValue(null),
+        finalizeSession: vi.fn().mockResolvedValue(null),
+      },
+      input: { userPrompt: "find bookmark", tabId: 1, url: "u" },
+      settings: { provider: "anthropic", model: "m", apiKey: "k", apiKeyMode: "session", maxRounds: 3, trustedDangerTools: [], defaultPermissionMode: "default", theme: "dark", selfHealEnabled: true, maxSelfHealOutputTokens: 4096, defaultInjectionMode: "operate" as const, defaultAssistantEnabled: true, siteInjectionRules: [] },
+      systemPrompt: "sys",
+      tools: [],
+      permissionMode: "default",
+      metaTools: { searchBookmarks },
+      requestPermission: vi.fn(async () => ({ granted: false as const, reason: "user_denied" as const })),
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(result.status).toBe("done");
+    expect(searchBookmarks).toHaveBeenCalledOnce();
+    expect(events).toContainEqual({
+      type: "permission_resolved",
+      toolUseId: "bookmark-denied",
+      permission: "bookmarks",
+      granted: false,
+    });
+    expect(events.some((event) => event.type === "tool_error" && event.error.includes("未授权"))).toBe(true);
+  });
+
+  it("does not request again when the post-grant retry still reports missing permission", async () => {
+    const client = makeClient([
+      [
+        { type: "tool_use_start", id: "bookmark-retry", name: "searchBookmarks" },
+        { type: "tool_use_end", id: "bookmark-retry", input: { query: "docs" } },
+        { type: "message_end" },
+      ],
+      [{ type: "text_delta", text: "could not search" }, { type: "message_end" }],
+    ]);
+    const events: SessionEvent[] = [];
+    const required = new PermissionRequiredError({
+      code: "permission_required",
+      permission: "bookmarks",
+      capability: "searchBookmarks",
+      requestable: true,
+    });
+    const searchBookmarks = vi.fn(async () => {
+      throw required;
+    });
+    const requestPermission = vi.fn(async () => ({ granted: true as const }));
+
+    await runChatSession({
+      client,
+      runner: makeRunner(async () => null),
+      approver: new Approver(),
+      rpc: {
+        startSession: vi.fn().mockResolvedValue({ id: "r" }),
+        appendStepLog: vi.fn().mockResolvedValue(null),
+        finalizeSession: vi.fn().mockResolvedValue(null),
+      },
+      input: { userPrompt: "find bookmark", tabId: 1, url: "u" },
+      settings: { provider: "anthropic", model: "m", apiKey: "k", apiKeyMode: "session", maxRounds: 3, trustedDangerTools: [], defaultPermissionMode: "default", theme: "dark", selfHealEnabled: true, maxSelfHealOutputTokens: 4096, defaultInjectionMode: "operate" as const, defaultAssistantEnabled: true, siteInjectionRules: [] },
+      systemPrompt: "sys",
+      tools: [],
+      permissionMode: "default",
+      metaTools: { searchBookmarks },
+      requestPermission,
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(searchBookmarks).toHaveBeenCalledTimes(2);
+    expect(requestPermission).toHaveBeenCalledOnce();
+    const error = events.find((event) => event.type === "tool_error");
+    expect(error).toMatchObject({ type: "tool_error" });
+    expect(error?.type === "tool_error" ? error.error : "").toContain("授权后仍不可用");
+    expect(error?.type === "tool_error" ? error.error : "").not.toContain("AIPAGEGO_PERMISSION_REQUIRED");
+  });
+
+  it("requests a missing runner permission and retries the exact tool step once", async () => {
+    const client = makeClient([
+      [
+        { type: "tool_use_start", id: "history-1", name: "searchHistory" },
+        { type: "tool_use_end", id: "history-1", input: { query: "release" } },
+        { type: "message_end" },
+      ],
+      [{ type: "text_delta", text: "found" }, { type: "message_end" }],
+    ]);
+    const events: SessionEvent[] = [];
+    let calls = 0;
+    const runner = makeRunner(async () => {
+      calls++;
+      if (calls === 1) {
+        throw new PermissionRequiredError({
+          code: "permission_required",
+          permission: "history",
+          capability: "searchHistory",
+          requestable: true,
+        });
+      }
+      return [{ title: "Release notes", url: "https://example.com/release" }];
+    });
+    const requestPermission = vi.fn(async () => ({ granted: true as const }));
+
+    const result = await runChatSession({
+      client,
+      runner,
+      approver: new Approver(),
+      rpc: {
+        startSession: vi.fn().mockResolvedValue({ id: "r" }),
+        appendStepLog: vi.fn().mockResolvedValue(null),
+        finalizeSession: vi.fn().mockResolvedValue(null),
+      },
+      input: { userPrompt: "find history", tabId: 1, url: "u" },
+      settings: { provider: "anthropic", model: "m", apiKey: "k", apiKeyMode: "session", maxRounds: 3, trustedDangerTools: [], defaultPermissionMode: "default", theme: "dark", selfHealEnabled: true, maxSelfHealOutputTokens: 4096, defaultInjectionMode: "operate" as const, defaultAssistantEnabled: true, siteInjectionRules: [] },
+      systemPrompt: "sys",
+      tools: [],
+      permissionMode: "default",
+      requestPermission,
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(result.status).toBe("done");
+    expect(calls).toBe(2);
+    expect(requestPermission).toHaveBeenCalledOnce();
+    expect(events).toContainEqual({
+      type: "permission_required",
+      toolUseId: "history-1",
+      permission: "history",
+      capability: "searchHistory",
+    });
+    expect(events).toContainEqual({
+      type: "permission_resolved",
+      toolUseId: "history-1",
+      permission: "history",
+      granted: true,
+    });
+  });
+
+  it("does not wait for permission UI when the runner has no requester", async () => {
+    const client = makeClient([
+      [
+        { type: "tool_use_start", id: "remote-download", name: "downloadImage" },
+        { type: "tool_use_end", id: "remote-download", input: { url: "https://example.com/a.png" } },
+        { type: "message_end" },
+      ],
+      [{ type: "text_delta", text: "permission required" }, { type: "message_end" }],
+    ]);
+    const events: SessionEvent[] = [];
+    const runner = makeRunner(async () => {
+      throw new PermissionRequiredError({
+        code: "permission_required",
+        permission: "downloads",
+        capability: "downloadImage",
+        requestable: true,
+      });
+    });
+
+    const result = await runChatSession({
+      client,
+      runner,
+      approver: new Approver(),
+      rpc: {
+        startSession: vi.fn().mockResolvedValue({ id: "r" }),
+        appendStepLog: vi.fn().mockResolvedValue(null),
+        finalizeSession: vi.fn().mockResolvedValue(null),
+      },
+      input: { userPrompt: "download", tabId: 1, url: "u" },
+      settings: { provider: "anthropic", model: "m", apiKey: "k", apiKeyMode: "session", maxRounds: 3, trustedDangerTools: [], defaultPermissionMode: "default", theme: "dark", selfHealEnabled: true, maxSelfHealOutputTokens: 4096, defaultInjectionMode: "operate" as const, defaultAssistantEnabled: true, siteInjectionRules: [] },
+      systemPrompt: "sys",
+      tools: [],
+      permissionMode: "default",
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(result.status).toBe("done");
+    expect(events.some((event) => event.type === "permission_required")).toBe(false);
+    const error = events.find((event) => event.type === "tool_error");
+    expect(error?.type === "tool_error" ? error.error : "").toContain("downloads 未授权");
+    expect(error?.type === "tool_error" ? error.error : "").not.toContain("AIPAGEGO_PERMISSION_REQUIRED");
+  });
+
+  it("never asks twice when a runner still lacks permission after the grant retry", async () => {
+    const client = makeClient([
+      [
+        { type: "tool_use_start", id: "download-retry", name: "downloadSpreadsheet" },
+        { type: "tool_use_end", id: "download-retry", input: { filename: "items.xlsx", rows: [] } },
+        { type: "message_end" },
+      ],
+      [{ type: "text_delta", text: "could not download" }, { type: "message_end" }],
+    ]);
+    const required = new PermissionRequiredError({
+      code: "permission_required",
+      permission: "downloads",
+      capability: "downloadSpreadsheet",
+      requestable: true,
+    });
+    const runner = makeRunner(async () => {
+      throw required;
+    });
+    const requestPermission = vi.fn(async () => ({ granted: true as const }));
+    const events: SessionEvent[] = [];
+
+    await runChatSession({
+      client,
+      runner,
+      approver: new Approver(),
+      rpc: {
+        startSession: vi.fn().mockResolvedValue({ id: "r" }),
+        appendStepLog: vi.fn().mockResolvedValue(null),
+        finalizeSession: vi.fn().mockResolvedValue(null),
+      },
+      input: { userPrompt: "download", tabId: 1, url: "u" },
+      settings: { provider: "anthropic", model: "m", apiKey: "k", apiKeyMode: "session", maxRounds: 3, trustedDangerTools: [], defaultPermissionMode: "default", theme: "dark", selfHealEnabled: true, maxSelfHealOutputTokens: 4096, defaultInjectionMode: "operate" as const, defaultAssistantEnabled: true, siteInjectionRules: [] },
+      systemPrompt: "sys",
+      tools: [],
+      permissionMode: "default",
+      requestPermission,
+      onEvent: (event) => events.push(event),
+    });
+
+    expect(requestPermission).toHaveBeenCalledOnce();
+    const error = events.find((event) => event.type === "tool_error");
+    expect(error?.type === "tool_error" ? error.error : "").toContain("授权后仍不可用");
+    expect(error?.type === "tool_error" ? error.error : "").not.toContain("AIPAGEGO_PERMISSION_REQUIRED");
   });
 
   it("stops at maxRounds", async () => {

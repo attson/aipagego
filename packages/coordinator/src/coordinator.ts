@@ -81,6 +81,38 @@ export class Coordinator {
     return session;
   }
 
+  findReusableSession(input: OpenSessionInput): Session | undefined {
+    return this.sessions.findReusable(input);
+  }
+
+  attachSessionTab(
+    sessionId: string,
+    workerId: string,
+    tabId: string
+  ): { session: Session; attached: boolean } {
+    const result = this.sessions.attachTab(sessionId, workerId, tabId);
+    if (result.attached) this.notifySessionOpened(result.session, tabId);
+    return result;
+  }
+
+  detachSessionTab(
+    sessionId: string,
+    workerId: string,
+    tabId: string
+  ): { session: Session; detached: boolean; closed: boolean } {
+    const result = this.sessions.detachTab(sessionId, workerId, tabId);
+    if (result.detached && result.closed) this.notifySessionClosed(result.session);
+    return result;
+  }
+
+  reconcileWorkerTabs(workerId: string, available: ReadonlySet<string>): void {
+    const { closed_session_ids } = this.sessions.reconcileWorkerTabs(workerId, available);
+    for (const id of closed_session_ids) {
+      const session = this.sessions.get(id);
+      if (session) this.notifySessionClosed(session);
+    }
+  }
+
   closeSession(id: string): void {
     const session = this.sessions.get(id);
     this.sessions.close(id);
@@ -132,6 +164,21 @@ export class Coordinator {
       })
       .catch(() => {
         // A disconnected worker releases all of its claims on the extension side.
+      });
+  }
+
+  private notifySessionOpened(session: Session, tabId: string): void {
+    void this.hub
+      .send(session.worker_id, {
+        type: "SESSION_OPENED",
+        nonce: this.idGen.next("nonce"),
+        ts: this.clock.now(),
+        protocol_version: PROTOCOL_VERSION,
+        session_id: session.id,
+        tab_id: tabId
+      })
+      .catch(() => {
+        // Ownership is advisory; disconnect reconciliation releases it.
       });
   }
 }

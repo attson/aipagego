@@ -55,6 +55,7 @@ const CAUTION = new Set([
   "fillForm",
   "downloadImage",
   "downloadSpreadsheet",
+  "collectStructuredData",
   // Round 6
   "pressKey",
   // Plan 32

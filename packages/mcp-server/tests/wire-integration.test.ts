@@ -47,6 +47,18 @@ async function waitForWorkerCount(coordinator: Coordinator, count: number, timeo
   }
 }
 
+async function waitFor(
+  predicate: () => boolean,
+  message: string,
+  timeoutMs = 1000
+): Promise<void> {
+  const start = Date.now();
+  while (!predicate()) {
+    if (Date.now() - start > timeoutMs) throw new Error(message);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+}
+
 describe("wire.ts integration — C1: reconnect safety", () => {
   it("C1: second HELLO with same worker_id does not throw uncaught exception and re-registers cleanly", async () => {
     const clock = new DefaultClock();
@@ -94,5 +106,58 @@ describe("wire.ts integration — C1: reconnect safety", () => {
     } finally {
       process.off("uncaughtException", onUncaught);
     }
+  });
+});
+
+describe("wire.ts integration — tab reconciliation", () => {
+  it("promotes an attached tab and closes the session after the final tab disappears", async () => {
+    const clock = new DefaultClock();
+    const idGen = new DefaultIdGen();
+    hub = new LoopbackWSHub({ port: 0, token: "t", clock, idGen });
+    const port = await hub.ready();
+    const coordinator = new Coordinator({ hub, clock, idGen });
+    installWire(hub, coordinator, clock);
+    const ws = await connectWorker(port);
+    ws.send(JSON.stringify({
+      ...helloMsg(),
+      available_tabs: [
+        { tab_id: "42", url: "https://example.org" },
+        { tab_id: "43", url: "https://second.example.org" }
+      ]
+    }));
+    await waitForWorkerCount(coordinator, 1);
+    const session = coordinator.openSession({
+      ai_client_fingerprint: "ai-1",
+      worker_id: "w1",
+      tab_id: "42",
+      scope: new Set(["read:dom"])
+    });
+    coordinator.attachSessionTab(session.id, "w1", "43");
+
+    ws.send(JSON.stringify({
+      type: "TABS_UPDATE",
+      nonce: "tabs-1",
+      ts: 2,
+      protocol_version: PROTOCOL_VERSION,
+      tabs: [{ tab_id: "43", url: "https://second.example.org" }]
+    }));
+    await waitFor(
+      () => coordinator.sessions.get(session.id)?.tab_id === "43",
+      "primary tab was not promoted"
+    );
+
+    ws.send(JSON.stringify({
+      type: "TABS_UPDATE",
+      nonce: "tabs-2",
+      ts: 3,
+      protocol_version: PROTOCOL_VERSION,
+      tabs: []
+    }));
+    await waitFor(
+      () => coordinator.sessions.get(session.id)?.state === "closed",
+      "session was not closed after its final tab disappeared"
+    );
+    expect(coordinator.sessions.get(session.id)?.tab_ids).toEqual([]);
+    ws.close();
   });
 });

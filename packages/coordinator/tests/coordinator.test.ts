@@ -79,6 +79,57 @@ describe("Coordinator happy path", () => {
       session_id: session.id
     }));
   });
+
+  it("adds several tabs to one logical session and announces each new ownership claim", () => {
+    const { coord, hub } = newCoord();
+    coord.registerWorker(makeWorker("w1", {
+      available_tabs: [
+        { tab_id: "t1", url: "https://one.test" },
+        { tab_id: "t2", url: "https://two.test" }
+      ]
+    }));
+    const session = coord.openSession({
+      ai_client_fingerprint: "ai-1",
+      worker_id: "w1",
+      tab_id: "t1",
+      scope: new Set(["read:dom"])
+    });
+    vi.mocked(hub.send).mockClear();
+
+    const attached = coord.attachSessionTab(session.id, "w1", "t2");
+    expect(attached.session.tab_ids).toEqual(["t1", "t2"]);
+    expect(hub.send).toHaveBeenCalledWith("w1", expect.objectContaining({
+      type: "SESSION_OPENED",
+      session_id: session.id,
+      tab_id: "t2"
+    }));
+
+    vi.mocked(hub.send).mockClear();
+    coord.attachSessionTab(session.id, "w1", "t2");
+    expect(hub.send).not.toHaveBeenCalled();
+  });
+
+  it("notifies one logical close when the worker reports that every owned tab is gone", () => {
+    const { coord, hub } = newCoord();
+    coord.registerWorker(makeWorker("w1"));
+    const session = coord.openSession({
+      ai_client_fingerprint: "ai-1",
+      worker_id: "w1",
+      tab_id: "t1",
+      scope: new Set([])
+    });
+    coord.attachSessionTab(session.id, "w1", "t2");
+    vi.mocked(hub.send).mockClear();
+
+    coord.reconcileWorkerTabs("w1", new Set());
+
+    expect(coord.sessions.get(session.id)?.state).toBe("closed");
+    expect(hub.send).toHaveBeenCalledTimes(1);
+    expect(hub.send).toHaveBeenCalledWith("w1", expect.objectContaining({
+      type: "CLOSE_SESSION",
+      session_id: session.id
+    }));
+  });
 });
 
 describe("Coordinator denials", () => {

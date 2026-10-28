@@ -15,7 +15,11 @@ export function ResultView(props: { run: RunRecord }) {
           {run.stepLog.map((s) => (
             <li key={s.stepIndex} className="border-l-2 border-zinc-700 pl-2">
               <div className="text-zinc-400">
-                #{s.stepIndex} · {s.ms}ms {s.error && <span className="text-red-400">{s.error}</span>}
+                #{s.stepIndex} · {s.ms}ms {s.error && (
+                  <span className="text-red-400">
+                    {typeof s.error === "string" ? s.error : "[已脱敏]"}
+                  </span>
+                )}
               </div>
               <pre className="text-[10px] text-zinc-300 overflow-auto">
                 {JSON.stringify({ in: s.input, out: s.output }, null, 2)}

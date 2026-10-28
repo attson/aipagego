@@ -24,6 +24,8 @@ function defaultProps(over: Partial<React.ComponentProps<typeof InputToolbar>> =
     pickableTabs: [],
     pickableTools: [],
     pickableBookmarks: [],
+    bookmarkPermission: { state: "required" as const },
+    onRequestBookmarkPermission: vi.fn(),
     onAttachTab: vi.fn(),
     onMentionTool: vi.fn(),
     onMentionBookmark: vi.fn(),

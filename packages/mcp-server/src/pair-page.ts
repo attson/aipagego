@@ -15,13 +15,31 @@ export function renderPairPage(payload: PairPayload): string {
 <title>AIPageGo 配对</title>
 <body style="font:14px/1.6 system-ui,sans-serif;padding:2rem;max-width:32rem;margin:auto;color:#222">
 <h1 style="font-size:1.1rem;margin:0 0 1rem">AIPageGo 配对</h1>
-<p id="aipagego-status">正在联系扩展…</p>
+<p><span id="aipagego-status">正在联系扩展…</span> <span id="aipagego-elapsed" style="color:#666;font-variant-numeric:tabular-nums">（已等待 0.0 秒）</span></p>
 <p style="color:#666;font-size:13px">会话：${escapeHtml(payload.label)} · pid ${payload.pid} · 端口 ${payload.port} · ${payload.mcpVersion ? `MCP v${escapeHtml(payload.mcpVersion)}` : "MCP 版本未知"}</p>
 <p style="color:#666;font-size:13px">没有反应？请确认这个浏览器已安装并启用 AIPageGo 扩展，然后刷新本页。</p>
 <script>
 (function () {
   var payload = ${json};
   var done = false;
+  var startedAt = Date.now();
+  var elapsedEl = document.getElementById("aipagego-elapsed");
+  var elapsedTimer;
+
+  function elapsedSeconds() {
+    return ((Date.now() - startedAt) / 1000).toFixed(1);
+  }
+
+  function updateElapsed() {
+    elapsedEl.textContent = "（已等待 " + elapsedSeconds() + " 秒）";
+  }
+
+  function finishElapsed() {
+    clearInterval(elapsedTimer);
+    elapsedEl.textContent = "（配对耗时 " + elapsedSeconds() + " 秒）";
+  }
+
+  elapsedTimer = setInterval(updateElapsed, 100);
 
   function announce() {
     if (!done) window.postMessage({ source: "aipagego-pair", payload: payload }, "*");
@@ -31,9 +49,14 @@ export function renderPairPage(payload: PairPayload): string {
     if (!e.data) return;
     // The extension's relay installs at document_idle, i.e. after this script
     // has already run. It says hello when it is ready; that is our cue.
-    if (e.data.source === "aipagego-pair-ready") { announce(); return; }
+    if (e.data.source === "aipagego-pair-ready") {
+      document.getElementById("aipagego-status").textContent = "扩展已响应，等待授权…";
+      announce();
+      return;
+    }
     if (e.data.source !== "aipagego-pair-result") return;
     done = true;
+    finishElapsed();
     var el = document.getElementById("aipagego-status");
     if (e.data.ok) {
       if (typeof e.data.versionWarning === "string" && e.data.versionWarning) {
@@ -66,9 +89,10 @@ export function renderPairPage(payload: PairPayload): string {
   announce();
   var tries = 0;
   var timer = setInterval(function () {
-    if (done || ++tries > 40) {
+    if (done || ++tries > 90) {
       clearInterval(timer);
       if (!done) {
+        finishElapsed();
         document.getElementById("aipagego-status").textContent =
           "没有联系上扩展。请确认这个浏览器已安装并启用 AIPageGo 扩展，然后刷新本页。";
       }

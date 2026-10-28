@@ -150,6 +150,29 @@ describe("CoordinatorClient.connect", () => {
     expect(ping.protocol_version).toBe(PROTOCOL_VERSION);
   });
 
+  it("sends PING every 15 seconds while the socket is open", async () => {
+    vi.useFakeTimers();
+    const client = new CoordinatorClient({
+      ws_url: "ws://localhost:7842",
+      token: "t",
+      worker_id: "w1",
+      savedToolsProvider: async () => [],
+      labelsProvider: async () => []
+    });
+    await client.connect();
+    const ws = FakeWS.instances[0];
+    ws.fakeOpen();
+    await vi.advanceTimersByTimeAsync(0);
+    ws.sent.length = 0;
+
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    expect(ws.sent).toHaveLength(1);
+    const ping = JSON.parse(ws.sent[0]);
+    expect(ping.type).toBe("PING");
+    expect(ping.protocol_version).toBe(PROTOCOL_VERSION);
+  });
+
   it("ignores server PONG (no client reply)", async () => {
     const client = new CoordinatorClient({
       ws_url: "ws://localhost:7842",
@@ -336,6 +359,46 @@ describe("CoordinatorClient.connect", () => {
     const sent = JSON.parse(ws.sent[0]);
     expect(sent.type).toBe("RESULT");
     expect(sent.req_id).toBe("r1");
+  });
+
+  it("returns an error RESULT when the EXEC handler throws", async () => {
+    const client = new CoordinatorClient({
+      ws_url: "ws://localhost:7842",
+      token: "t",
+      worker_id: "w1",
+      savedToolsProvider: async () => [],
+      labelsProvider: async () => [],
+      onExec: vi.fn().mockRejectedValue(new Error("incognito tab cannot be grouped"))
+    });
+    await client.connect();
+    const ws = FakeWS.instances[0];
+    ws.fakeOpen();
+    await new Promise((r) => setTimeout(r, 0));
+    ws.sent.length = 0;
+
+    ws.fakeMessage({
+      type: "EXEC",
+      nonce: "e",
+      ts: 2,
+      protocol_version: PROTOCOL_VERSION,
+      req_id: "r-throw",
+      session_id: "s1",
+      tab_id: "42",
+      step: { kind: "js", source: "return document.title" }
+    });
+    await new Promise((r) => setTimeout(r, 0));
+
+    expect(ws.sent).toHaveLength(1);
+    expect(JSON.parse(ws.sent[0])).toMatchObject({
+      type: "RESULT",
+      req_id: "r-throw",
+      ok: false,
+      error: {
+        code: "PageScriptError",
+        message: "incognito tab cannot be grouped",
+        retryable: false
+      }
+    });
   });
 
   it("heartbeat alarm reconnects when the socket is closed and not intentionally closed", async () => {

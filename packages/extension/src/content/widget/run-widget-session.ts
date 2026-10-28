@@ -24,6 +24,7 @@ import {
   setCardStatus,
   setStatus,
   setError,
+  setAbortController,
   pushExecutedStep,
   setLastOutput,
 } from "@/sidepanel/chat/session-store";
@@ -32,7 +33,13 @@ import { RpcToolRunner } from "@/sidepanel/chat/tool-runner";
 import { TOOL_DEFS } from "@/sidepanel/llm/tool-schema";
 import { buildSystemPrompt } from "@/sidepanel/llm/system-prompt";
 import { classifyTool } from "@/sidepanel/chat/severity";
-import { handOffToSidepanel } from "./handoff";
+import { handOffPermissionToSidepanel, handOffToSidepanel } from "./handoff";
+import {
+  PermissionRequester,
+  broadcastPermissionDecision,
+  disposePermissionRequesterForTab,
+  registerPermissionRequesterForTab,
+} from "@/sidepanel/chat/permission-request";
 import type { Decision } from "@/sidepanel/chat/approval";
 import type { ChatMessage, ImagePart, Json, Step, ReplayableTool } from "@aipagego/shared/types";
 import {
@@ -121,6 +128,10 @@ export async function runFromInput(
   // Register in the module map so that Panel.handleApprove (via getApproverForTab)
   // and the broadcast relay can reach this instance.
   registerApproverForTab(tabId, approver);
+  const permissionRequester = new PermissionRequester();
+  registerPermissionRequesterForTab(tabId, permissionRequester);
+  const abortController = new AbortController();
+  setAbortController(tabId, abortController);
 
   const systemPrompt = buildSystemPrompt({
     url,
@@ -196,6 +207,12 @@ export async function runFromInput(
       case "exception":
         setError(tabId, e.error);
         break;
+      case "permission_required":
+        setStatus(tabId, "awaiting");
+        break;
+      case "permission_resolved":
+        setStatus(tabId, e.granted ? "running" : "streaming");
+        break;
       case "session_end":
         if (e.status === "done") {
           setStatus(tabId, "done");
@@ -212,22 +229,45 @@ export async function runFromInput(
     }
   };
 
-  await runChatSession({
-    client,
-    runner,
-    approver,
-    rpc: {
-      startSession: (i) => rpc.startSession(i).then((r) => ({ id: r.id })),
-      appendStepLog: (runId, entry) => rpc.appendStepLog(runId, entry),
-      finalizeSession: (runId, status, output) => rpc.finalizeSession(runId, status, output),
-    },
-    initialMessages: context.initialMessages,
-    input: { userPrompt: text, userContent, tabId, url },
-    settings: { ...settings, trustedDangerTools: settings.trustedDangerTools ?? [] },
-    systemPrompt,
-    tools: TOOL_DEFS,
-    permissionMode,
-    onEvent,
-    tabsRpc: { listTabs: rpc.listTabs, openTab: rpc.openTab },
-  });
+  try {
+    await runChatSession({
+      client,
+      runner,
+      approver,
+      rpc: {
+        startSession: (i) => rpc.startSession(i).then((r) => ({ id: r.id })),
+        appendStepLog: (runId, entry) => rpc.appendStepLog(runId, entry),
+        finalizeSession: (runId, status, output) => rpc.finalizeSession(runId, status, output),
+      },
+      initialMessages: context.initialMessages,
+      input: { userPrompt: text, userContent, tabId, url },
+      settings: { ...settings, trustedDangerTools: settings.trustedDangerTools ?? [] },
+      systemPrompt,
+      tools: TOOL_DEFS,
+      permissionMode,
+      requestPermission: async (required) => {
+        const pending = permissionRequester.request(required.toolUseId, abortController.signal);
+        const opened = await handOffPermissionToSidepanel(tabId, required);
+        if (!opened) {
+          permissionRequester.resolve(required.toolUseId, {
+            granted: false,
+            reason: "user_denied",
+          });
+        }
+        const result = await pending;
+        if (!opened || abortController.signal.aborted) {
+          broadcastPermissionDecision(tabId, required.toolUseId, result);
+        }
+        return result;
+      },
+      abortSignal: abortController.signal,
+      onEvent,
+      tabsRpc: { listTabs: rpc.listTabs, openTab: rpc.openTab },
+    });
+  } finally {
+    approver.resolveAllPending({ kind: "deny" });
+    permissionRequester.resolveAllPending({ granted: false, reason: "user_denied" });
+    disposePermissionRequesterForTab(tabId);
+    setAbortController(tabId, null);
+  }
 }

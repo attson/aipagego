@@ -20,12 +20,21 @@ export type MentionBookmarkOption = {
   url: string;
 };
 
+export type BookmarkPermissionState =
+  | { state: "required" }
+  | { state: "loading" }
+  | { state: "granted" }
+  | { state: "denied" }
+  | { state: "error"; message: string };
+
 type MentionCategory = "tabs" | "tools" | "bookmarks";
 
 type Props = {
   tabs: MentionTabOption[];
   tools: MentionToolOption[];
   bookmarks: MentionBookmarkOption[];
+  bookmarkPermission?: BookmarkPermissionState;
+  onRequestBookmarkPermission?: () => void;
   onPickTab: (opt: MentionTabOption) => void;
   onPickTool: (opt: MentionToolOption) => void;
   onPickBookmark: (opt: MentionBookmarkOption) => void;
@@ -43,6 +52,8 @@ export function MentionPicker({
   tabs,
   tools,
   bookmarks,
+  bookmarkPermission = { state: "granted" },
+  onRequestBookmarkPermission,
   onPickTab,
   onPickTool,
   onPickBookmark,
@@ -134,7 +145,27 @@ export function MentionPicker({
         </CatBtn>
       </div>
       <div className="py-1 max-h-72 overflow-y-auto">
-        {items.length === 0 ? (
+        {cat === "bookmarks" && bookmarkPermission.state !== "granted" ? (
+          <div className="m-2 rounded border border-amber-900/70 bg-amber-950/40 p-3 text-[11px]">
+            <div className="font-medium text-amber-200">允许访问书签</div>
+            <p className="mt-1 text-zinc-400">仅用于在本机搜索并引用你的书签；拒绝不会影响网页聊天和其他功能。</p>
+            {bookmarkPermission.state === "denied" ? (
+              <p className="mt-1 text-amber-300">你尚未授权，可以稍后重试。</p>
+            ) : null}
+            {bookmarkPermission.state === "error" ? (
+              <p role="alert" className="mt-1 text-rose-300">{bookmarkPermission.message}</p>
+            ) : null}
+            <button
+              type="button"
+              data-testid="grant-bookmarks"
+              disabled={bookmarkPermission.state === "loading"}
+              onClick={onRequestBookmarkPermission}
+              className="mt-2 rounded bg-amber-700 px-2 py-1 text-white disabled:opacity-60"
+            >
+              {bookmarkPermission.state === "loading" ? "等待授权…" : "允许访问书签"}
+            </button>
+          </div>
+        ) : items.length === 0 ? (
           <div className="text-zinc-500 text-[11px] px-3 py-2">
             {cat === "tabs" ? "没有可挂载的 tab" : cat === "tools" ? "没有可引用的工具" : "没有可引用的书签"}
           </div>

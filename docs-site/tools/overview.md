@@ -3,14 +3,14 @@
 
 # 工具参考总览
 
-共 **57** 个内置工具，按类别与 severity 分组：
+共 **59** 个内置工具，按类别与 severity 分组：
 
 | 类别 | 说明 | 数量 |
 |---|---|---|
 | [探查](/tools/inspect) | 页面读取 · safe | 14 |
 | [操作](/tools/action) | 页面写入 · caution | 8 |
 | [危险](/tools/danger) | 提交 / 发 cookie 请求 / runJS · dangerous | 6 |
-| [元 / 视觉](/tools/meta) | 跨 tab / bookmark / history / 视觉 | 29 |
+| [元 / 视觉](/tools/meta) | 跨 tab / bookmark / history / 视觉 | 31 |
 
 ## Severity 说明
 
@@ -27,6 +27,7 @@
 | `click` | 🟡 caution | action | [ACT] 点击选择器命中的元素。required=false 时找不到不报错。会经过审阅（caution）。 |
 | `clickByUid` | 🟡 caution | action | [ACT·UID] 用 takeSnapshot 返回的 uid 点击元素。比 selector 版稳定。 |
 | `closeTab` | 🟢 safe | meta | [META] 真正关闭一个 tab。**只能关 attachedTabs 里的 tab**（防止误关用户其它窗口）。 |
+| `collectStructuredData` | 🔴 dangerous | meta | [COLLECT·REPLAY] 使用已经确认的本地采集配方运行结构化采集。返回有界 CollectionRunSumm |
 | `consoleMessages` | 🔴 dangerous | meta | [OBSERVE] 读取本页 console 日志与未捕获错误。返回里带 backend 字段：main-world 档 |
 | `createPageIndex` | 🔴 dangerous | meta | [PAGE-INDEX][FIRST·READ] 在内容脚本本地构建/刷新页面索引，返回小型页面地图、blockId、k |
 | `detachTab` | 🟢 safe | meta | [META] 从会话 attachedTabs 移除 tab；不关闭该 tab。 |
@@ -50,6 +51,7 @@
 | `highlightText` | 🟢 safe | meta | [VISUAL] 在页面文本里高亮某段文字（黄色背景，3s 后还原）。仅找到第一次出现的位置。 |
 | `hover` | 🟢 safe | inspect | [ACT] 把鼠标悬停在元素上（触发 mouseenter / mouseover / mousemove）。 |
 | `httpRequest` | 🟡 caution | danger | [ACT] 通过后台代理发请求。withCredentials=true 时带 cookie（dangerous，要审阅 |
+| `inspectElement` | 🔴 dangerous | meta | [FAST·READ·LAYOUT] 读取元素的运行时布局真相：computed style、viewport/docu |
 | `listTabs` | 🟡 caution | meta | [META] 列出所有窗口的可访问 tab；返回 [{tabId, windowId, url, title, atta |
 | `navigate` | 🟢 safe | inspect | [ACT] 页面导航：后退 / 前进 / 重载 / 跳转。**优先**用本工具而不是 runJS('location.h |
 | `navigateBack` | 🔴 dangerous | meta | [FLOW] 后退一页。已在历史起点时返回 { ok:false, reason }，不抛错。 |

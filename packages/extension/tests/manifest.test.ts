@@ -22,6 +22,10 @@ describe("manifest", () => {
   it("declares native tab-group access for visible AI session ownership", () => {
     expect((manifest as { permissions?: string[] }).permissions).toContain("tabGroups");
   });
+
+  it("declares alarms permission for coordinator reconnect fallback", () => {
+    expect((manifest as { permissions?: string[] }).permissions).toContain("alarms");
+  });
 });
 
 type ContentScript = { js?: string[]; world?: string; run_at?: string; matches?: string[] };
@@ -58,5 +62,26 @@ describe("Plan 32 — recorder and CDP opt-in", () => {
       item.resources.includes("assets/main-world.ts-*.js")
     );
     expect(entry?.matches).toContain("<all_urls>");
+  });
+});
+
+describe("P0 — browser data permissions are requested on demand", () => {
+  it.each(["bookmarks", "history", "downloads"])(
+    "does not request %s at install time",
+    (permission) => {
+      expect(m.permissions).not.toContain(permission);
+      expect(m.optional_permissions).toContain(permission);
+    },
+  );
+});
+
+describe("P3 — local Job scheduling", () => {
+  it("declares alarms for MV3 wakeups", () => {
+    expect(m.permissions).toContain("alarms");
+  });
+
+  it("requests notifications only when the user enables Job notifications", () => {
+    expect(m.permissions).not.toContain("notifications");
+    expect(m.optional_permissions).toContain("notifications");
   });
 });

@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from "vitest";
 import { WebSocket } from "ws";
 import { PROTOCOL_VERSION, type Hello, type ClientToServer } from "@aipagego/shared/protocol";
 import { DefaultClock, DefaultIdGen } from "@aipagego/coordinator";
-import { LoopbackWSHub } from "../src/loopback-ws-hub";
+import { LoopbackWSHub, execTimeoutForStep } from "../src/loopback-ws-hub";
 
 let hub: LoopbackWSHub | null = null;
 afterEach(async () => { if (hub) await hub.close(); hub = null; });
@@ -33,6 +33,22 @@ async function waitForWorker(h: LoopbackWSHub, id: string, timeoutMs = 1000): Pr
 }
 
 describe("LoopbackWSHub", () => {
+  it("keeps the MCP transport alive for bounded collection EXEC calls", () => {
+    expect(execTimeoutForStep({ kind: "tool", tool: "click", args: {} }, 30_000)).toBe(30_000);
+    expect(execTimeoutForStep({
+      kind: "tool",
+      tool: "collectStructuredData",
+      args: {},
+      timeoutMs: 600_000,
+    }, 30_000)).toBe(605_000);
+    expect(execTimeoutForStep({
+      kind: "tool",
+      tool: "collectStructuredData",
+      args: {},
+      timeoutMs: 900_000,
+    }, 30_000)).toBe(605_000);
+  });
+
   it("replies WELCOME on HELLO and registers the worker via onMessage", async () => {
     hub = new LoopbackWSHub({ port: 0, clock: new DefaultClock(), idGen: new DefaultIdGen() });
     const port = await hub.ready();

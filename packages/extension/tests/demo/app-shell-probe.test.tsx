@@ -92,4 +92,41 @@ describe("AppShell under the demo shim", () => {
     );
     expect(send, "panel send button").toBeDefined();
   });
+
+  it("offers a direct reconnect action when a completed user's session key is gone", async () => {
+    installChromeShim({
+      seed: {
+        "aipagego.llm": {
+          provider: "anthropic",
+          model: "demo-model",
+          apiKey: "",
+          apiKeyMode: "session",
+          maxRounds: 20,
+          defaultPermissionMode: "default",
+        },
+        "aipagego.firstRun.v1": {
+          version: 1,
+          disposition: "task_completed",
+          updatedAt: "2026-10-23T00:00:00.000Z",
+        },
+      },
+    });
+    const { AppShell } = await import("@/sidepanel/shell/app-shell");
+    const { ThemeProvider } = await import("@/sidepanel/shell/theme-provider");
+    const { useSettings } = await import("@/sidepanel/chat/settings-store");
+    useSettings.setState({ loaded: false, apiKey: "" });
+    await act(async () => {
+      root.render(React.createElement(ThemeProvider, null, React.createElement(AppShell)));
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+
+    expect(container.textContent).toContain("重新连接模型");
+    const reconnect = [...container.querySelectorAll("button")].find((item) =>
+      (item.textContent ?? "").includes("打开 LLM 设置")
+    ) as HTMLButtonElement;
+    await act(async () => reconnect.click());
+    expect(container.querySelector('[aria-label="设置分类: LLM"]')).not.toBeNull();
+  });
 });

@@ -73,13 +73,14 @@
 ## `runJS`  🟡 caution
 
 [LAST RESORT·DANGER] 在 MAIN world 注入并执行 async 函数体（receives `ctx` = bindings）。必须 return 值。
-**仅在结构化工具不够用时使用**——会经过静态扫描与人工审阅。
+**仅在结构化工具不够用时使用**——会经过静态扫描与人工审阅。严格 CSP 页面需要用户预先在扩展设置中开启 CDP/debugger；读取样式、位置或祖先链请优先使用 inspectElement。
 
 **参数：**
 
 | 字段 | 类型 | 说明 | 必填 |
 |---|---|---|---|
 | `source` | string | async function body | 是 |
+| `timeoutMs` | integer |  | 否 |
 | `tabId` | integer | 目标 tab。要操作主会话 tab 时整个字段不要带（不要 0 / null）；要操作其它 tab 时它必须先在 attachedTabs（用 attachTab 申请） | 否 |
 
 ---

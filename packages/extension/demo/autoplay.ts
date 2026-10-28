@@ -43,7 +43,7 @@ function findSend(doc: Document): HTMLButtonElement | null {
     (b) => !b.disabled
   );
   return (
-    buttons.find((b) => (b.getAttribute("aria-label") ?? "").includes("发送")) ??
+    buttons.find((b) => (b.getAttribute("aria-label") ?? "").trim() === "发送") ??
     buttons.find((b) => (b.textContent ?? "").includes("发送")) ??
     buttons.find((b) => b.type === "submit") ??
     null

@@ -8,7 +8,7 @@ import { buildToolList, createToolState } from "../src/mcp-server";
  */
 const PRE_PAIR_MAX_CHARS = 5_300;
 const CORE_MAX_CHARS = 19_700;
-const FULL_MAX_CHARS = 28_700;
+const FULL_MAX_CHARS = 30_100;
 const ORCHESTRATION_MAX_CHARS = 1_200;
 
 describe("tools/list size budget", () => {

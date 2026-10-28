@@ -1,4 +1,4 @@
-import type { Json } from "@aipagego/shared/types";
+import type { Json, RunSource } from "@aipagego/shared/types";
 import { screenshot } from "./bg-tools/capture";
 import { downloadImage, downloadSpreadsheet } from "./bg-tools/downloads";
 import { navigateBack, navigateForward, resize } from "./bg-tools/nav";
@@ -11,6 +11,7 @@ import {
 } from "./bg-tools/recorder-tools";
 import { searchBookmarks, searchHistory } from "./bg-tools/search";
 import { closeTab, listTabs, openTab, switchToTab } from "./bg-tools/tabs";
+import { collectStructuredData } from "./bg-tools/collection";
 
 /**
  * Tools that run in the service worker rather than the content script.
@@ -20,7 +21,16 @@ import { closeTab, listTabs, openTab, switchToTab } from "./bg-tools/tabs";
  * script — could not reach them at all. Routing them here is what makes "every
  * built-in is exposed over MCP" true rather than aspirational.
  */
-export type MetaHandler = (args: Json, tabId: number) => Promise<Json>;
+export type MetaExecutionContext = {
+  timeoutMs?: number;
+  source: RunSource;
+};
+
+export type MetaHandler = (
+  args: Json,
+  tabId: number,
+  context?: MetaExecutionContext,
+) => Promise<Json>;
 
 /**
  * Keyed by tool name rather than `BuiltinTool` because `listTabs` and
@@ -48,7 +58,8 @@ export const META_TOOLS: Record<string, MetaHandler> = {
   networkRequests,
   networkRequestDetail,
   handleDialog,
-  recorderConfig
+  recorderConfig,
+  collectStructuredData
 };
 
 export function isMetaTool(name: string): boolean {

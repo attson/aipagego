@@ -49,6 +49,12 @@ describe("attemptHeal", () => {
     expect(r).toEqual(expect.objectContaining({ ok: false, reason: "invalid_output" }));
   });
 
+  it("returns invalid_output when a parsed patch violates workflow dependencies", async () => {
+    const deps = makeDeps({ validatePatch: () => false });
+    const r = await attemptHeal(baseCtx as any, deps);
+    expect(r).toEqual(expect.objectContaining({ ok: false, reason: "invalid_output" }));
+  });
+
   it("returns static_scan_reject on dangerous patch", async () => {
     const deps = makeDeps({ staticScan: () => ["dangerous"] });
     const r = await attemptHeal(baseCtx as any, deps);

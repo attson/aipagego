@@ -26,7 +26,7 @@ describe("meta tool router", () => {
     for (const n of [
       "navigateBack", "navigateForward", "resize",
       "consoleMessages", "networkRequests", "networkRequestDetail",
-      "handleDialog", "recorderConfig"
+      "handleDialog", "recorderConfig", "collectStructuredData"
     ]) {
       expect(isMetaTool(n), n).toBe(true);
     }
@@ -60,6 +60,93 @@ describe("tab plane", () => {
     expect(out[0].tabId).toBe(1);
   });
 
+  it("opens a tab in an existing incognito window", async () => {
+    const create = vi.fn(async (info: chrome.tabs.CreateProperties) => ({
+      id: 71,
+      windowId: info.windowId,
+      url: info.url,
+      title: "PDD",
+      incognito: true
+    }));
+    fakeChrome({
+      extension: {
+        isAllowedIncognitoAccess: vi.fn((callback: (allowed: boolean) => void) => callback(true))
+      },
+      runtime: {},
+      tabs: { create },
+      windows: {
+        getAll: vi.fn(async () => [
+          { id: 9, type: "normal", incognito: false },
+          { id: 12, type: "normal", incognito: true }
+        ]),
+        create: vi.fn()
+      }
+    });
+
+    const out = (await META_TOOLS.openTab(
+      { url: "https://mobile.yangkeduo.com/", active: false, incognito: true } as never,
+      1
+    )) as unknown as { tabId: number; windowId: number; incognito: boolean };
+
+    expect(create).toHaveBeenCalledWith({
+      url: "https://mobile.yangkeduo.com/",
+      active: false,
+      windowId: 12
+    });
+    expect(out).toMatchObject({ tabId: 71, windowId: 12, incognito: true });
+  });
+
+  it("creates an incognito window when none exists", async () => {
+    const createWindow = vi.fn(async () => ({
+      id: 33,
+      incognito: true,
+      tabs: [{ id: 72, windowId: 33, url: "https://mobile.yangkeduo.com/", title: "" }]
+    }));
+    fakeChrome({
+      extension: {
+        isAllowedIncognitoAccess: vi.fn((callback: (allowed: boolean) => void) => callback(true))
+      },
+      runtime: {},
+      tabs: { create: vi.fn() },
+      windows: {
+        getAll: vi.fn(async () => [{ id: 9, type: "normal", incognito: false }]),
+        create: createWindow
+      }
+    });
+
+    const out = (await META_TOOLS.openTab(
+      { url: "https://mobile.yangkeduo.com/", active: true, incognito: true } as never,
+      1
+    )) as unknown as { tabId: number; windowId: number; incognito: boolean };
+
+    expect(createWindow).toHaveBeenCalledWith({
+      url: "https://mobile.yangkeduo.com/",
+      incognito: true,
+      focused: true
+    });
+    expect(out).toMatchObject({ tabId: 72, windowId: 33, incognito: true });
+  });
+
+  it("explains how to enable incognito access", async () => {
+    const getAll = vi.fn();
+    fakeChrome({
+      extension: {
+        isAllowedIncognitoAccess: vi.fn((callback: (allowed: boolean) => void) => callback(false))
+      },
+      runtime: {},
+      tabs: { create: vi.fn() },
+      windows: { getAll, create: vi.fn() }
+    });
+
+    await expect(
+      META_TOOLS.openTab(
+        { url: "https://mobile.yangkeduo.com/", incognito: true } as never,
+        1
+      )
+    ).rejects.toThrow("允许在无痕模式下运行");
+    expect(getAll).not.toHaveBeenCalled();
+  });
+
   it("refuses to close a tab outside the allowed set", async () => {
     fakeChrome({ tabs: { remove: vi.fn() } });
     await expect(
@@ -85,7 +172,10 @@ describe("tab plane", () => {
 describe("downloads", () => {
   it("builds a data URL rather than a blob URL", async () => {
     const download = vi.fn(async () => 5);
-    fakeChrome({ downloads: { download } });
+    fakeChrome({
+      downloads: { download },
+      permissions: { contains: vi.fn(async () => true) },
+    });
     const out = (await META_TOOLS.downloadSpreadsheet(
       { filename: "a", sheets: [{ name: "S", rows: [["x"]] }] } as never,
       1

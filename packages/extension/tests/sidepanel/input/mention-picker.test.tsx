@@ -158,4 +158,32 @@ describe("MentionPicker (Tabs + Tools)", () => {
     expect(c.textContent).toContain("没有可挂载的 tab");
     cleanup();
   });
+
+  it("shows a purpose-specific permission card before reading bookmarks", () => {
+    const onRequestBookmarkPermission = vi.fn();
+    const { c, cleanup } = mount(
+      <MentionPicker
+        tabs={[]}
+        tools={[]}
+        bookmarks={[]}
+        bookmarkPermission={{ state: "required" }}
+        onRequestBookmarkPermission={onRequestBookmarkPermission}
+        onPickBookmark={() => {}}
+        onPickTab={() => {}}
+        onPickTool={() => {}}
+        onClose={() => {}}
+      />
+    );
+
+    const bookmarkTab = [...c.querySelectorAll('button[role="tab"]')].find((item) =>
+      (item.textContent ?? "").includes("Bookmarks")
+    ) as HTMLButtonElement;
+    act(() => bookmarkTab.click());
+
+    expect(c.textContent).toContain("仅用于在本机搜索并引用你的书签");
+    const grant = c.querySelector('[data-testid="grant-bookmarks"]') as HTMLButtonElement;
+    act(() => grant.click());
+    expect(onRequestBookmarkPermission).toHaveBeenCalledOnce();
+    cleanup();
+  });
 });

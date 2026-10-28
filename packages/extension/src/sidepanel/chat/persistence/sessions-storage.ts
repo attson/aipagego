@@ -115,6 +115,10 @@ export async function cascadeDeleteRuns(runIds: string[]): Promise<void> {
   try {
     const db = await getDB();
     for (const id of runIds) {
+      const run = await db.get("runs", id);
+      if (run?.collection?.resultId) {
+        await db.delete("collection_results", run.collection.resultId);
+      }
       await db.delete("runs", id);
     }
   } catch (e) {

@@ -180,8 +180,10 @@ export async function handleBrowserStart(
 
   const opened = await handleOpenSession(deps, {
     tab_id: selected.tab_id,
-    ...(Array.isArray(args.capabilities) ? { capabilities: args.capabilities } : {}),
-    ...(typeof args.idle_timeout_min === "number" ? { idle_timeout_min: args.idle_timeout_min } : {})
+    ...(Object.hasOwn(args, "session_id") ? { session_id: args.session_id } : {}),
+    ...(Object.hasOwn(args, "force_new") ? { force_new: args.force_new } : {}),
+    ...(Object.hasOwn(args, "capabilities") ? { capabilities: args.capabilities } : {}),
+    ...(Object.hasOwn(args, "idle_timeout_min") ? { idle_timeout_min: args.idle_timeout_min } : {})
   });
   return { status: "ready", session_id: opened.session_id, tab: selected };
 }
@@ -192,11 +194,58 @@ export async function handleOpenSession(
 ): Promise<{ session_id: string }> {
   const { coordinator } = await deps.ensure();
   const worker_id = singleWorkerId(coordinator, deps.pairUrl());
-  const tab_id = String(args.tab_id);
-  const requested = Array.isArray(args.capabilities) ? (args.capabilities as unknown[]).map(String).filter(isCapability) : [];
-  const scope = new Set<Capability>(requested.length ? requested : (CAPABILITIES as readonly Capability[]));
+  if (typeof args.tab_id !== "string" || args.tab_id.length === 0) {
+    throw new Error("InvalidArgs: open_session requires a non-empty tab_id");
+  }
+  const tab_id = args.tab_id;
+  const worker = coordinator.workers.get(worker_id);
+  if (!worker?.available_tabs.some((tab) => tab.tab_id === tab_id)) {
+    throw new Error(`InvalidArgs: open_session tab_id ${JSON.stringify(tab_id)} is not available`);
+  }
+  if (args.force_new !== undefined && typeof args.force_new !== "boolean") {
+    throw new Error("InvalidArgs: force_new must be a boolean");
+  }
+  if (args.session_id !== undefined && (typeof args.session_id !== "string" || args.session_id.length === 0)) {
+    throw new Error("InvalidArgs: session_id must be a non-empty string");
+  }
+  if (args.session_id && args.force_new === true) {
+    throw new Error("InvalidArgs: session_id and force_new=true cannot be combined");
+  }
+
+  if (args.capabilities !== undefined && !Array.isArray(args.capabilities)) {
+    throw new Error("InvalidArgs: capabilities must be an array");
+  }
+  const requested = (args.capabilities ?? []) as unknown[];
+  if (requested.some((capability) => typeof capability !== "string" || !isCapability(capability))) {
+    throw new Error("InvalidArgs: capabilities contains an unknown capability");
+  }
+  if (
+    args.idle_timeout_min !== undefined &&
+    (typeof args.idle_timeout_min !== "number" || !Number.isFinite(args.idle_timeout_min) || args.idle_timeout_min <= 0)
+  ) {
+    throw new Error("InvalidArgs: idle_timeout_min must be a positive number");
+  }
+  const scope = new Set<Capability>(requested.length
+    ? requested as Capability[]
+    : CAPABILITIES as readonly Capability[]);
   const idle_timeout_ms = typeof args.idle_timeout_min === "number" ? args.idle_timeout_min * 60_000 : undefined;
-  const s = coordinator.openSession({ ai_client_fingerprint: "mcp-local", worker_id, tab_id, scope, idle_timeout_ms });
+  if (args.session_id) {
+    const existing = coordinator.sessions.get(args.session_id);
+    if (!existing) throw new Error(`Session ${args.session_id} not found`);
+    if (args.capabilities !== undefined && !sameSet(existing.scope, scope)) {
+      throw new Error("InvalidArgs: capabilities cannot change when attaching to an existing session");
+    }
+    if (idle_timeout_ms !== undefined && existing.idle_timeout_ms !== idle_timeout_ms) {
+      throw new Error("InvalidArgs: idle_timeout_min cannot change when attaching to an existing session");
+    }
+    const attached = coordinator.attachSessionTab(args.session_id, worker_id, tab_id);
+    return { session_id: attached.session.id };
+  }
+
+  const input = { ai_client_fingerprint: "mcp-local", worker_id, tab_id, scope, idle_timeout_ms };
+  const s = args.force_new === true
+    ? coordinator.openSession({ ...input, auto_reusable: false })
+    : coordinator.findReusableSession(input) ?? coordinator.openSession(input);
   return { session_id: s.id };
 }
 
@@ -232,6 +281,7 @@ export type PreparedBrowserTool = {
   session_id: string;
   worker_id: string;
   tab_id: string;
+  tool: string;
   step: Exec["step"];
   dangerous: boolean;
 };
@@ -247,10 +297,17 @@ export async function prepareBrowserTool(
   const session = coordinator.sessions.get(session_id);
   if (!session) throw new Error(`session ${session_id} not found`);
 
-  const { session_id: _omit, ...suppliedToolArgs } = args;
+  const { session_id: _omit, tabId: requestedTabId, ...suppliedToolArgs } = args;
+  const tab_id = requestedTabId === undefined
+    ? session.tab_id
+    : normalizeRouteTabId(requestedTabId);
+  if (!session.tab_ids.includes(tab_id)) {
+    throw new Error(`PermissionDenied: session ${session_id} does not own or have attached tab ${tab_id}`);
+  }
   const resolved = gen.resolve ? gen.resolve(suppliedToolArgs) : { builtinTool: gen.builtinTool, args: suppliedToolArgs };
   const toolArgs: Record<string, unknown> = { ...resolved.args };
-  const tool = resolved.builtinTool as BuiltinTool;
+  const toolName = resolved.builtinTool;
+  const tool = toolName as BuiltinTool;
 
   // The scanner lives in shared, so MCP can select the same capability tier as
   // the extension before the step crosses the websocket.
@@ -266,7 +323,8 @@ export async function prepareBrowserTool(
       hub,
       session_id,
       worker_id: session.worker_id,
-      tab_id: session.tab_id,
+      tab_id,
+      tool: toolName,
       step: {
         kind: "js",
         source,
@@ -278,13 +336,11 @@ export async function prepareBrowserTool(
     };
   }
 
-  // MCP tools are session-bound, so their schema intentionally omits tabId.
-  // These two tools use tabId as their command argument rather than as a route
-  // override; supply the bound tab explicitly for the background handler.
+  // These commands need the routed tab both in EXEC and in their own payload.
   if (tool === "switchToTab" || tool === "closeTab") {
-    const boundTabId = Number.parseInt(session.tab_id, 10);
+    const boundTabId = Number.parseInt(tab_id, 10);
     if (!Number.isFinite(boundTabId)) {
-      throw new Error(`InvalidArgs: session tab_id "${session.tab_id}" is not numeric`);
+      throw new Error(`InvalidArgs: session tab_id "${tab_id}" is not numeric`);
     }
     toolArgs.tabId = boundTabId;
   }
@@ -314,8 +370,14 @@ export async function prepareBrowserTool(
     hub,
     session_id,
     worker_id: session.worker_id,
-    tab_id: session.tab_id,
-    step: { kind: "tool", tool, args: toolArgs as Json },
+    tab_id,
+    tool: toolName,
+    step: {
+      kind: "tool",
+      tool,
+      args: toolArgs as Json,
+      ...(tool === "collectStructuredData" ? { timeoutMs: 600_000 } : {}),
+    },
     dangerous
   };
 }
@@ -329,5 +391,33 @@ export async function handleBrowserTool(deps: Deps, gen: GeneratedTool, args: Re
     step: prepared.step
   });
   if (!result.ok) throw new Error(result.error ? `${result.error.code}: ${result.error.message}` : "EXEC failed");
+  if (prepared.tool === "openTab") {
+    const openedTabId = tabIdFromOpenResult(result.return);
+    prepared.coordinator.attachSessionTab(prepared.session_id, prepared.worker_id, openedTabId);
+  } else if (prepared.tool === "closeTab") {
+    prepared.coordinator.detachSessionTab(prepared.session_id, prepared.worker_id, prepared.tab_id);
+  }
   return (result.return ?? null) as Json;
+}
+
+function normalizeRouteTabId(value: unknown): string {
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) {
+    throw new Error("InvalidArgs: tabId must be a non-negative integer");
+  }
+  return String(value);
+}
+
+function tabIdFromOpenResult(value: unknown): string {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("InvalidResult: browser_openTab did not return a tabId");
+  }
+  const tabId = (value as Record<string, unknown>).tabId;
+  if (typeof tabId !== "number" || !Number.isInteger(tabId) || tabId < 0) {
+    throw new Error("InvalidResult: browser_openTab returned an invalid tabId");
+  }
+  return String(tabId);
+}
+
+function sameSet<T>(left: ReadonlySet<T>, right: ReadonlySet<T>): boolean {
+  return left.size === right.size && [...left].every((value) => right.has(value));
 }

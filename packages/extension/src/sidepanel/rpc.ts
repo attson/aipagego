@@ -1,6 +1,21 @@
 import type { RpcRequest } from "@aipagego/shared/messages";
 import type { ExportBundle, Json, RunRecord, Step, Tool } from "@aipagego/shared/types";
 import type { Preset } from "@aipagego/shared/preset";
+import type { PermissionRequired } from "@aipagego/shared/optional-permissions";
+import type {
+  CollectionPreview,
+  CollectionRecipeV1,
+  CollectionResultPage,
+  CollectionRunSnapshot,
+} from "@aipagego/shared/collection";
+import type { Job, JobDraft, JobRun } from "@aipagego/shared/jobs";
+import type { Connector, ConnectorDelivery, ConnectorDraft, ConnectorSource } from "@aipagego/shared/connectors";
+import type {
+  ImportCommitResult,
+  ImportConflictAction,
+  ImportPreview,
+  ToolSharePackageV1,
+} from "@aipagego/shared/tool-package";
 
 function isReceiverMissing(msg: string): boolean {
   return (
@@ -50,16 +65,44 @@ export const rpc = {
   deleteTool: (id: string) => call<null>({ type: "tools.delete", id }),
   matchingTools: (url: string) => call<Tool[]>({ type: "tools.matching", url }),
   exportAll: () => call<ExportBundle>({ type: "tools.export" }),
-  importBundle: (bundle: unknown) =>
-    call<{ imported: number; skipped: number }>({ type: "tools.import", bundle }),
+  exportToolSharePackage: (toolIds: string[], name: string, description?: string) =>
+    call<ToolSharePackageV1>({
+      type: "tools.share.export",
+      toolIds,
+      name,
+      ...(description === undefined ? {} : { description }),
+    }),
+  previewToolImport: (bundle: unknown) =>
+    call<ImportPreview>({ type: "tools.import.preview", bundle }),
+  commitToolImport: (input: {
+    bundle: unknown;
+    digest: string;
+    decisions: Array<{ index: number; action: ImportConflictAction }>;
+    approveDangerous?: boolean;
+  }) => call<ImportCommitResult>({ type: "tools.import.commit", ...input }),
+  publishWorkflow: (input: Omit<Extract<RpcRequest, { type: "workflows.publish" }>, "type">) =>
+    call<Tool>({ type: "workflows.publish", ...input }),
+  activateWorkflow: (id: string, version: number) =>
+    call<Tool>({ type: "workflows.activate", id, version }),
 
   // runs
   runDraft: (
     draft: Extract<RpcRequest, { type: "tools.save" }>["draft"],
-    tabId: number
-  ) => call<RunRecord>({ type: "runs.start", target: { kind: "draft", draft }, tabId }),
-  runTool: (id: string, tabId: number) =>
-    call<RunRecord>({ type: "runs.start", target: { kind: "tool", id }, tabId }),
+    tabId: number,
+    inputs?: Record<string, Json>
+  ) => call<RunRecord>({
+    type: "runs.start",
+    target: { kind: "draft", draft },
+    tabId,
+    ...(inputs === undefined ? {} : { inputs })
+  }),
+  runTool: (id: string, tabId: number, inputs?: Record<string, Json>) =>
+    call<RunRecord>({
+      type: "runs.start",
+      target: { kind: "tool", id },
+      tabId,
+      ...(inputs === undefined ? {} : { inputs })
+    }),
   runOneStep: (input: {
     step: Step;
     tabId: number;
@@ -76,17 +119,56 @@ export const rpc = {
   listRuns: (toolId?: string) => call<RunRecord[]>({ type: "runs.list", toolId }),
   getRun: (id: string) => call<RunRecord | null>({ type: "runs.get", id }),
 
+  // local Jobs
+  listJobs: () => call<Array<Job & { upgradeAvailable?: number }>>({ type: "jobs.list" }),
+  getJob: (id: string) => call<Job | null>({ type: "jobs.get", id }),
+  saveJob: (draft: JobDraft, options: { id?: string; acknowledgeCaution?: boolean } = {}) =>
+    call<Job>({ type: "jobs.save", draft, ...options }),
+  pauseJob: (id: string) => call<Job>({ type: "jobs.pause", id }),
+  resumeJob: (id: string) => call<Job>({ type: "jobs.resume", id }),
+  deleteJob: (id: string) => call<null>({ type: "jobs.delete", id }),
+  runJobNow: (id: string, options: { inputs?: Record<string, Json>; approveDangerousOnce?: boolean } = {}) =>
+    call<JobRun>({ type: "jobs.runNow", id, ...options }),
+  upgradeJob: (id: string, toolVersion: number, acknowledgeCaution = false) =>
+    call<Job>({ type: "jobs.upgrade", id, toolVersion, acknowledgeCaution }),
+  listJobRuns: (jobId: string, cursor?: string, limit = 50) =>
+    call<{ items: JobRun[]; nextCursor?: string }>({
+      type: "jobRuns.list",
+      jobId,
+      limit,
+      ...(cursor == null ? {} : { cursor }),
+    }),
+  getJobRun: (id: string) => call<JobRun | null>({ type: "jobRuns.get", id }),
+
+  // connectors (credentials are write-only; responses contain redacted Connector data)
+  listConnectors: () => call<Connector[]>({ type: "connectors.list" }),
+  getConnector: (id: string) => call<Connector | null>({ type: "connectors.get", id }),
+  saveConnector: (draft: ConnectorDraft, id?: string) =>
+    call<Connector>({ type: "connectors.save", draft, ...(id == null ? {} : { id }) }),
+  deleteConnector: (id: string) => call<null>({ type: "connectors.delete", id }),
+  testConnector: (id: string) => call<{ ok: true; status: number }>({ type: "connectors.test", id }),
+  createDelivery: (connectorId: string, source: ConnectorSource) =>
+    call<ConnectorDelivery>({ type: "deliveries.create", connectorId, source }),
+  listDeliveries: (connectorId?: string) =>
+    call<ConnectorDelivery[]>({ type: "deliveries.list", ...(connectorId == null ? {} : { connectorId }) }),
+  retryDelivery: (id: string, confirmUnknownCommit = false) =>
+    call<ConnectorDelivery>({ type: "deliveries.retry", id, confirmUnknownCommit }),
+
   // tabs
   listTabs: (windowId?: number) =>
     call<{ tabs: Array<{ tabId: number; windowId: number; url: string; title: string }> }>({
       type: "tabs.list",
       ...(windowId == null ? {} : { windowId })
     }),
-  openTab: (url: string, active?: boolean) =>
-    call<{ tabId: number; url: string; title: string }>({
+  openTab: (input: {
+    url: string;
+    active?: boolean;
+    incognito?: boolean;
+    windowId?: number;
+  }) =>
+    call<{ tabId: number; windowId: number; incognito: boolean; url: string; title: string }>({
       type: "tabs.open",
-      url,
-      ...(active == null ? {} : { active })
+      ...input
     }),
 
   // presets
@@ -94,7 +176,11 @@ export const rpc = {
   materializePreset: (presetId: string) => call<Tool>({ type: "presets.materialize", presetId }),
 
   // widget RPCs
-  widgetOpenSidepanel: (input: { tabId: number; pendingApprovalId?: string }) =>
+  widgetOpenSidepanel: (input: {
+    tabId: number;
+    pendingApprovalId?: string;
+    pendingPermission?: PermissionRequired & { toolUseId: string };
+  }) =>
     call<null>({ type: "widget.openSidepanel", ...input }),
   widgetOpenSidepanelWithSave: (input: { tabId: number }) =>
     call<null>({ type: "widget.openSidepanelWithSave", tabId: input.tabId }),
@@ -104,6 +190,18 @@ export const rpc = {
   // element capture
   startElementCapture: (tabId: number) =>
     call<null>({ type: "elementCapture.start", tabId }),
+
+  // collection studio
+  previewCollection: (input: { tabId: number; recipe: CollectionRecipeV1 }) =>
+    call<CollectionPreview>({ type: "collections.preview", ...input }),
+  startCollection: (input: { tabId: number; recipe: CollectionRecipeV1 }) =>
+    call<{ runId: string }>({ type: "collections.start", ...input }),
+  getCollectionRun: (runId: string) =>
+    call<CollectionRunSnapshot | null>({ type: "collections.runs.get", runId }),
+  cancelCollection: (runId: string) =>
+    call<null>({ type: "collections.cancel", runId }),
+  readCollectionResult: (input: { resultId: string; offset: number; limit: number }) =>
+    call<CollectionResultPage>({ type: "collections.results.read", ...input }),
 
   // chat session
   startSession: (input: { url: string }) =>

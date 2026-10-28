@@ -34,9 +34,13 @@ export function installSelfHealHost(): () => void {
     const req = msg as Req;
     const settings = useSettings.getState();
     try {
+      if (!settings.selfHealEnabled) throw new Error("self_heal_disabled");
       if (!settings.apiKey) throw new Error("no_api_key");
       const client = pickClient(settings.provider);
-      const built = buildSelfHealMessages(req.ctx, req.maxOutputTokens);
+      const built = buildSelfHealMessages(
+        req.ctx,
+        Math.min(req.maxOutputTokens, settings.maxSelfHealOutputTokens)
+      );
 
       // Non-streaming one-shot: drain stream events, collect text
       let text = "";

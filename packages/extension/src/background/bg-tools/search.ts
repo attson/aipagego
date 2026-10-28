@@ -1,4 +1,5 @@
 import type { Json } from "@aipagego/shared/types";
+import { requireOptionalPermission } from "@/permissions/optional-permissions";
 
 function asObj(raw: Json): Record<string, unknown> {
   return (raw ?? {}) as Record<string, unknown>;
@@ -9,6 +10,7 @@ export async function searchBookmarks(raw: Json): Promise<Json> {
   if (typeof query !== "string" || query.trim() === "") {
     throw new Error("searchBookmarks: query required");
   }
+  await requireOptionalPermission("bookmarks", "searchBookmarks");
   if (!chrome.bookmarks?.search) throw new Error("searchBookmarks: bookmarks API unavailable");
   const nodes = await chrome.bookmarks.search(query);
   const cap = typeof limit === "number" && limit > 0 ? limit : 50;
@@ -25,6 +27,7 @@ export async function searchHistory(raw: Json): Promise<Json> {
     limit?: number;
   };
   if (typeof query !== "string") throw new Error("searchHistory: query required");
+  await requireOptionalPermission("history", "searchHistory");
   if (!chrome.history?.search) throw new Error("searchHistory: history API unavailable");
   const start = Date.now() - (daysBack && daysBack > 0 ? daysBack : 7) * 24 * 60 * 60 * 1000;
   const items = await chrome.history.search({

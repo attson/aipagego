@@ -11,6 +11,7 @@ type Props = {
 };
 
 const DEFAULT_POS = { x: -1, y: -1 }; // sentinel: right/bottom 16px
+const FAB_SIZE_PX = 48;
 
 export function FAB({ onToggle, active }: Props) {
   const [pos, setPos] = useState(DEFAULT_POS);
@@ -69,6 +70,11 @@ export function FAB({ onToggle, active }: Props) {
         onPointerUp={onPointerUp}
         onContextMenu={onContextMenu}
         aria-label="AIPageGo 助手"
+        // Tailwind's `w-12`/`h-12` utilities are expressed in `rem`.  `rem`
+        // resolves against the host page's `<html>` font size even inside a
+        // shadow root, and mobile pages commonly set that size to 100px+.
+        // Keep the injected control a stable 48px regardless of the page.
+        style={{ width: FAB_SIZE_PX, height: FAB_SIZE_PX }}
         className={
           "w-12 h-12 rounded-full flex items-center justify-center shadow-lg cursor-pointer " +
           (active

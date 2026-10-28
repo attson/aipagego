@@ -50,9 +50,10 @@ describe("ExecSchema", () => {
       req_id: "r1",
       session_id: "s1",
       tab_id: "t1",
-      step: { kind: "tool", tool: "snapshotDOM", args: {} }
+      step: { kind: "tool", tool: "snapshotDOM", args: {}, timeoutMs: 600000 }
     });
     expect(r.success).toBe(true);
+    if (r.success) expect(r.data.step.timeoutMs).toBe(600000);
   });
 
   it("parses an EXEC whose step carries kind:'js'", () => {
