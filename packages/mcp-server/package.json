@@ -1,6 +1,6 @@
 {
   "name": "@attson/aipagego-mcp",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "Apache-2.0",
   "description": "MCP server for the AIPageGo browser extension - let Codex or Claude Code drive your browser.",
   "homepage": "https://github.com/attson/aipagego#readme",

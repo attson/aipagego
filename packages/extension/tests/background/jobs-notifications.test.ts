@@ -76,6 +76,19 @@ describe("Job notifications", () => {
     expect(create).not.toHaveBeenCalled();
   });
 
+  it("degrades safely when the optional notifications API is unavailable", async () => {
+    const contains = vi.fn(async () => true);
+    vi.stubGlobal("chrome", {
+      permissions: { contains },
+      runtime: { getURL: (path: string) => path },
+    });
+
+    await expect(notifyJobTerminal(job, run())).resolves.toBeUndefined();
+    const dispose = installJobNotificationClickHandler();
+    expect(() => dispose()).not.toThrow();
+    expect(contains).not.toHaveBeenCalled();
+  });
+
   it("replaces unknown failure text with a stable non-sensitive code", async () => {
     const create = vi.fn(async () => "id");
     vi.stubGlobal("chrome", {

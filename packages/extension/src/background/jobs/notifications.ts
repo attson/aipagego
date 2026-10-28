@@ -39,9 +39,11 @@ function notificationText(job: Job, run: JobRun): { title: string; message: stri
 
 export async function notifyJobTerminal(job: Job, run: JobRun): Promise<void> {
   if (!shouldNotify(job, run)) return;
+  const createNotification = chrome.notifications?.create;
+  if (!createNotification) return;
   if (!await chrome.permissions.contains({ permissions: ["notifications"] })) return;
   const text = notificationText(job, run);
-  await chrome.notifications.create(`${PREFIX}${job.id}.${run.id}`, {
+  await createNotification(`${PREFIX}${job.id}.${run.id}`, {
     type: "basic",
     iconUrl: chrome.runtime.getURL("icons/icon-128.png"),
     title: text.title.slice(0, 120),
@@ -50,6 +52,9 @@ export async function notifyJobTerminal(job: Job, run: JobRun): Promise<void> {
 }
 
 export function installJobNotificationClickHandler(): () => void {
+  const onClicked = chrome.notifications?.onClicked;
+  if (!onClicked) return () => {};
+
   const listener = (notificationId: string) => {
     if (!notificationId.startsWith(PREFIX)) return;
     const jobId = notificationId.slice(PREFIX.length).split(".")[0];
@@ -63,6 +68,6 @@ export function installJobNotificationClickHandler(): () => void {
       if (tab.id != null) await chrome.sidePanel.open({ tabId: tab.id });
     })();
   };
-  chrome.notifications.onClicked.addListener(listener);
-  return () => chrome.notifications.onClicked.removeListener(listener);
+  onClicked.addListener(listener);
+  return () => onClicked.removeListener(listener);
 }
