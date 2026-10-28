@@ -22,6 +22,10 @@ describe("manifest", () => {
   it("declares native tab-group access for visible AI session ownership", () => {
     expect((manifest as { permissions?: string[] }).permissions).toContain("tabGroups");
   });
+
+  it("declares alarms permission for coordinator reconnect fallback", () => {
+    expect((manifest as { permissions?: string[] }).permissions).toContain("alarms");
+  });
 });
 
 type ContentScript = { js?: string[]; world?: string; run_at?: string; matches?: string[] };

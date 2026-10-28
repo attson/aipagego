@@ -20,6 +20,101 @@ function allowedFrom(raw: Json): Set<number> {
   return new Set(Array.isArray(list) ? (list as number[]) : []);
 }
 
+export interface OpenTabInput {
+  url: string;
+  active?: boolean;
+  incognito?: boolean;
+  windowId?: number;
+}
+
+export interface OpenTabResult {
+  tabId: number;
+  windowId: number;
+  incognito: boolean;
+  url: string;
+  title: string;
+}
+
+function incognitoAccessAllowed(): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    chrome.extension.isAllowedIncognitoAccess((allowed) => {
+      const lastError = chrome.runtime.lastError;
+      if (lastError) {
+        reject(new Error(`openTab: 无法检查无痕模式权限：${lastError.message}`));
+        return;
+      }
+      resolve(allowed);
+    });
+  });
+}
+
+function tabResult(
+  tab: chrome.tabs.Tab,
+  fallback: { url: string; windowId?: number; incognito: boolean }
+): OpenTabResult {
+  if (tab.id == null) throw new Error("openTab: chrome did not return a tab id");
+  const windowId = tab.windowId ?? fallback.windowId;
+  if (windowId == null) throw new Error("openTab: chrome did not return a window id");
+  return {
+    tabId: tab.id,
+    windowId,
+    incognito: tab.incognito ?? fallback.incognito,
+    url: tab.url ?? fallback.url,
+    title: tab.title ?? ""
+  };
+}
+
+export async function openTabInBrowser(input: OpenTabInput): Promise<OpenTabResult> {
+  const { url, windowId } = input;
+  if (!url) throw new Error("openTab: url required");
+  const active = input.active === true;
+
+  if (input.incognito !== true) {
+    const tab = await chrome.tabs.create({
+      url,
+      active,
+      ...(windowId == null ? {} : { windowId })
+    });
+    return tabResult(tab, { url, windowId, incognito: false });
+  }
+
+  if (!(await incognitoAccessAllowed())) {
+    throw new Error(
+      "AIPageGo 尚未获准在无痕模式下运行，请在 Chrome 扩展详情中开启“允许在无痕模式下运行”"
+    );
+  }
+
+  const windows = await chrome.windows.getAll({ windowTypes: ["normal"] });
+  const target = windowId == null
+    ? windows.find((window) => window.incognito === true)
+    : windows.find((window) => window.id === windowId);
+
+  if (windowId != null && !target) {
+    throw new Error(`openTab: window ${windowId} does not exist`);
+  }
+  if (target && target.incognito !== true) {
+    throw new Error(`openTab: window ${target.id ?? windowId} is not incognito`);
+  }
+
+  if (target?.id != null) {
+    const tab = await chrome.tabs.create({ url, active, windowId: target.id });
+    return tabResult(tab, { url, windowId: target.id, incognito: true });
+  }
+
+  const createdWindow = await chrome.windows.create({
+    url,
+    incognito: true,
+    focused: active
+  });
+  if (createdWindow.id == null) {
+    throw new Error("openTab: chrome did not return an incognito window id");
+  }
+  const createdTab = createdWindow.tabs?.find((tab) => tab.id != null) ??
+    (await chrome.tabs.query({ windowId: createdWindow.id }))[0];
+  if (!createdTab) throw new Error("openTab: chrome did not return the incognito tab");
+  return tabResult(createdTab, { url, windowId: createdWindow.id, incognito: true });
+}
+
 export async function listTabs(raw: Json): Promise<Json> {
   const { windowId } = asObj(raw) as { windowId?: number };
   const tabs = await chrome.tabs.query(windowId != null ? { windowId } : {});
@@ -35,14 +130,14 @@ export async function listTabs(raw: Json): Promise<Json> {
 }
 
 export async function openTab(raw: Json): Promise<Json> {
-  const { url, active } = asObj(raw) as { url?: string; active?: boolean };
+  const { url, active, incognito, windowId } = asObj(raw) as {
+    url?: string;
+    active?: boolean;
+    incognito?: boolean;
+    windowId?: number;
+  };
   if (typeof url !== "string" || !url) throw new Error("openTab: url required");
-  const tab = await chrome.tabs.create({ url, active: active === true });
-  return {
-    tabId: tab.id ?? null,
-    url: tab.url ?? url,
-    title: tab.title ?? null
-  } as unknown as Json;
+  return (await openTabInBrowser({ url, active, incognito, windowId })) as unknown as Json;
 }
 
 export async function closeTab(raw: Json): Promise<Json> {

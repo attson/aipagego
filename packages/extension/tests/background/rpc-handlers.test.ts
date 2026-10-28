@@ -782,6 +782,41 @@ describe("tabs.open", () => {
     expect(res.ok).toBe(false);
     if (!res.ok) expect(res.error).toMatch(/scheme/i);
   });
+
+  it("forwards incognito and windowId to the tab opener", async () => {
+    const create = vi.fn(async (info: chrome.tabs.CreateProperties) => ({
+      id: 43,
+      windowId: info.windowId,
+      url: info.url ?? "",
+      title: "",
+      incognito: true
+    }));
+    vi.stubGlobal("chrome", {
+      extension: {
+        isAllowedIncognitoAccess: vi.fn((callback: (allowed: boolean) => void) => callback(true))
+      },
+      runtime: {},
+      tabs: {
+        get: vi.fn(),
+        sendMessage: vi.fn(),
+        create
+      },
+      windows: {
+        getAll: vi.fn(async () => [{ id: 22, type: "normal", incognito: true }]),
+        create: vi.fn()
+      }
+    });
+
+    const res = await handleRpc({
+      type: "tabs.open",
+      url: "https://x.com",
+      incognito: true,
+      windowId: 22
+    });
+
+    expect(res.ok).toBe(true);
+    expect(create).toHaveBeenCalledWith({ url: "https://x.com", active: false, windowId: 22 });
+  });
 });
 
 describe("runs.runOneStep tabId gate", () => {

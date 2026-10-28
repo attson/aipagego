@@ -40,13 +40,13 @@ describe("buildHello", () => {
     expect(payload.protocol_version).toBe(PROTOCOL_VERSION);
   });
 
-  it("advertises all 15 capabilities by default", async () => {
+  it("advertises incognito tab opening", async () => {
     const payload = await buildHello({
       worker_id: "w",
       saved_tools: [],
       labels: []
     });
-    expect(payload.capabilities.length).toBe(15);
+    expect(payload.capabilities).toContain("tab:open-incognito");
   });
 
   it("maps open tabs to available_tabs entries (tab_id as string)", async () => {

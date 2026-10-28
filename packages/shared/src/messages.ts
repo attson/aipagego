@@ -519,7 +519,9 @@ export const RpcRequest = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("tabs.open"),
     url: z.string().url(),
-    active: z.boolean().optional()
+    active: z.boolean().optional(),
+    incognito: z.boolean().optional(),
+    windowId: z.number().int().optional()
   }),
 
   // binary fetch (for uploadFile)

@@ -124,6 +124,18 @@ describe("multi-tab RPC variants", () => {
     expect(RpcRequest.safeParse({ type: "tabs.open", url: "https://x.com" }).success).toBe(true);
     expect(RpcRequest.safeParse({ type: "tabs.open" }).success).toBe(false);
     expect(RpcRequest.safeParse({ type: "tabs.open", url: "https://x", active: true }).success).toBe(true);
+    expect(
+      RpcRequest.safeParse({
+        type: "tabs.open",
+        url: "https://x.com",
+        active: false,
+        incognito: true,
+        windowId: 12
+      }).success
+    ).toBe(true);
+    expect(
+      RpcRequest.safeParse({ type: "tabs.open", url: "https://x.com", windowId: 1.5 }).success
+    ).toBe(false);
   });
 
   it("runs.runOneStep accepts attachedTabIds (defaults to [])", () => {

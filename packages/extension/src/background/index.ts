@@ -221,11 +221,20 @@ function ensurePool(): CoordinatorPool {
         onExec: async (exec) => {
           const tabId = Number.parseInt(exec.tab_id, 10);
           if (Number.isFinite(tabId)) {
-            groupedSessions.add(exec.session_id);
-            await tabSessionGroups.claim({
-              sessionId: groupSessionId(exec.session_id),
-              tabId,
-              source: "mcp"
+            // Chrome can leave tab lookup/grouping pending indefinitely for
+            // native incognito windows. This entire presentation path must run
+            // out-of-band so it can never delay the coordinator RESULT.
+            void chrome.tabs.get(tabId).then((tab) => {
+              if (tab.incognito) return;
+              return tabSessionGroups.claim({
+                sessionId: groupSessionId(exec.session_id),
+                tabId,
+                source: "mcp"
+              }).then(() => {
+                groupedSessions.add(exec.session_id);
+              });
+            }).catch((error) => {
+              console.warn("[coordinator] tab grouping skipped", error);
             });
           }
           return handleExec(exec);

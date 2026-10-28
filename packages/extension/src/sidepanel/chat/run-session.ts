@@ -42,7 +42,12 @@ export type CrossTabRpc = {
   listTabs: (
     windowId?: number
   ) => Promise<{ tabs: Array<{ tabId: number; windowId: number; url: string; title: string }> }>;
-  openTab: (url: string, active?: boolean) => Promise<{ tabId: number; url: string; title: string }>;
+  openTab: (input: {
+    url: string;
+    active?: boolean;
+    incognito?: boolean;
+    windowId?: number;
+  }) => Promise<{ tabId: number; url: string; title: string }>;
 };
 
 export type RunSessionInput = {
@@ -578,10 +583,18 @@ export async function runChatSession(args: RunSessionArgs): Promise<RunSessionRe
             }
             case "openTab": {
               if (!args.tabsRpc) throw new Error("openTab: tabsRpc not provided");
-              const r = await args.tabsRpc.openTab(
-                (tu.input as { url: string }).url,
-                (tu.input as { active?: boolean }).active
-              );
+              const input = tu.input as {
+                url: string;
+                active?: boolean;
+                incognito?: boolean;
+                windowId?: number;
+              };
+              const r = await args.tabsRpc.openTab({
+                url: input.url,
+                active: input.active,
+                incognito: input.incognito,
+                windowId: input.windowId
+              });
               out = r as unknown as Json;
               args.onCrossTabResult?.({
                 kind: "opened",

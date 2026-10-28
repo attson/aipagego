@@ -76,6 +76,9 @@ describe("TOOL_DEFS", () => {
   it("openTab requires url; attachTab/detachTab require tabId", () => {
     const openTab = TOOL_DEFS.find((d) => d.name === "openTab")!;
     expect((openTab.input_schema as { required: string[] }).required).toEqual(["url"]);
+    const openTabProperties = (openTab.input_schema as { properties: Record<string, unknown> }).properties;
+    expect(openTabProperties.incognito).toBeDefined();
+    expect(openTabProperties.windowId).toBeDefined();
     const attachTab = TOOL_DEFS.find((d) => d.name === "attachTab")!;
     expect((attachTab.input_schema as { required: string[] }).required).toEqual(["tabId"]);
     const detachTab = TOOL_DEFS.find((d) => d.name === "detachTab")!;

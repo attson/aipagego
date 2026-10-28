@@ -413,8 +413,8 @@ describe("runChatSession", () => {
       const client = makeClient([
         [
           { type: "tool_use_start", id: "u2", name: "openTab" },
-          { type: "tool_use_input_delta", id: "u2", partial_json: '{"url":"https://new"}' },
-          { type: "tool_use_end", id: "u2", input: { url: "https://new" } },
+          { type: "tool_use_input_delta", id: "u2", partial_json: '{"url":"https://new","incognito":true,"windowId":12}' },
+          { type: "tool_use_end", id: "u2", input: { url: "https://new", incognito: true, windowId: 12 } },
           { type: "message_end" }
         ],
         [
@@ -457,7 +457,12 @@ describe("runChatSession", () => {
         onCrossTabResult: (r) => events.push(r)
       });
 
-      expect(tabsRpc.openTab).toHaveBeenCalledWith("https://new", undefined);
+      expect(tabsRpc.openTab).toHaveBeenCalledWith({
+        url: "https://new",
+        active: undefined,
+        incognito: true,
+        windowId: 12
+      });
       expect(events).toContainEqual({ kind: "opened", tabId: 99, url: "https://new", title: "" });
     });
   });

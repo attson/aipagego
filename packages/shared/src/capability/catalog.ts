@@ -16,6 +16,7 @@ export const CAPABILITIES = [
   "runJS:scanned",
   "runJS:unsafe",
   "tab:open",
+  "tab:open-incognito",
   // Plan 32 — page-event recorder
   "read:console",
   "read:network",

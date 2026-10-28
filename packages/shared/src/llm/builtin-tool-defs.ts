@@ -488,13 +488,29 @@ export const TOOL_DEFS: LlmTool[] = [
   },
   {
     name: "openTab",
-    description: "[META] 打开新 tab，成功后自动加入会话 attachedTabs（source=ai-open）。返回 {tabId, url, title}。",
-    mcp: { description: "Open a new tab and attach it to the session. Returns {tabId, url, title}.", params: { active: "true = switch to it" } },
+    description:
+      "[META] 打开并加入新 tab。incognito=true 使用原生无痕窗口（需授权）。" +
+      "返回 {tabId, windowId, incognito, url, title}。",
+    mcp: {
+      description: "Open a tab.",
+      params: {
+        active: "switch"
+      }
+    },
     input_schema: {
       type: "object",
       properties: {
         url: { type: "string" },
         active: { type: "boolean", default: false, description: "true=切到该 tab" },
+        incognito: {
+          type: "boolean",
+          default: false,
+          description: "使用原生无痕窗口"
+        },
+        windowId: {
+          type: "integer",
+          description: "可选目标窗口"
+        },
       },
       required: ["url"],
     },

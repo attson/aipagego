@@ -41,6 +41,7 @@ import { classifyTool } from "@/sidepanel/chat/severity";
 import { registerInjectMain } from "./recorder/host";
 import { registerCaptureDeps } from "./bg-tools/capture";
 import { META_TOOLS, isMetaTool } from "./meta-tool-router";
+import { openTabInBrowser } from "./bg-tools/tabs";
 import { readPolicyForTab } from "@/injection-policy";
 import { injectionModeRank } from "@aipagego/shared";
 import type { InjectionMode } from "@aipagego/shared/types";
@@ -345,7 +346,12 @@ export async function dispatch(req: RpcRequest): Promise<Json> {
     case "tabs.list":
       return (await listTabsRpc(req.windowId)) as unknown as Json;
     case "tabs.open":
-      return (await openTabRpc(req.url, req.active ?? false)) as unknown as Json;
+      return (await openTabRpc({
+        url: req.url,
+        active: req.active,
+        incognito: req.incognito,
+        windowId: req.windowId
+      })) as unknown as Json;
     case "http.fetchBinary": {
       return (await fetchAsBase64(req.url)) as unknown as Json;
     }
@@ -1014,13 +1020,20 @@ async function listTabsRpc(windowId?: number): Promise<{
   return { tabs };
 }
 
-async function openTabRpc(url: string, active: boolean): Promise<{
-  tabId: number; url: string; title: string;
+async function openTabRpc(input: {
+  url: string;
+  active?: boolean;
+  incognito?: boolean;
+  windowId?: number;
+}): Promise<{
+  tabId: number;
+  windowId: number;
+  incognito: boolean;
+  url: string;
+  title: string;
 }> {
-  if (!isAccessibleUrl(url)) throw new Error("openTab: URL scheme not allowed");
-  const tab = await chrome.tabs.create({ url, active });
-  if (tab.id == null) throw new Error("openTab: chrome did not return a tab id");
-  return { tabId: tab.id, url: tab.url ?? url, title: tab.title ?? "" };
+  if (!isAccessibleUrl(input.url)) throw new Error("openTab: URL scheme not allowed");
+  return openTabInBrowser(input);
 }
 
 function isAccessibleUrl(url: string): boolean {

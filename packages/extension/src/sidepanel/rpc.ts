@@ -160,11 +160,15 @@ export const rpc = {
       type: "tabs.list",
       ...(windowId == null ? {} : { windowId })
     }),
-  openTab: (url: string, active?: boolean) =>
-    call<{ tabId: number; url: string; title: string }>({
+  openTab: (input: {
+    url: string;
+    active?: boolean;
+    incognito?: boolean;
+    windowId?: number;
+  }) =>
+    call<{ tabId: number; windowId: number; incognito: boolean; url: string; title: string }>({
       type: "tabs.open",
-      url,
-      ...(active == null ? {} : { active })
+      ...input
     }),
 
   // presets
