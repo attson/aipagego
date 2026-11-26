@@ -25,22 +25,6 @@ export function registerCdpLookup(fn: (tabId: number) => PageRecorder | null): v
   cdpLookup = fn;
 }
 
-/**
- * When a CDP session owns the tab, `resize` prefers Emulation over resizing
- * the user's actual window. Null when no CDP session is attached.
- */
-export type CdpResizer = (width: number, height: number) => Promise<void>;
-
-let cdpResizerLookup: (tabId: number) => CdpResizer | null = () => null;
-
-export function registerCdpResizer(fn: (tabId: number) => CdpResizer | null): void {
-  cdpResizerLookup = fn;
-}
-
-export function getCdpResizer(tabId: number): CdpResizer | null {
-  return cdpResizerLookup(tabId);
-}
-
 export type InjectMainFn = (tabId: number, source: string, args: Json) => Promise<Json>;
 
 let injectMain: InjectMainFn | null = null;
