@@ -1,5 +1,5 @@
 import type { Json } from "@aipagego/shared/types";
-import { getCdpResizer } from "../recorder/host";
+import { resizeViewportWithCdp } from "../recorder/cdp";
 
 function asObj(raw: Json): Record<string, unknown> {
   return (raw ?? {}) as Record<string, unknown>;
@@ -90,9 +90,7 @@ export async function resize(raw: Json, tabId: number): Promise<Json> {
     throw new Error("resize: width and height required");
   }
 
-  const viaCdp = getCdpResizer(tabId);
-  if (viaCdp) {
-    await viaCdp(width, height);
+  if (await resizeViewportWithCdp(tabId, width, height)) {
     const actual = await measureSettledViewport(tabId, width, height);
     return {
       ok: true,

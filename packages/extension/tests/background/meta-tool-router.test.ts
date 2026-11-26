@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { META_TOOLS, META_TOOL_NAMES, isMetaTool } from "@/background/meta-tool-router";
+import { detachCdp } from "@/background/recorder/cdp";
 
 const realChrome = globalThis.chrome;
 
@@ -7,7 +8,8 @@ function fakeChrome(patch: Record<string, unknown>): void {
   globalThis.chrome = patch as unknown as typeof chrome;
 }
 
-afterEach(() => {
+afterEach(async () => {
+  await detachCdp(1);
   globalThis.chrome = realChrome;
   vi.restoreAllMocks();
 });
@@ -218,6 +220,147 @@ describe("navigation", () => {
       }
     });
     await expect(META_TOOLS.navigateForward({}, 1)).rejects.toThrow("navigateForward");
+  });
+
+  it("prefers a tab-scoped CDP viewport even when the tab is not attached yet", async () => {
+    const update = vi.fn(async () => undefined);
+    const attach = vi.fn(async () => undefined);
+    const sendCommand = vi.fn(async () => undefined);
+    fakeChrome({
+      debugger: {
+        attach,
+        sendCommand
+      },
+      permissions: {
+        contains: vi.fn(async () => true)
+      },
+      storage: {
+        local: {
+          get: vi.fn(async () => ({ "aipagego.recorder.cdpEnabled": true }))
+        }
+      },
+      scripting: {
+        executeScript: vi.fn(async () => [{
+          result: { iw: 1280, ih: 800, ow: 1440, oh: 900, dpr: 2 }
+        }])
+      },
+      tabs: { get: vi.fn(async () => ({ windowId: 9 })) },
+      windows: { update }
+    });
+
+    const out = (await META_TOOLS.resize({ width: 1280, height: 800 } as never, 1)) as unknown as {
+      backend: string;
+      actualViewport: { width: number; height: number };
+    };
+
+    expect(attach).toHaveBeenCalledWith({ tabId: 1 }, "1.3");
+    expect(sendCommand).toHaveBeenCalledWith(
+      { tabId: 1 },
+      "Emulation.setDeviceMetricsOverride",
+      expect.objectContaining({ width: 1280, height: 800 })
+    );
+    expect(update).not.toHaveBeenCalled();
+    expect(out).toMatchObject({
+      backend: "cdp",
+      actualViewport: { width: 1280, height: 800 }
+    });
+  });
+
+  it("falls back to the window without requesting missing debugger permission", async () => {
+    const request = vi.fn(async () => true);
+    const attach = vi.fn(async () => undefined);
+    const update = vi.fn(async () => undefined);
+    const executeScript = vi.fn()
+      .mockResolvedValueOnce([{ result: { iw: 1000, ih: 700, ow: 1016, oh: 790, dpr: 1 } }])
+      .mockResolvedValue([{ result: { iw: 1280, ih: 800, ow: 1296, oh: 890, dpr: 1 } }]);
+    fakeChrome({
+      debugger: { attach },
+      permissions: {
+        contains: vi.fn(async () => false),
+        request
+      },
+      storage: {
+        local: {
+          get: vi.fn(async () => ({ "aipagego.recorder.cdpEnabled": true }))
+        }
+      },
+      scripting: { executeScript },
+      tabs: { get: vi.fn(async () => ({ windowId: 9 })) },
+      windows: { update }
+    });
+
+    const out = (await META_TOOLS.resize({ width: 1280, height: 800 } as never, 1)) as unknown as {
+      backend: string;
+    };
+
+    expect(request).not.toHaveBeenCalled();
+    expect(attach).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledWith(9, { width: 1296, height: 890 });
+    expect(out.backend).toBe("main-world");
+  });
+
+  it("falls back to the window when another debugger owns the tab", async () => {
+    const update = vi.fn(async () => undefined);
+    const executeScript = vi.fn()
+      .mockResolvedValueOnce([{ result: { iw: 1000, ih: 700, ow: 1016, oh: 790, dpr: 1 } }])
+      .mockResolvedValue([{ result: { iw: 1280, ih: 800, ow: 1296, oh: 890, dpr: 1 } }]);
+    fakeChrome({
+      debugger: {
+        attach: vi.fn(async () => {
+          throw new Error("Another debugger is already attached");
+        })
+      },
+      permissions: { contains: vi.fn(async () => true) },
+      storage: {
+        local: {
+          get: vi.fn(async () => ({ "aipagego.recorder.cdpEnabled": true }))
+        }
+      },
+      scripting: { executeScript },
+      tabs: { get: vi.fn(async () => ({ windowId: 9 })) },
+      windows: { update }
+    });
+
+    const out = (await META_TOOLS.resize({ width: 1280, height: 800 } as never, 1)) as unknown as {
+      backend: string;
+    };
+
+    expect(update).toHaveBeenCalledWith(9, { width: 1296, height: 890 });
+    expect(out.backend).toBe("main-world");
+  });
+
+  it("falls back to the window when CDP cannot apply the viewport", async () => {
+    const update = vi.fn(async () => undefined);
+    const executeScript = vi.fn()
+      .mockResolvedValueOnce([{ result: { iw: 1000, ih: 700, ow: 1016, oh: 790, dpr: 1 } }])
+      .mockResolvedValue([{ result: { iw: 1280, ih: 800, ow: 1296, oh: 890, dpr: 1 } }]);
+    fakeChrome({
+      debugger: {
+        attach: vi.fn(async () => undefined),
+        detach: vi.fn(async () => undefined),
+        sendCommand: vi.fn(async (_target: unknown, method: string) => {
+          if (method === "Emulation.setDeviceMetricsOverride") {
+            throw new Error("Emulation unavailable");
+          }
+        })
+      },
+      permissions: { contains: vi.fn(async () => true) },
+      storage: {
+        local: {
+          get: vi.fn(async () => ({ "aipagego.recorder.cdpEnabled": true }))
+        }
+      },
+      scripting: { executeScript },
+      tabs: { get: vi.fn(async () => ({ windowId: 9 })) },
+      windows: { update }
+    });
+
+    const out = (await META_TOOLS.resize({ width: 1280, height: 800 } as never, 1)) as unknown as {
+      backend: string;
+    };
+
+    expect(update).toHaveBeenCalledWith(9, { width: 1296, height: 890 });
+    expect(out.backend).toBe("main-world");
   });
 
   it("compensates for browser chrome when resizing", async () => {

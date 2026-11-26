@@ -24,7 +24,7 @@ import {
 } from "@aipagego/shared/recorder";
 import type { Json } from "@aipagego/shared/types";
 import { cdpRecorderEnabled } from "./cdp-permission";
-import { registerCdpLookup, registerCdpResizer, setDegradedReason } from "./host";
+import { registerCdpLookup, setDegradedReason } from "./host";
 
 const PROTOCOL = "1.3";
 
@@ -491,6 +491,23 @@ export async function captureScreenshotWithCdp(
   return recorder ? recorder.captureScreenshot(options) : null;
 }
 
+/** Best-effort tab-scoped resize. Never requests permission or blocks fallback. */
+export async function resizeViewportWithCdp(
+  tabId: number,
+  width: number,
+  height: number
+): Promise<boolean> {
+  if (!(await cdpRecorderEnabled())) return false;
+  const recorder = getAttachedCdpRecorder(tabId) ?? (await attachCdp(tabId));
+  if (!recorder) return false;
+  try {
+    await recorder.setViewport(width, height);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Returns null rather than throwing — a failed attach must degrade, not fail. */
 export async function attachCdp(tabId: number): Promise<CdpRecorder | null> {
   if (attached.has(tabId)) return attached.get(tabId)!;
@@ -543,10 +560,6 @@ export async function detachCdp(tabId: number): Promise<void> {
 /** Idempotent; safe to call from both service-worker start and tests. */
 export function installCdpListeners(): void {
   registerCdpLookup((tabId) => getAttachedCdpRecorder(tabId));
-  registerCdpResizer((tabId) => {
-    const rec = getAttachedCdpRecorder(tabId);
-    return rec ? (w, h) => rec.setViewport(w, h) : null;
-  });
 
   chrome.debugger?.onEvent?.addListener((source, method, params) => {
     if (source.tabId == null) return;
